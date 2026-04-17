@@ -1,0 +1,75 @@
+{
+  "_readme": "Edit with stats_manager.py — set enabled:false to hide, change order to reorder.",
+
+  "summary": [
+    { "id": "summary_possession",    "enabled": true, "order": 0 },
+    { "id": "summary_xg",            "enabled": true, "order": 1 },
+    { "id": "summary_shots_sot",     "enabled": true, "order": 2 },
+    { "id": "summary_pass_accuracy", "enabled": true, "order": 3 },
+    { "id": "summary_fouls",         "enabled": true, "order": 4 }
+  ],
+
+  "attack_shooting": [
+    { "id": "attack_goals",              "enabled": true, "order": 0 },
+    { "id": "attack_shots_on_target",    "enabled": true, "order": 1 },
+    { "id": "attack_shots_inside_box",   "enabled": true, "order": 2 },
+    { "id": "attack_shots_outside_box",  "enabled": true, "order": 3 },
+    { "id": "attack_avg_shot_distance",  "enabled": true, "order": 4 },
+    { "id": "attack_xg",                 "enabled": true, "order": 5 },
+    { "id": "attack_xg_per_shot",        "enabled": true, "order": 6 },
+    { "id": "attack_xg_overperformance", "enabled": true, "order": 7 }
+  ],
+
+  "attack_distribution": [
+    { "id": "attack_assists",            "enabled": true, "order": 0 },
+    { "id": "attack_key_passes",         "enabled": true, "order": 1 },
+    { "id": "attack_total_passes",       "enabled": true, "order": 2 },
+    { "id": "attack_progressive_passes", "enabled": true, "order": 3 },
+    { "id": "attack_through_balls",      "enabled": true, "order": 4 },
+    { "id": "attack_crosses",            "enabled": true, "order": 5 }
+  ],
+
+  "attack_ball_progression": [
+    { "id": "attack_total_carries",        "enabled": true, "order": 0 },
+    { "id": "attack_progressive_carries",  "enabled": true, "order": 1 },
+    { "id": "attack_carries_final_third",  "enabled": true, "order": 2 },
+    { "id": "attack_dribbles",             "enabled": true, "order": 3 }
+  ],
+
+  "attack_pressure": [
+    { "id": "attack_shots_under_pressure",    "enabled": true, "order": 0 },
+    { "id": "attack_pass_acc_under_pressure", "enabled": true, "order": 1 }
+  ],
+
+  "defense_tackling": [
+    { "id": "defense_total_tackles",             "enabled": true, "order": 0 },
+    { "id": "defense_tackles_succ_failed",       "enabled": true, "order": 1 },
+    { "id": "defense_tackles_gaining_poss",      "enabled": true, "order": 2 },
+    { "id": "defense_total_interceptions",       "enabled": true, "order": 3 },
+    { "id": "defense_interceptions_succ_failed", "enabled": true, "order": 4 },
+    { "id": "defense_ints_gaining_poss",         "enabled": true, "order": 5 }
+  ],
+
+  "defense_blocks": [
+    { "id": "defense_total_blocks",            "enabled": true, "order": 0 },
+    { "id": "defense_opp_shots_blocked",       "enabled": true, "order": 1 },
+    { "id": "defense_total_clearances",        "enabled": true, "order": 2 },
+    { "id": "defense_clearances_gaining_poss", "enabled": true, "order": 3 },
+    { "id": "defense_own_goals",               "enabled": true, "order": 4 }
+  ],
+
+  "defense_work_rate": [
+    { "id": "defense_total_defensive_actions",  "enabled": true, "order": 0 },
+    { "id": "defense_defensive_success_rate",   "enabled": true, "order": 1 },
+    { "id": "defense_possession_wins",          "enabled": true, "order": 2 },
+    { "id": "defense_total_ball_recoveries",    "enabled": true, "order": 3 },
+    { "id": "defense_total_pressures",          "enabled": true, "order": 4 }
+  ],
+
+  "defense_goalkeeping": [
+    { "id": "defense_total_saves",         "enabled": true, "order": 0 },
+    { "id": "defense_gripping_push_saves", "enabled": true, "order": 1 },
+    { "id": "defense_total_fouls",         "enabled": true, "order": 2 },
+    { "id": "defense_yellow_red_cards",    "enabled": true, "order": 3 }
+  ]
+}
