@@ -168,8 +168,8 @@ const renderStatRows = (sectionKey, homeStats, awayStats) => {
 // ============================================================================
 // ⚙️ SUPABASE CONFIGURATION
 // ============================================================================
-const SUPABASE_URL = "https://oettovcvpzedbgvswvgh.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ldHRvdmN2cHplZGJndnN3dmdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NTMzNjQsImV4cCI6MjA4ODEyOTM2NH0.Ii0ptncoh-b3c4jn5xspWXvyoS3uBSK752XaMBUg2ME";
+const SUPABASE_URL = "https://pxhbxewnijavotdwiueo.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4aGJ4ZXduaWphdm90ZHdpdWVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNjIwODIsImV4cCI6MjA4OTkzODA4Mn0.UD55F-XT43KYbZpKRiwuD70eSNLpJvAQT5n-V5bYL00";
 
 const fetchSupabase = async (table, queryParams) => {
   const url = new URL(`${SUPABASE_URL}/rest/v1/${table}`);
