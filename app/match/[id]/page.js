@@ -466,7 +466,7 @@ export default function MatchReportPage() {
     })
     return Object.entries(goalMap).map(([pid, count]) => {
       const l = lineups.find(x => x.player_id === pid)
-      return { name: l?.players?.player_name || 'Unknown', display: Array(count).fill('G').join('') }
+      return { name: l?.players?.player_name || 'Unknown', jersey: l?.jersey_no || '-', count }
     })
   }
 
@@ -780,9 +780,13 @@ export default function MatchReportPage() {
                   <BrutalistCard color="bg-[#f8fafc]" className="text-center py-10">
                     <h2 className="text-3xl font-black uppercase text-[#0077B6] mb-4 tracking-tighter">{match.home_team?.team_name}</h2>
                     <div className="text-9xl font-black tracking-tighter">{dbHomeScore}</div>
-                    <div className="mt-6 text-sm font-bold text-gray-600 space-y-1">
+                    <div className="mt-6 text-sm font-bold text-gray-600 space-y-2">
                       {stats.home.roster.scorers.map((s, i) => (
-                        <div key={i} className="flex items-center justify-center gap-2">{s.name} (G)</div>
+                        <div key={i} className="flex items-center justify-center gap-2">
+                          <span className="text-[#0077B6] font-black text-xs border border-[#0077B6] px-1.5 py-0.5">#{s.jersey}</span>
+                          <span>{s.name}</span>
+                          <span className="tracking-tight">{Array(s.count).fill('⚽').join('')}</span>
+                        </div>
                       ))}
                     </div>
                   </BrutalistCard>
@@ -793,9 +797,13 @@ export default function MatchReportPage() {
                   <BrutalistCard color="bg-[#f8fafc]" className="text-center py-10">
                     <h2 className="text-3xl font-black uppercase text-[#D90429] mb-4 tracking-tighter">{match.away_team?.team_name}</h2>
                     <div className="text-9xl font-black tracking-tighter">{dbAwayScore}</div>
-                    <div className="mt-6 text-sm font-bold text-gray-600 space-y-1">
+                    <div className="mt-6 text-sm font-bold text-gray-600 space-y-2">
                       {stats.away.roster.scorers.map((s, i) => (
-                        <div key={i} className="flex items-center justify-center gap-2">{s.name} (G)</div>
+                        <div key={i} className="flex items-center justify-center gap-2">
+                          <span className="text-[#D90429] font-black text-xs border border-[#D90429] px-1.5 py-0.5">#{s.jersey}</span>
+                          <span>{s.name}</span>
+                          <span className="tracking-tight">{Array(s.count).fill('⚽').join('')}</span>
+                        </div>
                       ))}
                     </div>
                   </BrutalistCard>
