@@ -56,18 +56,12 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto flex justify-between items-start">
           <div>
             <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tighter leading-none">
-              Welcome to CAC Match Report
+              Welcome to <a href="https://calico-analysis-company.lovable.app" target="_blank" rel="noreferrer" className="hover:text-[#FFD166] transition-colors">CAC</a> Match Report
             </h1>
             <p className="text-[#06D6A0] font-black uppercase tracking-[0.3em] text-xs mt-2">
-              CAC Analytics
+              <a href="https://calico-analysis-company.lovable.app" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">CAC Analytics</a>
             </p>
           </div>
-          <Link
-            href="/admin"
-            className="border-2 border-white px-4 py-2 font-bold uppercase text-xs hover:bg-white hover:text-black transition-all mt-1"
-          >
-            Admin
-          </Link>
         </div>
       </header>
 
@@ -160,7 +154,7 @@ export default function HomePage() {
       </main>
 
       <footer className="mt-20 p-8 border-t-4 border-black text-center text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
-        CAC Analytics Engine
+        <a href="https://calico-analysis-company.lovable.app" target="_blank" rel="noreferrer" className="hover:text-black transition-colors">CAC Analytics Engine</a>
       </footer>
     </div>
   )

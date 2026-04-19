@@ -16,6 +16,7 @@ import AveragePositionsPitch from '../../../components/pitch/AveragePositionsPit
 import ShotMapPitch from '../../../components/pitch/ShotMapPitch.jsx'
 import ShotPlacementPitch from '../../../components/pitch/ShotPlacementPitch.jsx'
 import HeatmapPitch from '../../../components/pitch/HeatmapPitch.jsx'
+import HighlightsPitch from '../../../components/pitch/HighlightsPitch.jsx'
 import RadarChart from '../../../components/RadarChart.jsx'
 import LeaderCard from '../../../components/LeaderCard.jsx'
 import TeamSheetSide from '../../../components/TeamSheetSide.jsx'
@@ -90,6 +91,7 @@ export default function MatchReportPage() {
   const [hlOutcome, setHlOutcome] = useState('ALL')
   const [hlType, setHlType] = useState('ALL')
   const [hlInsideBox, setHlInsideBox] = useState(false)
+  const [hlBrushBounds, setHlBrushBounds] = useState(null) // {x1,y1,x2,y2} in pitch coords
   const [hlSeekTime, setHlSeekTime] = useState(0)
   const [hlForceRender, setHlForceRender] = useState(0)
   const videoRef = useRef(null)
@@ -632,6 +634,16 @@ export default function MatchReportPage() {
       return matchTeam && matchPlayer && matchAction && matchOutcome && matchType && matchBox && e.action !== 'Match Time'
     }).sort((a, b) => a.match_time_seconds - b.match_time_seconds)
   }, [enrichedEvents, hlTeam, hlPlayer, hlAction, hlOutcome, hlType, hlInsideBox, cfg])
+
+  const hlPitchFilteredEvents = useMemo(() => {
+    if (!hlBrushBounds) return hlFilteredEvents
+    const { x1, y1, x2, y2 } = hlBrushBounds
+    return hlFilteredEvents.filter(e =>
+      e.start_x != null && e.start_y != null &&
+      e.start_x >= x1 && e.start_x <= x2 &&
+      e.start_y >= y1 && e.start_y <= y2
+    )
+  }, [hlFilteredEvents, hlBrushBounds])
 
   const handleEventClick = (timeSecs) => {
     setHlSeekTime(Math.max(0, timeSecs - 5))
@@ -1225,43 +1237,56 @@ export default function MatchReportPage() {
                     </BrutalistCard>
                     <div className="flex flex-wrap gap-2 mt-4">
                       {hotFilters.map((hf, i) => (
-                        <button key={i} onClick={hf.apply} className="text-[10px] font-black uppercase border-2 border-black px-2 py-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-[#FFD166] transition-all bg-white">
+                        <button key={i} onClick={() => { hf.apply(); setHlBrushBounds(null) }} className="text-[10px] font-black uppercase border-2 border-black px-2 py-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-[#FFD166] transition-all bg-white">
                           {hf.label}
                         </button>
                       ))}
-                      <button onClick={() => { setHlAction('ALL'); setHlOutcome('ALL'); setHlType('ALL'); setHlTeam('ALL'); setHlPlayer('ALL'); setHlInsideBox(false) }} className="text-[10px] font-black uppercase border-2 border-black px-2 py-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-[#06D6A0] transition-all bg-white ml-auto">
+                      <button onClick={() => { setHlAction('ALL'); setHlOutcome('ALL'); setHlType('ALL'); setHlTeam('ALL'); setHlPlayer('ALL'); setHlInsideBox(false); setHlBrushBounds(null) }} className="text-[10px] font-black uppercase border-2 border-black px-2 py-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-[#06D6A0] transition-all bg-white ml-auto">
                         Reset
                       </button>
+                    </div>
+
+                    {/* Pitch Map with brush selection */}
+                    <div className="mt-4">
+                      <HighlightsPitch
+                        events={hlFilteredEvents}
+                        lineups={lineups}
+                        isFutsal={isFutsal}
+                        homeTeamId={match.home_team_id}
+                        onEventClick={handleEventClick}
+                        onBrushChange={setHlBrushBounds}
+                      />
                     </div>
                   </div>
                   <div>
                     <BrutalistCard className="max-h-[90vh] flex flex-col">
                       <h4 className="text-[10px] font-black uppercase text-gray-400 mb-3 flex items-center gap-1 border-b-2 border-black pb-2">
-                        <Clock size={12} /> Event Timeline ({hlFilteredEvents.length})
+                        <Clock size={12} /> Event Timeline ({hlPitchFilteredEvents.length}
+                        {hlBrushBounds ? ' in region' : ''})
                       </h4>
                       <div className="grid grid-cols-2 gap-2 mb-3">
-                        <select className="border-2 border-black p-1 font-black text-[10px] uppercase" value={hlTeam} onChange={e => { setHlTeam(e.target.value); setHlPlayer('ALL') }}>
+                        <select className="border-2 border-black p-1 font-black text-[10px] uppercase" value={hlTeam} onChange={e => { setHlTeam(e.target.value); setHlPlayer('ALL'); setHlBrushBounds(null) }}>
                           <option value="ALL">All Teams</option>
                           <option value={match.home_team_id}>{match.home_team?.team_name}</option>
                           <option value={match.away_team_id}>{match.away_team?.team_name}</option>
                         </select>
-                        <select className="border-2 border-black p-1 font-black text-[10px] uppercase" value={hlPlayer} onChange={e => setHlPlayer(e.target.value)}>
+                        <select className="border-2 border-black p-1 font-black text-[10px] uppercase" value={hlPlayer} onChange={e => { setHlPlayer(e.target.value); setHlBrushBounds(null) }}>
                           <option value="ALL">All Players</option>
                           {(hlTeam === 'ALL' ? lineups : lineups.filter(l => l.team_id === hlTeam)).map(p => (
                             <option key={p.player_id} value={p.player_id}>#{p.jersey_no} {p.players?.player_name}</option>
                           ))}
                         </select>
-                        <select className="border-2 border-black p-1 font-black text-[10px] uppercase" value={hlAction} onChange={e => { setHlAction(e.target.value); setHlOutcome('ALL'); setHlType('ALL') }}>
+                        <select className="border-2 border-black p-1 font-black text-[10px] uppercase" value={hlAction} onChange={e => { setHlAction(e.target.value); setHlOutcome('ALL'); setHlType('ALL'); setHlBrushBounds(null) }}>
                           <option value="ALL">All Actions</option>
                           {hlFilterOptions.actions.map(a => <option key={a} value={a}>{a}</option>)}
                         </select>
-                        <select className="border-2 border-black p-1 font-black text-[10px] uppercase" value={hlOutcome} onChange={e => { setHlOutcome(e.target.value); setHlType('ALL') }}>
+                        <select className="border-2 border-black p-1 font-black text-[10px] uppercase" value={hlOutcome} onChange={e => { setHlOutcome(e.target.value); setHlType('ALL'); setHlBrushBounds(null) }}>
                           <option value="ALL">All Outcomes</option>
                           {hlFilterOptions.outcomes.map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
                       </div>
                       <div className="flex-1 overflow-y-auto no-scrollbar">
-                        {hlFilteredEvents.length === 0 ? (
+                        {hlPitchFilteredEvents.length === 0 ? (
                           <div className="text-center py-6 text-gray-400 font-bold text-xs uppercase">No events match filters</div>
                         ) : (
                           <table className="w-full text-[10px] font-bold uppercase">
@@ -1275,7 +1300,7 @@ export default function MatchReportPage() {
                               </tr>
                             </thead>
                             <tbody>
-                              {hlFilteredEvents.map((e, i) => {
+                              {hlPitchFilteredEvents.map((e, i) => {
                                 const isHome = e.team_id === match.home_team_id
                                 const pLineup = lineups.find(l => l.player_id === e.player_id)
                                 return (
@@ -1361,7 +1386,7 @@ export default function MatchReportPage() {
       </main>
 
       <footer className="mt-20 p-8 border-t-4 border-black text-center text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
-        CAC Analytics Engine
+        <a href="https://calico-analysis-company.lovable.app" target="_blank" rel="noreferrer" className="hover:text-black transition-colors">CAC Analytics Engine</a>
       </footer>
     </div>
   )
