@@ -122,6 +122,9 @@ export default function AveragePositionsPitch({ data, teamName, isHome, lineups,
           </div>
         </div>
       )}
+      <div className="border-t-2 border-black px-3 py-1.5 bg-[#f1f5f9] text-[9px] font-black uppercase tracking-widest text-gray-500 flex items-center justify-center gap-2">
+        <span>←</span><span>Attack Direction</span><span>→</span>
+      </div>
     </div>
   )
 }
