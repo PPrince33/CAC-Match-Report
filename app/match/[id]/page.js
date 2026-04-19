@@ -79,6 +79,7 @@ export default function MatchReportPage() {
   const defActions = useMemo(() => ['Standing Tackle', 'Sliding Tackle', 'Block', 'Save', 'Pass Intercept'], [])
 
   // Player comparison state
+  const [cacExpandedId, setCacExpandedId] = useState(null)
   const [p1TeamId, setP1TeamId] = useState(null)
   const [p1PlayerId, setP1PlayerId] = useState(null)
   const [p2TeamId, setP2TeamId] = useState(null)
@@ -585,6 +586,84 @@ export default function MatchReportPage() {
     })
     return leaders.sort((a, b) => b.actionTotal - a.actionTotal).slice(0, 12)
   }, [enrichedEvents, lineups, match])
+
+  const cacPlayerPoints = useMemo(() => {
+    if (!enrichedEvents || !lineups || !match) return []
+
+    // Exclude goalkeepers: position = GK/Goalkeeper OR has any Save action
+    const gkIds = new Set()
+    lineups.forEach(l => {
+      const pos = (l.position || l.players?.position || '').toLowerCase()
+      if (pos === 'gk' || pos === 'goalkeeper' || l.jersey_no === 1) gkIds.add(l.player_id)
+    })
+    enrichedEvents.forEach(e => { if (e.action === 'Save') gkIds.add(e.player_id) })
+
+    const pts = {}
+    const add = (pid, amount, cat) => {
+      if (!pid || gkIds.has(pid)) return
+      if (!pts[pid]) pts[pid] = { total: 0, progressive: 0, keyPass: 0, assist: 0, offTarget: 0, shotSoT: 0, goal: 0, recovery: 0, block: 0 }
+      pts[pid].total += amount
+      pts[pid][cat]  += amount
+    }
+
+    enrichedEvents.forEach(e => {
+      if (!e.player_id) return
+
+      // Passes & Through Balls
+      if (e.action === 'Pass' || e.action === 'Through Ball') {
+        if (e.outcome === 'Assist') {
+          add(e.player_id, 3, 'assist')
+        } else if (e.outcome === 'Key Pass') {
+          add(e.player_id, 2, 'keyPass')
+        } else if (
+          e.outcome === 'Successful' &&
+          e.start_x != null && e.end_x != null &&
+          (e.end_x - e.start_x) >= cfg.progressiveThreshold
+        ) {
+          add(e.player_id, 1, 'progressive')
+        }
+      }
+
+      // Shots
+      if (e.action === 'Shoot') {
+        if      (e.outcome === 'Goal')       add(e.player_id, 4, 'goal')
+        else if (e.outcome === 'Save')       add(e.player_id, 3, 'shotSoT')
+        else if (e.outcome === 'Off-Target') add(e.player_id, 2, 'offTarget')
+      }
+
+      // Ball recovery: successful tackle or interception that wins possession
+      if (
+        ['Standing Tackle', 'Sliding Tackle', 'Pass Intercept'].includes(e.action) &&
+        e.outcome === 'Successful' && e.type === 'With Possession'
+      ) {
+        add(e.player_id, 2, 'recovery')
+      }
+
+      // Blocks
+      if (e.action === 'Block' && e.outcome === 'Successful') {
+        const inside =
+          e.start_x != null && e.start_x >= cfg.boxX &&
+          e.start_y != null && e.start_y >= cfg.boxYMin && e.start_y <= cfg.boxYMax
+        add(e.player_id, inside ? 2 : 1, 'block')
+      }
+    })
+
+    return Object.entries(pts)
+      .map(([pid, p]) => {
+        const l = lineups.find(x => x.player_id === pid)
+        const isHome = l?.team_id === match.home_team_id
+        return {
+          playerId: pid,
+          name: l?.players?.player_name || 'Unknown',
+          jersey: l?.jersey_no || '-',
+          teamName: isHome ? match.home_team?.team_name : match.away_team?.team_name,
+          isHome,
+          ...p,
+        }
+      })
+      .filter(p => p.total > 0)
+      .sort((a, b) => b.total - a.total)
+  }, [enrichedEvents, lineups, match, cfg])
 
   const matchVideoUrl = match?.video_url
 
@@ -1158,55 +1237,151 @@ export default function MatchReportPage() {
             {/* PLAYER TAB */}
             {activeTab === 'PLAYER' && (
               <div className="space-y-12">
-                <div className="border-b-4 border-black pb-2 mb-8">
-                  <h2 className="text-3xl font-black uppercase tracking-tighter flex items-center gap-3"><Users size={32} /> Player Comparison</h2>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                  <BrutalistCard color="bg-[#f8fafc]">
-                    <h4 className="text-[10px] font-black uppercase text-gray-400 mb-2">PLAYER 1 (Blue)</h4>
-                    <select className="w-full border-2 border-black p-2 font-black text-xs uppercase mb-2" value={p1TeamId || ''} onChange={e => setP1TeamId(e.target.value)}>
-                      <option value={match.home_team_id}>{match.home_team?.team_name}</option>
-                      <option value={match.away_team_id}>{match.away_team?.team_name}</option>
-                    </select>
-                    <select className="w-full border-2 border-black p-2 font-black text-xs uppercase" value={p1PlayerId || ''} onChange={e => setP1PlayerId(e.target.value)}>
-                      {p1Options.map(p => <option key={p.player_id} value={p.player_id}>#{p.jersey_no} {p.players?.player_name}</option>)}
-                    </select>
-                  </BrutalistCard>
-                  <BrutalistCard color="bg-[#f8fafc]">
-                    <h4 className="text-[10px] font-black uppercase text-gray-400 mb-2">PLAYER 2 (Red)</h4>
-                    <select className="w-full border-2 border-black p-2 font-black text-xs uppercase mb-2" value={p2TeamId || ''} onChange={e => setP2TeamId(e.target.value)}>
-                      <option value={match.home_team_id}>{match.home_team?.team_name}</option>
-                      <option value={match.away_team_id}>{match.away_team?.team_name}</option>
-                    </select>
-                    <select className="w-full border-2 border-black p-2 font-black text-xs uppercase" value={p2PlayerId || ''} onChange={e => setP2PlayerId(e.target.value)}>
-                      {p2Options.map(p => <option key={p.player_id} value={p.player_id}>#{p.jersey_no} {p.players?.player_name}</option>)}
-                    </select>
-                  </BrutalistCard>
-                </div>
-                {p1Data && p2Data && (
-                  <div className="space-y-8">
-                    <BrutalistCard className="py-8">
-                      <RadarChart p1Data={p1Data} p2Data={p2Data} maxes={matchMaxes} />
-                    </BrutalistCard>
-                    <BrutalistCard>
-                      <h4 className="text-sm font-black uppercase text-gray-400 mb-4">Head-to-Head</h4>
-                      <CompareRow label="Total Passes" homeVal={p1Data.stats.passes} awayVal={p2Data.stats.passes} />
-                      <CompareRow label="Pass Accuracy" homeVal={`${p1Data.stats.passAcc}%`} awayVal={`${p2Data.stats.passAcc}%`} highlight />
-                      <CompareRow label="Total Shots" homeVal={p1Data.stats.shots} awayVal={p2Data.stats.shots} />
-                      <CompareRow label="Goals" homeVal={p1Data.stats.goals} awayVal={p2Data.stats.goals} highlight />
-                      <CompareRow label="xG" homeVal={p1Data.stats.xg} awayVal={p2Data.stats.xg} />
-                      <CompareRow label="Tackles" homeVal={p1Data.stats.tackles} awayVal={p2Data.stats.tackles} />
-                      <CompareRow label="Carries" homeVal={p1Data.stats.carries} awayVal={p2Data.stats.carries} />
-                      <CompareRow label="Pass Intercepts" homeVal={p1Data.stats.interceptions} awayVal={p2Data.stats.interceptions} />
-                    </BrutalistCard>
+
+                {/* ── CAC PLAYER POINTS ── */}
+                <section>
+                  <div className="border-b-4 border-black pb-2 mb-6 flex items-end gap-4">
+                    <h2 className="text-3xl font-black uppercase tracking-tighter flex items-center gap-3"><Users size={32} /> CAC Player Points</h2>
+                    <span className="text-[10px] font-black uppercase text-gray-400 mb-1">GK excluded · sorted by total</span>
                   </div>
-                )}
+                  <BrutalistCard>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs font-bold uppercase">
+                        <thead>
+                          <tr className="border-b-4 border-black text-left text-[10px] text-gray-500">
+                            <th className="py-2 pr-3 w-8">#</th>
+                            <th className="py-2 pr-3 w-8">No.</th>
+                            <th className="py-2 pr-4">Player</th>
+                            <th className="py-2 pr-3">Team</th>
+                            <th className="py-2 text-right text-black">CAC Pts</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {cacPlayerPoints.map((p, i) => {
+                            const isExpanded = cacExpandedId === p.playerId
+                            const rowBg = i === 0 ? 'bg-[#FFD166]' : i < 3 ? 'bg-[#fff9e6]' : 'hover:bg-gray-50'
+                            const breakdown = [
+                              { label: 'Progressive Pass', pts: 1, count: p.progressive },
+                              { label: 'Key Pass',         pts: 2, count: p.keyPass    },
+                              { label: 'Assist',           pts: 3, count: p.assist     },
+                              { label: 'Shot Off-Target',  pts: 2, count: p.offTarget  },
+                              { label: 'Shot On-Target',   pts: 3, count: p.shotSoT    },
+                              { label: 'Goal',             pts: 4, count: p.goal       },
+                              { label: 'Ball Recovery',    pts: 2, count: p.recovery   },
+                              { label: 'Block',            pts: null, count: p.block   },
+                            ].filter(b => b.count > 0)
+                            return (
+                              <>
+                                <tr key={p.playerId} className={`border-b border-gray-200 ${rowBg}`}>
+                                  <td className="py-2 pr-3 font-black text-gray-400">{i + 1}</td>
+                                  <td className="py-2 pr-3">
+                                    <span className={`px-1.5 py-0.5 border text-[10px] font-black ${p.isHome ? 'border-[#0077B6] text-[#0077B6]' : 'border-[#D90429] text-[#D90429]'}`}>
+                                      #{p.jersey}
+                                    </span>
+                                  </td>
+                                  <td className="py-2 pr-4 font-black">{p.name}</td>
+                                  <td className="py-2 pr-3 text-gray-500 text-[10px]">{p.teamName}</td>
+                                  <td className="py-2 text-right">
+                                    <button
+                                      onClick={() => setCacExpandedId(isExpanded ? null : p.playerId)}
+                                      className={`font-black text-base px-2 py-0.5 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all ${isExpanded ? 'bg-black text-white' : 'bg-white hover:bg-[#FFD166]'}`}
+                                    >
+                                      {p.total} {isExpanded ? '▲' : '▼'}
+                                    </button>
+                                  </td>
+                                </tr>
+                                {isExpanded && (
+                                  <tr key={`${p.playerId}-breakdown`} className="border-b-2 border-black">
+                                    <td colSpan={5} className="px-4 py-3 bg-black text-white">
+                                      <div className="flex flex-wrap gap-3">
+                                        {breakdown.map((b, bi) => (
+                                          <div key={bi} className="flex items-center gap-1.5 bg-white/10 border border-white/30 px-2 py-1 text-[10px] font-black uppercase">
+                                            <span className="text-gray-300">{b.label}</span>
+                                            <span className="text-[#FFD166]">
+                                              {b.pts
+                                                ? `${Math.round(b.count / b.pts)} × ${b.pts} = ${b.count}`
+                                                : `${b.count} pts`}
+                                            </span>
+                                          </div>
+                                        ))}
+                                        <div className="flex items-center gap-1.5 border-l border-white/30 pl-3 ml-auto text-[10px] font-black uppercase">
+                                          <span className="text-gray-300">Total</span>
+                                          <span className="text-[#FFD166] text-sm">{p.total} pts</span>
+                                        </div>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                )}
+                              </>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    {/* point key */}
+                    <div className="mt-4 pt-3 border-t-2 border-black flex flex-wrap gap-x-4 gap-y-1 text-[9px] font-bold uppercase text-gray-500">
+                      <span>Prog Pass +1</span><span>Key Pass +2</span><span>Assist +3</span>
+                      <span>Shot Off-Target +2</span><span>Shot On-Target +3</span><span>Goal +4</span>
+                      <span>Ball Recovery +2</span><span>Block Outside Box +1</span><span>Block Inside Box +2</span>
+                    </div>
+                  </BrutalistCard>
+                </section>
+
+                {/* ── MATCH LEADERS ── */}
                 <section>
                   <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Match Leaders</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {matchLeaders.map((leader, i) => <LeaderCard key={i} leader={leader} />)}
                   </div>
                 </section>
+
+                {/* ── PLAYER COMPARISON ── */}
+                <section>
+                  <div className="border-b-4 border-black pb-2 mb-8">
+                    <h2 className="text-3xl font-black uppercase tracking-tighter flex items-center gap-3"><Users size={32} /> Player Comparison</h2>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <BrutalistCard color="bg-[#f8fafc]">
+                      <h4 className="text-[10px] font-black uppercase text-gray-400 mb-2">PLAYER 1 (Blue)</h4>
+                      <select className="w-full border-2 border-black p-2 font-black text-xs uppercase mb-2" value={p1TeamId || ''} onChange={e => setP1TeamId(e.target.value)}>
+                        <option value={match.home_team_id}>{match.home_team?.team_name}</option>
+                        <option value={match.away_team_id}>{match.away_team?.team_name}</option>
+                      </select>
+                      <select className="w-full border-2 border-black p-2 font-black text-xs uppercase" value={p1PlayerId || ''} onChange={e => setP1PlayerId(e.target.value)}>
+                        {p1Options.map(p => <option key={p.player_id} value={p.player_id}>#{p.jersey_no} {p.players?.player_name}</option>)}
+                      </select>
+                    </BrutalistCard>
+                    <BrutalistCard color="bg-[#f8fafc]">
+                      <h4 className="text-[10px] font-black uppercase text-gray-400 mb-2">PLAYER 2 (Red)</h4>
+                      <select className="w-full border-2 border-black p-2 font-black text-xs uppercase mb-2" value={p2TeamId || ''} onChange={e => setP2TeamId(e.target.value)}>
+                        <option value={match.home_team_id}>{match.home_team?.team_name}</option>
+                        <option value={match.away_team_id}>{match.away_team?.team_name}</option>
+                      </select>
+                      <select className="w-full border-2 border-black p-2 font-black text-xs uppercase" value={p2PlayerId || ''} onChange={e => setP2PlayerId(e.target.value)}>
+                        {p2Options.map(p => <option key={p.player_id} value={p.player_id}>#{p.jersey_no} {p.players?.player_name}</option>)}
+                      </select>
+                    </BrutalistCard>
+                  </div>
+                  {p1Data && p2Data && (
+                    <div className="space-y-8">
+                      <BrutalistCard className="py-8">
+                        <RadarChart p1Data={p1Data} p2Data={p2Data} maxes={matchMaxes} />
+                      </BrutalistCard>
+                      <BrutalistCard>
+                        <h4 className="text-sm font-black uppercase text-gray-400 mb-4">Head-to-Head</h4>
+                        <CompareRow label="Total Passes" homeVal={p1Data.stats.passes} awayVal={p2Data.stats.passes} />
+                        <CompareRow label="Pass Accuracy" homeVal={`${p1Data.stats.passAcc}%`} awayVal={`${p2Data.stats.passAcc}%`} highlight />
+                        <CompareRow label="Total Shots" homeVal={p1Data.stats.shots} awayVal={p2Data.stats.shots} />
+                        <CompareRow label="Goals" homeVal={p1Data.stats.goals} awayVal={p2Data.stats.goals} highlight />
+                        <CompareRow label="xG" homeVal={p1Data.stats.xg} awayVal={p2Data.stats.xg} />
+                        <CompareRow label="Tackles" homeVal={p1Data.stats.tackles} awayVal={p2Data.stats.tackles} />
+                        <CompareRow label="Carries" homeVal={p1Data.stats.carries} awayVal={p2Data.stats.carries} />
+                        <CompareRow label="Pass Intercepts" homeVal={p1Data.stats.interceptions} awayVal={p2Data.stats.interceptions} />
+                      </BrutalistCard>
+                    </div>
+                  )}
+                </section>
+
               </div>
             )}
 
