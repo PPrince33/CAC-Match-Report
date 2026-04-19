@@ -316,8 +316,8 @@ export default function MatchReportPage() {
         e.start_x !== null && e.end_x !== null
       )
       if (passes.length === 0) return { ratio: 0, label: 'N/A', forward: 0, total: 0 }
-      // Minimum forward gain: 3m futsal / 8m football — filters out lateral passes with tiny forward drift
-      const minForward = cfg.width === 40 ? 3 : 8
+      // Minimum forward gain: 3m futsal / 5m football — filters out lateral passes with tiny forward drift
+      const minForward = cfg.width === 40 ? 3 : 5
       const forward = passes.filter(e => e.end_x - e.start_x >= minForward).length
       const ratio = Math.round((forward / passes.length) * 100)
       const label = ratio >= 60 ? 'High' : ratio >= 40 ? 'Medium' : 'Low'
