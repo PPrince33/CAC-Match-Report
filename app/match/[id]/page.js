@@ -416,7 +416,8 @@ export default function MatchReportPage() {
       const pushSaves = saves.filter(e => ['Pushing-in', 'Pushing-out'].includes(e.outcome)).length
       const oppShotsBlocked = oppEvs.filter(e => e.action === 'Shoot' && e.outcome === 'Block').length
       const possessionWins = tacklesWithPoss + intsWithPoss + blocksWithPoss + clearWithPoss
-      const ballRecoveries = possessionWins + totalSaves
+      // Ball Recovery: defensive action (tackle/intercept/block) that directly wins possession
+      const ballRecoveries = tacklesWithPoss + intsWithPoss + blocksWithPoss
       const totalDefensiveActions = totalTackles + totalInterceptions + totalBlocks + totalClearances + totalPressures
       const totalSuccDefActions = succTackles.length + succInterceptions.length + succBlocks.length + succClearances.length
       const defActionSuccessRate = totalDefensiveActions > 0 ? Math.round((totalSuccDefActions / totalDefensiveActions) * 100) : 0
