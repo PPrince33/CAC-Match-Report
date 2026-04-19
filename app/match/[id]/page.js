@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { fetchSupabase } from '../../../lib/supabase.js'
+import { fetchSupabase, upsertSupabase } from '../../../lib/supabase.js'
 import { PITCH_CONFIG } from '../../../lib/pitchConfig.js'
 import { calculateXG } from '../../../lib/xg.js'
 import { CAC_LOGIC } from '../../../lib/cacLogic.js'
@@ -80,6 +80,10 @@ export default function MatchReportPage() {
 
   // Player comparison state
   const [cacExpandedId, setCacExpandedId] = useState(null)
+  const [analysisText, setAnalysisText] = useState('')
+  const [analysisLoading, setAnalysisLoading] = useState(false)
+  const [analysisSaved, setAnalysisSaved] = useState(false)
+  const [analysisGeneratedAt, setAnalysisGeneratedAt] = useState(null)
   const [p1TeamId, setP1TeamId] = useState(null)
   const [p1PlayerId, setP1PlayerId] = useState(null)
   const [p2TeamId, setP2TeamId] = useState(null)
@@ -122,6 +126,16 @@ export default function MatchReportPage() {
         const sortedLineups = (lineupsData || []).sort((a, b) => (a.jersey_no || 99) - (b.jersey_no || 99))
         setLineups(sortedLineups)
         setEvents(eventsData || [])
+
+        // Load saved analysis note if exists
+        try {
+          const noteData = await fetchSupabase('match_notes', { 'match_id': `eq.${matchId}`, select: 'analysis_text,generated_at' })
+          if (noteData?.[0]?.analysis_text) {
+            setAnalysisText(noteData[0].analysis_text)
+            setAnalysisGeneratedAt(noteData[0].generated_at)
+            setAnalysisSaved(true)
+          }
+        } catch (_) { /* table may not exist yet */ }
 
         const homeLineup = sortedLineups.filter(l => l.team_id === m.home_team_id)
         const awayLineup = sortedLineups.filter(l => l.team_id === m.away_team_id)
@@ -770,6 +784,57 @@ export default function MatchReportPage() {
     { label: 'Key Pass', apply: () => { setHlAction('ALL'); setHlOutcome('Key Pass'); setHlType('ALL'); setHlTeam('ALL'); setHlPlayer('ALL'); setHlInsideBox(false) } },
     { label: 'Shots Inside Box', apply: () => { setHlAction('Shoot'); setHlOutcome('ALL'); setHlType('ALL'); setHlTeam('ALL'); setHlPlayer('ALL'); setHlInsideBox(true) } },
   ]
+
+  const generateAnalysis = async () => {
+    if (!match || !attackStats || !defenseStats) return
+    setAnalysisLoading(true)
+    setAnalysisSaved(false)
+    try {
+      const res = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          match: {
+            homeName: match.home_team?.team_name,
+            awayName: match.away_team?.team_name,
+            homeScore: match.home_team_score ?? computedScores.home,
+            awayScore: match.away_team_score ?? computedScores.away,
+            tournament: match.tournament_name || 'CAC',
+            date: match.match_date,
+            sport: isFutsal ? 'Futsal' : 'Football',
+          },
+          home: { ...attackStats.home, possession: stats?.home?.possession },
+          away: { ...attackStats.away, possession: stats?.away?.possession },
+          defHome: defenseStats.home,
+          defAway: defenseStats.away,
+          vertHome: verticalityStats?.home || {},
+          vertAway: verticalityStats?.away || {},
+          fieldTilt: fieldTiltStats,
+          topPlayers: cacPlayerPoints.slice(0, 5),
+        }),
+      })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      setAnalysisText(data.analysis)
+      // Auto-save to Supabase (non-blocking — show analysis even if save fails)
+      try {
+        await upsertSupabase('match_notes', {
+          match_id: matchId,
+          analysis_text: data.analysis,
+          generated_at: new Date().toISOString(),
+        })
+        setAnalysisSaved(true)
+        setAnalysisGeneratedAt(new Date().toISOString())
+      } catch (saveErr) {
+        console.warn('Could not save note to Supabase:', saveErr.message)
+      }
+    } catch (err) {
+      console.error('Analysis error:', err)
+      setAnalysisText(`Error generating analysis: ${err.message}`)
+    } finally {
+      setAnalysisLoading(false)
+    }
+  }
 
   const tabs = [
     { id: 'SUMMARY', label: 'Summary', icon: Activity },
@@ -1513,6 +1578,66 @@ export default function MatchReportPage() {
             {/* NOTES TAB */}
             {activeTab === 'NOTES' && (
               <div className="space-y-12">
+
+                {/* ── AI ANALYSIS ── */}
+                <section>
+                  <div className="border-b-4 border-black pb-2 mb-6 flex items-end justify-between flex-wrap gap-3">
+                    <h2 className="text-3xl font-black uppercase tracking-tighter flex items-center gap-3"><Edit3 size={32} /> Match Analysis</h2>
+                    <div className="flex items-center gap-3">
+                      {analysisSaved && analysisGeneratedAt && (
+                        <span className="text-[10px] font-bold text-gray-400 uppercase">
+                          Saved · {new Date(analysisGeneratedAt).toLocaleDateString()}
+                        </span>
+                      )}
+                      <button
+                        onClick={generateAnalysis}
+                        disabled={analysisLoading}
+                        className="flex items-center gap-2 border-2 border-black px-4 py-2 font-black uppercase text-xs shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-[#FFD166] transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-white"
+                      >
+                        {analysisLoading ? (
+                          <><RefreshCw size={12} className="animate-spin" /> Generating...</>
+                        ) : analysisText ? (
+                          <><RefreshCw size={12} /> Regenerate</>
+                        ) : (
+                          <>✦ Generate Analysis</>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {analysisLoading && (
+                    <BrutalistCard color="bg-[#f8fafc]">
+                      <div className="flex items-center gap-3 py-8 justify-center text-gray-400 font-bold uppercase text-sm animate-pulse">
+                        <RefreshCw size={16} className="animate-spin" />
+                        Groq AI is analysing match data…
+                      </div>
+                    </BrutalistCard>
+                  )}
+
+                  {!analysisLoading && analysisText && (
+                    <BrutalistCard color="bg-white">
+                      {analysisSaved && (
+                        <div className="flex items-center gap-2 mb-4 text-[10px] font-black uppercase text-[#06D6A0] border-b-2 border-black pb-3">
+                          <span className="w-2 h-2 rounded-full bg-[#06D6A0] inline-block" />
+                          Saved to Supabase
+                        </div>
+                      )}
+                      <div className="prose prose-sm max-w-none font-mono text-sm leading-relaxed whitespace-pre-wrap text-gray-800">
+                        {analysisText}
+                      </div>
+                    </BrutalistCard>
+                  )}
+
+                  {!analysisLoading && !analysisText && (
+                    <BrutalistCard color="bg-[#f8fafc]">
+                      <div className="py-10 text-center text-gray-400 font-bold uppercase text-sm">
+                        <p className="mb-2">No analysis yet.</p>
+                        <p className="text-[10px]">Click "Generate Analysis" to let Groq AI write the match report.</p>
+                      </div>
+                    </BrutalistCard>
+                  )}
+                </section>
+
                 <div className="border-b-4 border-black pb-2 mb-6">
                   <h2 className="text-3xl font-black uppercase tracking-tighter flex items-center gap-3"><Edit3 size={32} /> Match Info</h2>
                 </div>
