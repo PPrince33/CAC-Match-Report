@@ -42,9 +42,9 @@ Write the analysis in clear paragraphs covering: (1) match overview & result, (2
 
   const models = [
     'llama-3.3-70b-versatile',
-    'llama-3.1-8b-instant',
-    'gemma2-9b-it',
     'mixtral-8x7b-32768',
+    'gemma2-9b-it',
+    'llama-3.1-8b-instant',
   ]
 
   for (const model of models) {
@@ -63,11 +63,16 @@ Write the analysis in clear paragraphs covering: (1) match overview & result, (2
         }),
       })
 
-      if (res.status === 429 || res.status === 503) continue
-
       if (!res.ok) {
-        const err = await res.text()
-        return NextResponse.json({ error: err }, { status: res.status })
+        const errText = await res.text()
+        let errJson
+        try { errJson = JSON.parse(errText) } catch (_) {}
+        const code = errJson?.error?.code || ''
+        const msg = errJson?.error?.message || ''
+        if (res.status === 429 || res.status === 503 || code === 'rate_limit_exceeded' || msg.includes('too large') || msg.includes('Request too large')) {
+          continue
+        }
+        return NextResponse.json({ error: errText }, { status: res.status })
       }
 
       const data = await res.json()
