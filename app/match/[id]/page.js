@@ -732,10 +732,13 @@ export default function MatchReportPage() {
       if (['Successful', 'Assist', 'Key Pass'].includes(e.outcome)) {
         map[e.player_id].successful += 1
       }
+      if (e.start_x != null && e.end_x != null && e.end_x < e.start_x) {
+        map[e.player_id].backPasses = (map[e.player_id].backPasses || 0) + 1
+      }
     })
     return Object.values(map)
       .filter(p => p.total >= 5)
-      .map(p => ({ ...p, accuracy: Math.round((p.successful / p.total) * 100) }))
+      .map(p => ({ ...p, accuracy: Math.round((p.successful / p.total) * 100), backPasses: p.backPasses || 0 }))
       .sort((a, b) => b.accuracy - a.accuracy)
   }, [enrichedEvents, lineups, match])
 

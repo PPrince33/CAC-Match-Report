@@ -67,9 +67,9 @@ ${goalEvents.length > 0
   ? goalEvents.map(g => `- ${g.minute}' — ${g.scorer} (${g.team})${g.assister ? ` assisted by ${g.assister}` : ''}`).join('\n')
   : '- No goals recorded with event data'}
 
-PLAYER PASS ACCURACY (min 5 passes, sorted by accuracy)
+PLAYER PASS STATS (min 5 passes, sorted by accuracy)
 ${(playerPassStats || []).map(p =>
-  `#${p.jersey} ${p.name} (${p.team}): ${p.accuracy}% (${p.successful}/${p.total} passes)`
+  `#${p.jersey} ${p.name} (${p.team}): accuracy ${p.accuracy}% (${p.successful}/${p.total}), back passes: ${p.backPasses}`
 ).join('\n')}
 
 PER-PLAYER ACTION COUNTS (top actions only)
