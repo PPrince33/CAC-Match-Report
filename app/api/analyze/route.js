@@ -40,30 +40,43 @@ ${topPlayers.slice(0, 5).map((p, i) => `${i + 1}. #${p.jersey} ${p.name} (${p.te
 
 Write the analysis in clear paragraphs covering: (1) match overview & result, (2) attacking performance & chances created, (3) defensive organisation & pressing, (4) key players & conclusion. Do not use bullet points — write in flowing analyst prose.`
 
-  try {
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
-        max_tokens: 1024,
-      }),
-    })
+  const models = [
+    'llama-3.3-70b-versatile',
+    'llama-3.1-8b-instant',
+    'gemma2-9b-it',
+    'mixtral-8x7b-32768',
+  ]
 
-    if (!res.ok) {
-      const err = await res.text()
-      return NextResponse.json({ error: err }, { status: res.status })
+  for (const model of models) {
+    try {
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.7,
+          max_tokens: 1024,
+        }),
+      })
+
+      if (res.status === 429 || res.status === 503) continue
+
+      if (!res.ok) {
+        const err = await res.text()
+        return NextResponse.json({ error: err }, { status: res.status })
+      }
+
+      const data = await res.json()
+      const analysis = data.choices?.[0]?.message?.content || ''
+      return NextResponse.json({ analysis })
+    } catch (_) {
+      continue
     }
-
-    const data = await res.json()
-    const analysis = data.choices?.[0]?.message?.content || ''
-    return NextResponse.json({ analysis })
-  } catch (err) {
-    return NextResponse.json({ error: err.message }, { status: 500 })
   }
+
+  return NextResponse.json({ error: 'All models are currently rate-limited. Please try again in a few minutes.' }, { status: 429 })
 }

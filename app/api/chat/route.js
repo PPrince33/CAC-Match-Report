@@ -85,30 +85,43 @@ ${contextBlock}`
     ...(messages || []),
   ]
 
-  try {
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: groqMessages,
-        temperature: 0.3,
-        max_tokens: 512,
-      }),
-    })
+  const models = [
+    'llama-3.1-8b-instant',
+    'llama-3.3-70b-versatile',
+    'gemma2-9b-it',
+    'mixtral-8x7b-32768',
+  ]
 
-    if (!res.ok) {
-      const err = await res.text()
-      return NextResponse.json({ error: err }, { status: res.status })
+  for (const model of models) {
+    try {
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages: groqMessages,
+          temperature: 0.3,
+          max_tokens: 512,
+        }),
+      })
+
+      if (res.status === 429 || res.status === 503) continue
+
+      if (!res.ok) {
+        const err = await res.text()
+        return NextResponse.json({ error: err }, { status: res.status })
+      }
+
+      const data = await res.json()
+      const reply = data.choices?.[0]?.message?.content || ''
+      return NextResponse.json({ reply, model })
+    } catch (_) {
+      continue
     }
-
-    const data = await res.json()
-    const reply = data.choices?.[0]?.message?.content || ''
-    return NextResponse.json({ reply })
-  } catch (err) {
-    return NextResponse.json({ error: err.message }, { status: 500 })
   }
+
+  return NextResponse.json({ error: 'All models are currently rate-limited. Please try again in a few minutes.' }, { status: 429 })
 }
