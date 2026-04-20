@@ -21,6 +21,7 @@ import RadarChart from '../../../components/RadarChart.jsx'
 import LeaderCard from '../../../components/LeaderCard.jsx'
 import TeamSheetSide from '../../../components/TeamSheetSide.jsx'
 import MatchChatBot from '../../../components/ui/MatchChatBot.jsx'
+import PassingNetworkPitch from '../../../components/pitch/PassingNetworkPitch.jsx'
 import {
   ChevronLeft, Activity, Map as MapIcon, Target, Shield, Users, Video, Edit3,
   Filter, Layers, Clock, RefreshCw
@@ -58,6 +59,7 @@ export default function MatchReportPage() {
   const [activeTab, setActiveTab] = useState('SUMMARY')
 
   // Distribution filters
+  const [netTeam, setNetTeam] = useState('HOME')
   const [distTeam, setDistTeam] = useState('ALL')
   const [distPlayer, setDistPlayer] = useState('ALL')
   const [distAction, setDistAction] = useState('ALL')
@@ -1258,6 +1260,33 @@ export default function MatchReportPage() {
                     </div>
                   </section>
                 )}
+
+                <section>
+                  <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Passing Network</h3>
+                  <div className="flex gap-2 mb-4">
+                    {['HOME', 'AWAY'].map(t => (
+                      <button
+                        key={t}
+                        onClick={() => setNetTeam(t)}
+                        className={`text-xs font-black uppercase border-2 border-black px-4 py-1.5 transition-all ${netTeam === t ? 'bg-black text-white' : 'bg-white text-black hover:bg-[#FFD166]'}`}
+                      >
+                        {t === 'HOME' ? match.home_team?.team_name : match.away_team?.team_name}
+                      </button>
+                    ))}
+                  </div>
+                  <PassingNetworkPitch
+                    events={enrichedEvents}
+                    lineups={lineups}
+                    homeTeamId={match.home_team_id}
+                    isFutsal={isFutsal}
+                    teamFilter={netTeam}
+                  />
+                  <div className="flex gap-6 text-[10px] font-black uppercase mt-3">
+                    <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-[#0077B6]"></div> {match.home_team?.team_name}</div>
+                    <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-[#D90429]"></div> {match.away_team?.team_name}</div>
+                    <div className="flex items-center gap-1 text-gray-400 italic ml-auto">* Line thickness = pass frequency · Hover for details</div>
+                  </div>
+                </section>
 
                 <section>
                   <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Average Positions</h3>
