@@ -1,9 +1,25 @@
 import { NextResponse } from 'next/server'
 
+const PROVIDERS = [
+  { url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', key: () => process.env.GEMINI_API_KEY, model: 'gemini-2.0-flash' },
+  { url: 'https://api.groq.com/openai/v1/chat/completions', key: () => process.env.GROQ_API_KEY, model: 'llama-3.3-70b-versatile' },
+  { url: 'https://api.groq.com/openai/v1/chat/completions', key: () => process.env.GROQ_API_KEY, model: 'llama3-70b-8192' },
+  { url: 'https://api.groq.com/openai/v1/chat/completions', key: () => process.env.GROQ_API_KEY, model: 'gemma2-9b-it' },
+  { url: 'https://api.groq.com/openai/v1/chat/completions', key: () => process.env.GROQ_API_KEY, model: 'llama-3.1-8b-instant' },
+]
+
+const isRateLimitError = (status, errJson) => {
+  const code = errJson?.error?.code || ''
+  const msg = errJson?.error?.message || ''
+  return status === 429 || status === 503 ||
+    code === 'rate_limit_exceeded' || code === 'model_decommissioned' ||
+    msg.includes('too large') || msg.includes('Request too large') ||
+    msg.includes('decommissioned')
+}
+
 export async function POST(req) {
-  const apiKey = process.env.GROQ_API_KEY
-  if (!apiKey) {
-    return NextResponse.json({ error: 'GROQ_API_KEY not set' }, { status: 500 })
+  if (!process.env.GEMINI_API_KEY && !process.env.GROQ_API_KEY) {
+    return NextResponse.json({ error: 'No API keys configured' }, { status: 500 })
   }
 
   const body = await req.json()
@@ -83,48 +99,31 @@ ${contextBlock}`
     ...(messages || []),
   ]
 
-  const models = [
-    'llama-3.3-70b-versatile',
-    'llama3-70b-8192',
-    'gemma2-9b-it',
-    'llama-3.1-8b-instant',
-  ]
-
-  for (const model of models) {
+  for (const provider of PROVIDERS) {
+    const key = provider.key()
+    if (!key) continue
     try {
-      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      const res = await fetch(provider.url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model,
-          messages: groqMessages,
-          temperature: 0.3,
-          max_tokens: 512,
-        }),
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+        body: JSON.stringify({ model: provider.model, messages: groqMessages, temperature: 0.3, max_tokens: 512 }),
       })
 
       if (!res.ok) {
         const errText = await res.text()
         let errJson
         try { errJson = JSON.parse(errText) } catch (_) {}
-        const code = errJson?.error?.code || ''
-        const msg = errJson?.error?.message || ''
-        if (res.status === 429 || res.status === 503 || code === 'rate_limit_exceeded' || code === 'model_decommissioned' || msg.includes('too large') || msg.includes('Request too large')) {
-          continue
-        }
+        if (isRateLimitError(res.status, errJson)) continue
         return NextResponse.json({ error: errText }, { status: res.status })
       }
 
       const data = await res.json()
       const reply = data.choices?.[0]?.message?.content || ''
-      return NextResponse.json({ reply, model })
+      return NextResponse.json({ reply })
     } catch (_) {
       continue
     }
   }
 
-  return NextResponse.json({ error: 'All models are currently rate-limited. Please try again in a few minutes.' }, { status: 429 })
+  return NextResponse.json({ error: 'All providers are currently unavailable. Please try again in a few minutes.' }, { status: 429 })
 }
