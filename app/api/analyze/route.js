@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 
 const PROVIDERS = [
-  { url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', key: () => process.env.GEMINI_API_KEY, model: 'gemini-2.0-flash' },
+  { url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', key: () => process.env.GEMINI_API_KEY, model: 'gemini-1.5-flash' },
   { url: 'https://api.groq.com/openai/v1/chat/completions', key: () => process.env.GROQ_API_KEY, model: 'llama-3.3-70b-versatile' },
   { url: 'https://api.groq.com/openai/v1/chat/completions', key: () => process.env.GROQ_API_KEY, model: 'llama3-70b-8192' },
   { url: 'https://api.groq.com/openai/v1/chat/completions', key: () => process.env.GROQ_API_KEY, model: 'gemma2-9b-it' },

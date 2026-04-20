@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 
 const PROVIDERS = [
-  { url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', key: () => process.env.GEMINI_API_KEY, model: 'gemini-2.0-flash' },
+  { url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', key: () => process.env.GEMINI_API_KEY, model: 'gemini-1.5-flash' },
+  { url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', key: () => process.env.GEMINI_API_KEY, model: 'gemini-1.5-flash-8b' },
   { url: 'https://api.groq.com/openai/v1/chat/completions', key: () => process.env.GROQ_API_KEY, model: 'llama-3.3-70b-versatile' },
   { url: 'https://api.groq.com/openai/v1/chat/completions', key: () => process.env.GROQ_API_KEY, model: 'llama3-70b-8192' },
   { url: 'https://api.groq.com/openai/v1/chat/completions', key: () => process.env.GROQ_API_KEY, model: 'gemma2-9b-it' },
@@ -99,6 +100,7 @@ ${contextBlock}`
     ...(messages || []),
   ]
 
+  const errors = []
   for (const provider of PROVIDERS) {
     const key = provider.key()
     if (!key) continue
@@ -113,6 +115,9 @@ ${contextBlock}`
         const errText = await res.text()
         let errJson
         try { errJson = JSON.parse(errText) } catch (_) {}
+        const summary = `${provider.model}: [${res.status}] ${errJson?.error?.message || errText}`
+        console.error('Provider failed:', summary)
+        errors.push(summary)
         if (isRateLimitError(res.status, errJson)) continue
         return NextResponse.json({ error: errText }, { status: res.status })
       }
@@ -120,10 +125,11 @@ ${contextBlock}`
       const data = await res.json()
       const reply = data.choices?.[0]?.message?.content || ''
       return NextResponse.json({ reply })
-    } catch (_) {
+    } catch (e) {
+      errors.push(`${provider.model}: ${e.message}`)
       continue
     }
   }
 
-  return NextResponse.json({ error: 'All providers are currently unavailable. Please try again in a few minutes.' }, { status: 429 })
+  return NextResponse.json({ error: `All providers failed: ${errors.join(' | ')}` }, { status: 429 })
 }
