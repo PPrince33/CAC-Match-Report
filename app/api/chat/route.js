@@ -14,7 +14,6 @@ async function callGemini(systemPrompt, messages) {
   const key = process.env.GEMINI_API_KEY
   if (!key) return null
 
-  // Convert messages to Gemini format (system separate, user/model alternating)
   const contents = messages.map(m => ({
     role: m.role === 'assistant' ? 'model' : 'user',
     parts: [{ text: m.content }],
@@ -37,7 +36,9 @@ async function callGemini(systemPrompt, messages) {
       return null
     }
     const data = await res.json()
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || null
+    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text
+    if (!reply) return null
+    return { reply, tokens: data.usageMetadata?.totalTokenCount || 0, provider: 'gemini' }
   } catch (e) {
     console.error('Gemini fetch error:', e.message)
     return null
@@ -61,7 +62,9 @@ async function callGroq(messages) {
         return null
       }
       const data = await res.json()
-      return data.choices?.[0]?.message?.content || null
+      const reply = data.choices?.[0]?.message?.content
+      if (!reply) return null
+      return { reply, tokens: data.usage?.total_tokens || 0, provider: 'groq' }
     } catch (_) { continue }
   }
   return null
@@ -137,11 +140,11 @@ ${contextBlock}`
     ...(messages || []),
   ]
 
-  const reply = await callGemini(systemPrompt, messages || []) || await callGroq(groqMessages)
+  const result = await callGemini(systemPrompt, messages || []) || await callGroq(groqMessages)
 
-  if (!reply) {
+  if (!result) {
     return NextResponse.json({ error: 'All providers are currently unavailable. Please try again in a few minutes.' }, { status: 429 })
   }
 
-  return NextResponse.json({ reply })
+  return NextResponse.json({ reply: result.reply, tokens: result.tokens, provider: result.provider })
 }

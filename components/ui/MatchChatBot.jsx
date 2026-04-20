@@ -1,15 +1,45 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { MessageCircle, X, Send, Loader2, Bot } from 'lucide-react'
+import { MessageCircle, X, Send, Loader2, Bot, Battery, BatteryLow, BatteryWarning, BatteryFull } from 'lucide-react'
+
+const DAILY_LIMIT = 1_000_000 // Gemini free tier: 1M tokens/day
+const STORAGE_KEY = 'cac_chatbot_usage'
+
+const todayKey = () => new Date().toISOString().slice(0, 10)
+
+const loadUsage = () => {
+  if (typeof window === 'undefined') return 0
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return 0
+    const parsed = JSON.parse(raw)
+    if (parsed.date !== todayKey()) return 0
+    return parsed.tokens || 0
+  } catch { return 0 }
+}
+
+const saveUsage = (tokens) => {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ date: todayKey(), tokens }))
+  } catch {}
+}
+
+const formatTokens = (n) => n >= 1000 ? `${(n / 1000).toFixed(0)}k` : n.toString()
 
 export default function MatchChatBot({ matchContext }) {
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [tokensUsed, setTokensUsed] = useState(0)
   const bottomRef = useRef(null)
   const inputRef = useRef(null)
+
+  useEffect(() => {
+    setTokensUsed(loadUsage())
+  }, [])
 
   useEffect(() => {
     if (open && inputRef.current) inputRef.current.focus()
@@ -37,6 +67,11 @@ export default function MatchChatBot({ matchContext }) {
       })
       const data = await res.json()
       if (data.error) throw new Error(data.error)
+      if (data.provider === 'gemini' && data.tokens) {
+        const newTotal = loadUsage() + data.tokens
+        saveUsage(newTotal)
+        setTokensUsed(newTotal)
+      }
       setMessages(prev => [...prev, { role: 'assistant', content: data.reply }])
     } catch (err) {
       setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${err.message}` }])
@@ -64,7 +99,22 @@ export default function MatchChatBot({ matchContext }) {
               <Bot size={16} />
               <span className="font-black uppercase tracking-widest text-xs">Match Assistant</span>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              {(() => {
+                const remaining = Math.max(0, DAILY_LIMIT - tokensUsed)
+                const pct = (remaining / DAILY_LIMIT) * 100
+                const Icon = pct > 60 ? BatteryFull : pct > 30 ? Battery : pct > 10 ? BatteryLow : BatteryWarning
+                const color = pct > 30 ? '#7CFC00' : pct > 10 ? '#FFD166' : '#FF4D4D'
+                return (
+                  <div
+                    className="flex items-center gap-1 bg-white text-black px-1.5 py-0.5 border-2 border-black"
+                    title={`${formatTokens(remaining)} / ${formatTokens(DAILY_LIMIT)} free tokens remaining today`}
+                  >
+                    <Icon size={14} style={{ color }} />
+                    <span className="text-[9px] font-black font-mono">{Math.round(pct)}%</span>
+                  </div>
+                )
+              })()}
               <span className="text-[9px] bg-[#FFD166] text-black px-2 py-0.5 font-black uppercase tracking-wider">
                 Match Data Only
               </span>
