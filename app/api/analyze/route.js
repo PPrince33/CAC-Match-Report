@@ -1,20 +1,13 @@
 import { NextResponse } from 'next/server'
 
-const PROVIDERS = [
-  { url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', key: () => process.env.GEMINI_API_KEY, model: 'gemini-1.5-flash' },
-  { url: 'https://api.groq.com/openai/v1/chat/completions', key: () => process.env.GROQ_API_KEY, model: 'llama-3.3-70b-versatile' },
-  { url: 'https://api.groq.com/openai/v1/chat/completions', key: () => process.env.GROQ_API_KEY, model: 'llama3-70b-8192' },
-  { url: 'https://api.groq.com/openai/v1/chat/completions', key: () => process.env.GROQ_API_KEY, model: 'gemma2-9b-it' },
-  { url: 'https://api.groq.com/openai/v1/chat/completions', key: () => process.env.GROQ_API_KEY, model: 'llama-3.1-8b-instant' },
-]
+const GROQ_MODELS = ['llama-3.3-70b-versatile', 'llama3-70b-8192', 'gemma2-9b-it', 'llama-3.1-8b-instant']
 
-const isRateLimitError = (status, errJson) => {
+const isSkippableError = (status, errJson) => {
   const code = errJson?.error?.code || ''
-  const msg = errJson?.error?.message || ''
+  const msg = (errJson?.error?.message || '').toLowerCase()
   return status === 429 || status === 503 ||
     code === 'rate_limit_exceeded' || code === 'model_decommissioned' ||
-    msg.includes('too large') || msg.includes('Request too large') ||
-    msg.includes('decommissioned')
+    msg.includes('too large') || msg.includes('rate limit') || msg.includes('decommissioned')
 }
 
 export async function POST(req) {
@@ -56,29 +49,48 @@ ${topPlayers.slice(0, 5).map((p, i) => `${i + 1}. #${p.jersey} ${p.name} (${p.te
 
 Write the analysis in clear paragraphs covering: (1) match overview & result, (2) attacking performance & chances created, (3) defensive organisation & pressing, (4) key players & conclusion. Do not use bullet points — write in flowing analyst prose.`
 
-  for (const provider of PROVIDERS) {
-    const key = provider.key()
-    if (!key) continue
+  // Try Gemini first (native API)
+  const geminiKey = process.env.GEMINI_API_KEY
+  if (geminiKey) {
     try {
-      const res = await fetch(provider.url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
-        body: JSON.stringify({ model: provider.model, messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 1024 }),
-      })
-
-      if (!res.ok) {
-        const errText = await res.text()
-        let errJson
-        try { errJson = JSON.parse(errText) } catch (_) {}
-        if (isRateLimitError(res.status, errJson)) continue
-        return NextResponse.json({ error: errText }, { status: res.status })
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
+          }),
+        }
+      )
+      if (res.ok) {
+        const data = await res.json()
+        const analysis = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+        if (analysis) return NextResponse.json({ analysis })
       }
+    } catch (_) {}
+  }
 
-      const data = await res.json()
-      const analysis = data.choices?.[0]?.message?.content || ''
-      return NextResponse.json({ analysis })
-    } catch (_) {
-      continue
+  // Fall back to Groq models
+  const groqKey = process.env.GROQ_API_KEY
+  if (groqKey) {
+    for (const model of GROQ_MODELS) {
+      try {
+        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${groqKey}` },
+          body: JSON.stringify({ model, messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 1024 }),
+        })
+        if (!res.ok) {
+          const errJson = await res.json().catch(() => ({}))
+          if (isSkippableError(res.status, errJson)) continue
+          break
+        }
+        const data = await res.json()
+        const analysis = data.choices?.[0]?.message?.content || ''
+        if (analysis) return NextResponse.json({ analysis })
+      } catch (_) { continue }
     }
   }
 
