@@ -87,7 +87,7 @@ ${contextBlock}`
 
   const models = [
     'llama-3.3-70b-versatile',
-    'mixtral-8x7b-32768',
+    'llama3-70b-8192',
     'gemma2-9b-it',
     'llama-3.1-8b-instant',
   ]
@@ -114,7 +114,7 @@ ${contextBlock}`
         try { errJson = JSON.parse(errText) } catch (_) {}
         const code = errJson?.error?.code || ''
         const msg = errJson?.error?.message || ''
-        if (res.status === 429 || res.status === 503 || code === 'rate_limit_exceeded' || msg.includes('too large') || msg.includes('Request too large')) {
+        if (res.status === 429 || res.status === 503 || code === 'rate_limit_exceeded' || code === 'model_decommissioned' || msg.includes('too large') || msg.includes('Request too large')) {
           continue
         }
         return NextResponse.json({ error: errText }, { status: res.status })
