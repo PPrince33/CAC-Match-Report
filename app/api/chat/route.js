@@ -56,16 +56,14 @@ ${(playerPassStats || []).map(p =>
   `#${p.jersey} ${p.name} (${p.team}): ${p.accuracy}% (${p.successful}/${p.total} passes)`
 ).join('\n')}
 
-PER-PLAYER EVENT BREAKDOWN
-${(playerEventSummary || []).map(p =>
-  `#${p.jersey} ${p.name} (${p.team}): ${Object.entries(p.actions).sort((a,b) => b[1]-a[1]).map(([k,v]) => `${k}: ${v}`).join(', ')}`
-).join('\n')}
+PER-PLAYER ACTION COUNTS (top actions only)
+${(playerEventSummary || []).map(p => {
+  const top = Object.entries(p.actions).sort((a,b) => b[1]-a[1]).slice(0, 5).map(([k,v]) => `${k}:${v}`).join(', ')
+  return `#${p.jersey} ${p.name} (${p.team}): ${top}`
+}).join('\n')}
 
-RAW EVENT BREAKDOWN — ${match.homeName}
-${Object.entries(eventSummary?.home || {}).sort((a,b) => b[1]-a[1]).map(([k,v]) => `- ${k}: ${v}`).join('\n') || '- No data'}
-
-RAW EVENT BREAKDOWN — ${match.awayName}
-${Object.entries(eventSummary?.away || {}).sort((a,b) => b[1]-a[1]).map(([k,v]) => `- ${k}: ${v}`).join('\n') || '- No data'}
+TEAM EVENT BREAKDOWN — ${match.homeName}: ${Object.entries(eventSummary?.home || {}).sort((a,b) => b[1]-a[1]).slice(0,15).map(([k,v]) => `${k}:${v}`).join(', ')}
+TEAM EVENT BREAKDOWN — ${match.awayName}: ${Object.entries(eventSummary?.away || {}).sort((a,b) => b[1]-a[1]).slice(0,15).map(([k,v]) => `${k}:${v}`).join(', ')}
 `.trim()
 
   const systemPrompt = `You are a match data assistant for CAC (Calico Analysis Company). You answer questions ONLY based on the match statistics and event data provided below. You have NO access to outside knowledge, historical data, or information about other matches.
