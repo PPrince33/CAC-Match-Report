@@ -80,54 +80,46 @@ export async function POST(req) {
 
   const { match, home, away, defHome, defAway, vertHome, vertAway, fieldTilt, allPlayers, goalEvents, eventSummary, playerEventSummary, playerPassStats } = matchContext
 
+  const passByJersey = Object.fromEntries((playerPassStats || []).map(p => [`${p.team}-${p.jersey}`, p]))
+  const actionsByJersey = Object.fromEntries((playerEventSummary || []).map(p => [`${p.team}-${p.jersey}`, p]))
+
+  const playerLines = allPlayers.map((p, i) => {
+    const key = `${p.teamName}-${p.jersey}`
+    const pass = passByJersey[key]
+    const act = actionsByJersey[key]
+    const passStr = pass ? ` pass:${pass.accuracy}%(${pass.successful}/${pass.total}) back:${pass.backPasses}` : ''
+    const actStr = act ? ' ' + Object.entries(act.actions).sort((a,b) => b[1]-a[1]).slice(0, 4).map(([k,v]) => `${k}:${v}`).join(',') : ''
+    return `${i + 1}.#${p.jersey} ${p.name}(${p.teamName}) ${p.total}pts G:${p.goal/10} A:${p.assist/6} KP:${p.keyPass/3} PP:${p.progressive} SoT:${p.shotSoT/5} Off:${p.offTarget/3} Dr:${p.dribble} Rec:${p.recovery/2}${passStr}${actStr}`
+  }).join('\n')
+
   const contextBlock = `
-MATCH: ${match.homeName} ${match.homeScore} – ${match.awayScore} ${match.awayName}
-Tournament: ${match.tournament} | Date: ${match.date} | Sport: ${match.sport}
+MATCH: ${match.homeName} ${match.homeScore}–${match.awayScore} ${match.awayName} | ${match.tournament} | ${match.date} | ${match.sport}
 
-POSSESSION & TEMPO
-- Possession: ${home.possession}% (${match.homeName}) vs ${away.possession}% (${match.awayName})
-- Verticality: ${match.homeName} ${vertHome.ratio ?? 'N/A'}% forward passes (${vertHome.label ?? ''}) | ${match.awayName} ${vertAway.ratio ?? 'N/A'}% (${vertAway.label ?? ''})
-- Field Tilt: ${match.homeName} ${fieldTilt.homeTilt}% | ${match.awayName} ${fieldTilt.awayTilt}%
+TEAM STATS (Home | Away)
+Poss: ${home.possession}% | ${away.possession}%
+Vert: ${vertHome.ratio ?? 'N/A'}% | ${vertAway.ratio ?? 'N/A'}%
+FieldTilt: ${fieldTilt.homeTilt}% | ${fieldTilt.awayTilt}%
+xG: ${home.xg} | ${away.xg}
+Shots(SoT): ${home.shots}(${home.sot}) | ${away.shots}(${away.sot})
+BoxShots: ${home.boxShots} | ${away.boxShots}
+KeyPasses: ${home.keyPasses} | ${away.keyPasses}
+Assists: ${home.assists} | ${away.assists}
+PassAcc: ${home.passAcc}%(${home.passes}) | ${away.passAcc}%(${away.passes})
+PPDA: ${defHome.ppda ?? 'N/A'} | ${defAway.ppda ?? 'N/A'}
+Tackles: ${defHome.totalTackles}(${defHome.tackleSuccess}%) | ${defAway.totalTackles}(${defAway.tackleSuccess}%)
+Interceptions: ${defHome.totalInterceptions} | ${defAway.totalInterceptions}
+PossWins: ${defHome.possessionWins} | ${defAway.possessionWins}
+Pressures: ${defHome.totalPressures} | ${defAway.totalPressures}
+Saves: ${defHome.totalSaves} | ${defAway.totalSaves}
 
-ATTACKING
-- xG: ${match.homeName} ${home.xg} | ${match.awayName} ${away.xg}
-- Shots (SoT): ${match.homeName} ${home.shots} (${home.sot}) | ${match.awayName} ${away.shots} (${away.sot})
-- Shots Inside Box: ${match.homeName} ${home.boxShots} | ${match.awayName} ${away.boxShots}
-- Key Passes: ${match.homeName} ${home.keyPasses} | ${match.awayName} ${away.keyPasses}
-- Assists: ${match.homeName} ${home.assists} | ${match.awayName} ${away.assists}
-- Pass Accuracy: ${match.homeName} ${home.passAcc}% (${home.passes} passes) | ${match.awayName} ${away.passAcc}% (${away.passes} passes)
+GOALS
+${goalEvents.length > 0 ? goalEvents.map(g => `${g.minute}' ${g.scorer}(${g.team})${g.assister ? ` a:${g.assister}` : ''}`).join(' | ') : 'None'}
 
-DEFENSIVE & PRESSING
-- PPDA: ${match.homeName} ${defHome.ppda ?? 'N/A'} | ${match.awayName} ${defAway.ppda ?? 'N/A'}
-- Tackles (success%): ${match.homeName} ${defHome.totalTackles} (${defHome.tackleSuccess}%) | ${match.awayName} ${defAway.totalTackles} (${defAway.tackleSuccess}%)
-- Interceptions: ${match.homeName} ${defHome.totalInterceptions} | ${match.awayName} ${defAway.totalInterceptions}
-- Possession Wins: ${match.homeName} ${defHome.possessionWins} | ${match.awayName} ${defAway.possessionWins}
-- Pressures: ${match.homeName} ${defHome.totalPressures} | ${match.awayName} ${defAway.totalPressures}
-- Saves: ${match.homeName} ${defHome.totalSaves} | ${match.awayName} ${defAway.totalSaves}
+PLAYERS (ranked by CAC pts — #1 = MoM)
+${playerLines}
 
-PLAYER STATS (CAC Points — #1 is Man of the Match)
-${allPlayers.map((p, i) =>
-  `${i + 1}. #${p.jersey} ${p.name} (${p.teamName}) — ${p.total}pts [Goals:${p.goal/10}, Assists:${p.assist/6}, KeyPass:${p.keyPass/3}, ProgPass:${p.progressive}, SoT:${p.shotSoT/5}, OffTarget:${p.offTarget/3}, Dribbles:${p.dribble}, Recovery:${p.recovery/2}]`
-).join('\n')}
-
-GOAL EVENTS
-${goalEvents.length > 0
-  ? goalEvents.map(g => `- ${g.minute}' ${g.scorer} (${g.team})${g.assister ? ` assist:${g.assister}` : ''}`).join('\n')
-  : '- None'}
-
-PLAYER PASS STATS
-${(playerPassStats || []).map(p =>
-  `#${p.jersey} ${p.name} (${p.team}): acc:${p.accuracy}% ${p.successful}/${p.total}, backpasses:${p.backPasses}`
-).join('\n')}
-
-PER-PLAYER TOP ACTIONS
-${(playerEventSummary || []).map(p => {
-  const top = Object.entries(p.actions).sort((a,b) => b[1]-a[1]).slice(0, 5).map(([k,v]) => `${k}:${v}`).join(', ')
-  return `#${p.jersey} ${p.name} (${p.team}): ${top}`
-}).join('\n')}
-
-TEAM EVENTS — ${match.homeName}: ${Object.entries(eventSummary?.home || {}).sort((a,b) => b[1]-a[1]).slice(0,15).map(([k,v]) => `${k}:${v}`).join(', ')}
-TEAM EVENTS — ${match.awayName}: ${Object.entries(eventSummary?.away || {}).sort((a,b) => b[1]-a[1]).slice(0,15).map(([k,v]) => `${k}:${v}`).join(', ')}
+TEAM EVENTS ${match.homeName}: ${Object.entries(eventSummary?.home || {}).sort((a,b) => b[1]-a[1]).slice(0,8).map(([k,v]) => `${k}:${v}`).join(', ')}
+TEAM EVENTS ${match.awayName}: ${Object.entries(eventSummary?.away || {}).sort((a,b) => b[1]-a[1]).slice(0,8).map(([k,v]) => `${k}:${v}`).join(', ')}
 `.trim()
 
   const systemPrompt = `You are a match data assistant for CAC. Answer ONLY from the match data below. If the answer isn't in the data, say: "I don't have that information in this match's data." Be concise and quote numbers directly.
