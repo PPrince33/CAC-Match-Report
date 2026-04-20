@@ -20,6 +20,7 @@ import HighlightsPitch from '../../../components/pitch/HighlightsPitch.jsx'
 import RadarChart from '../../../components/RadarChart.jsx'
 import LeaderCard from '../../../components/LeaderCard.jsx'
 import TeamSheetSide from '../../../components/TeamSheetSide.jsx'
+import MatchChatBot from '../../../components/ui/MatchChatBot.jsx'
 import {
   ChevronLeft, Activity, Map as MapIcon, Target, Shield, Users, Video, Edit3,
   Filter, Layers, Clock, RefreshCw
@@ -40,6 +41,7 @@ const renderStatRows = (sectionKey, homeStats, awayStats) => {
           homeVal={def.getH(homeStats)}
           awayVal={def.getA(awayStats)}
           highlight={def.highlight || false}
+          info={def.info}
         />
       )
     })
@@ -354,7 +356,8 @@ export default function MatchReportPage() {
       const assistPasses = passes.filter(p => p.outcome === 'Assist').length
       const assistThroughBalls = evs.filter(e => e.action === 'Through Ball' && e.outcome === 'Assist').length
       const assists = assistPasses + assistThroughBalls
-      const crosses = evs.filter(e => e.type === 'Corner Kick' || (e.action === 'Pass' && e.start_y !== null && (e.start_y < cfg.height * 0.2 || e.start_y > cfg.height * 0.8) && e.start_x > cfg.attackingThirdX)).length
+      const corners = evs.filter(e => e.action === 'Pass' && e.type === 'Corner Kick').length
+      const crosses = evs.filter(e => e.action === 'Pass' && e.type !== 'Corner Kick' && e.start_y !== null && (e.start_y < cfg.height * 0.2 || e.start_y > cfg.height * 0.8) && e.start_x > cfg.attackingThirdX).length
       const carries = evs.filter(e => e.action === 'Carry')
       const progCarries = carries.filter(c => c.end_x !== null && c.start_x !== null && (c.end_x - c.start_x) >= cfg.progressiveThreshold).length
       const final3rdCarries = carries.filter(c => c.start_x !== null && c.end_x !== null && c.start_x < cfg.attackingThirdX && c.end_x >= cfg.attackingThirdX).length
@@ -367,7 +370,7 @@ export default function MatchReportPage() {
       return {
         shots: shots.length, goals, sot, boxShots, outBoxShots: shots.length - boxShots, xg, xgPerShot, xgDiff,
         passes: passes.length, succPasses, passAcc: passes.length ? Math.round((succPasses / passes.length) * 100) : 0,
-        progPasses, keyPasses, assists, throughBalls, crosses,
+        progPasses, keyPasses, assists, throughBalls, crosses, corners,
         carries: carries.length, progCarries, final3rdCarries,
         dribbles: dribbles.length, succDribbles, dribbleAcc: dribbles.length ? Math.round((succDribbles / dribbles.length) * 100) : 0,
         shotsUnderPressure, pressPassAcc
@@ -618,7 +621,7 @@ export default function MatchReportPage() {
     const pts = {}
     const add = (pid, amount, cat) => {
       if (!pid || gkIds.has(pid)) return
-      if (!pts[pid]) pts[pid] = { total: 0, progressive: 0, keyPass: 0, assist: 0, offTarget: 0, shotSoT: 0, goal: 0, recovery: 0, block: 0 }
+      if (!pts[pid]) pts[pid] = { total: 0, progressive: 0, keyPass: 0, assist: 0, offTarget: 0, shotSoT: 0, goal: 0, recovery: 0, block: 0, dribble: 0 }
       pts[pid].total += amount
       pts[pid][cat]  += amount
     }
@@ -629,13 +632,14 @@ export default function MatchReportPage() {
       // Passes & Through Balls
       if (e.action === 'Pass' || e.action === 'Through Ball') {
         if (e.outcome === 'Assist') {
-          add(e.player_id, 3, 'assist')
+          add(e.player_id, 6, 'assist')
         } else if (e.outcome === 'Key Pass') {
-          add(e.player_id, 2, 'keyPass')
+          add(e.player_id, 3, 'keyPass')
         } else if (
           e.outcome === 'Successful' &&
           e.start_x != null && e.end_x != null &&
-          (e.end_x - e.start_x) >= cfg.progressiveThreshold
+          (e.end_x - e.start_x) >= cfg.progressiveThreshold &&
+          e.end_x >= cfg.width / 2
         ) {
           add(e.player_id, 1, 'progressive')
         }
@@ -643,9 +647,9 @@ export default function MatchReportPage() {
 
       // Shots
       if (e.action === 'Shoot') {
-        if      (e.outcome === 'Goal')       add(e.player_id, 4, 'goal')
-        else if (e.outcome === 'Save')       add(e.player_id, 3, 'shotSoT')
-        else if (e.outcome === 'Off-Target') add(e.player_id, 2, 'offTarget')
+        if      (e.outcome === 'Goal')       add(e.player_id, 10, 'goal')
+        else if (e.outcome === 'Save')       add(e.player_id, 5, 'shotSoT')
+        else if (e.outcome === 'Off-Target') add(e.player_id, 3, 'offTarget')
       }
 
       // Ball recovery: successful tackle or interception that wins possession
@@ -654,6 +658,11 @@ export default function MatchReportPage() {
         e.outcome === 'Successful' && e.type === 'With Possession'
       ) {
         add(e.player_id, 2, 'recovery')
+      }
+
+      // Dribbles
+      if (e.action === 'Dribble' && e.outcome === 'Successful') {
+        add(e.player_id, 1, 'dribble')
       }
 
       // Blocks
@@ -681,6 +690,118 @@ export default function MatchReportPage() {
       .filter(p => p.total > 0)
       .sort((a, b) => b.total - a.total)
   }, [enrichedEvents, lineups, match, cfg])
+
+  const goalEvents = useMemo(() => {
+    if (!enrichedEvents || !lineups || !match) return []
+    const goals = enrichedEvents.filter(e => e.action === 'Shoot' && e.outcome === 'Goal')
+    return goals.map(g => {
+      const scorerLineup = lineups.find(l => l.player_id === g.player_id)
+      const isHome = scorerLineup?.team_id === match.home_team_id
+      const minute = g.match_time_seconds ? Math.floor(g.match_time_seconds / 60) : '?'
+      // find assist in same sequence (pass with Assist outcome just before this event)
+      const assistEvent = enrichedEvents.find(e =>
+        e.outcome === 'Assist' &&
+        Math.abs((e.match_time_seconds || 0) - (g.match_time_seconds || 0)) < 10
+      )
+      const assisterLineup = assistEvent ? lineups.find(l => l.player_id === assistEvent.player_id) : null
+      return {
+        minute,
+        scorer: scorerLineup?.players?.player_name || `#${scorerLineup?.jersey_no || '?'}`,
+        team: isHome ? match.home_team?.team_name : match.away_team?.team_name,
+        assister: assisterLineup ? (assisterLineup.players?.player_name || `#${assisterLineup.jersey_no}`) : null,
+      }
+    })
+  }, [enrichedEvents, lineups, match])
+
+  const playerPassStats = useMemo(() => {
+    if (!enrichedEvents || !lineups || !match) return []
+    const map = {}
+    enrichedEvents.forEach(e => {
+      if (!e.player_id || (e.action !== 'Pass' && e.action !== 'Through Ball')) return
+      const l = lineups.find(x => x.player_id === e.player_id)
+      if (!l) return
+      if (!map[e.player_id]) {
+        map[e.player_id] = {
+          name: l.players?.player_name || 'Unknown',
+          jersey: l.jersey_no || '?',
+          team: l.team_id === match.home_team_id ? match.home_team?.team_name : match.away_team?.team_name,
+          total: 0, successful: 0,
+        }
+      }
+      map[e.player_id].total += 1
+      if (['Successful', 'Assist', 'Key Pass'].includes(e.outcome)) {
+        map[e.player_id].successful += 1
+      }
+    })
+    return Object.values(map)
+      .filter(p => p.total >= 5)
+      .map(p => ({ ...p, accuracy: Math.round((p.successful / p.total) * 100) }))
+      .sort((a, b) => b.accuracy - a.accuracy)
+  }, [enrichedEvents, lineups, match])
+
+  const playerEventSummary = useMemo(() => {
+    if (!enrichedEvents || !lineups || !match) return []
+    const map = {}
+    enrichedEvents.forEach(e => {
+      if (!e.player_id || !e.action) return
+      if (!map[e.player_id]) {
+        const l = lineups.find(x => x.player_id === e.player_id)
+        map[e.player_id] = {
+          name: l?.players?.player_name || 'Unknown',
+          jersey: l?.jersey_no || '?',
+          team: l?.team_id === match.home_team_id ? match.home_team?.team_name : match.away_team?.team_name,
+          actions: {},
+        }
+      }
+      const key = e.type && e.type !== 'NA' ? `${e.action} (${e.type})` : e.action
+      map[e.player_id].actions[key] = (map[e.player_id].actions[key] || 0) + 1
+    })
+    return Object.values(map)
+  }, [enrichedEvents, lineups, match])
+
+  const eventSummary = useMemo(() => {
+    if (!enrichedEvents || !match) return { home: {}, away: {} }
+    const build = (teamId) => {
+      const counts = {}
+      enrichedEvents.filter(e => e.team_id === teamId).forEach(e => {
+        if (!e.action) return
+        const key = e.type && e.type !== 'NA' ? `${e.action} (${e.type})` : e.action
+        counts[key] = (counts[key] || 0) + 1
+      })
+      return counts
+    }
+    return {
+      home: build(match.home_team_id),
+      away: build(match.away_team_id),
+    }
+  }, [enrichedEvents, match])
+
+  const matchContext = useMemo(() => {
+    if (!match || !attackStats || !defenseStats) return null
+    return {
+      match: {
+        homeName: match.home_team?.team_name,
+        awayName: match.away_team?.team_name,
+        homeScore: match.home_team_score ?? computedScores?.home ?? 0,
+        awayScore: match.away_team_score ?? computedScores?.away ?? 0,
+        tournament: match.tournament_name || 'CAC',
+        date: match.match_date,
+        sport: isFutsal ? 'Futsal' : 'Football',
+      },
+      home: { ...attackStats.home, possession: stats?.home?.possession ?? 50 },
+      away: { ...attackStats.away, possession: stats?.away?.possession ?? 50 },
+      defHome: defenseStats.home,
+      defAway: defenseStats.away,
+      vertHome: verticalityStats?.home || {},
+      vertAway: verticalityStats?.away || {},
+      fieldTilt: fieldTiltStats,
+      allPlayers: cacPlayerPoints,
+      goalEvents,
+      eventSummary,
+      playerEventSummary,
+      playerPassStats,
+    }
+  }, [match, attackStats, defenseStats, stats, verticalityStats, fieldTiltStats, cacPlayerPoints, goalEvents, eventSummary, playerEventSummary, playerPassStats, isFutsal])
 
   const matchVideoUrl = match?.video_url
 
@@ -956,7 +1077,7 @@ export default function MatchReportPage() {
                   </BrutalistCard>
                 </div>
 
-                <section>
+<section>
                   <h3 className="text-2xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Match Analytics</h3>
                   <div className="grid grid-cols-1 gap-3">
                     {(STATS_CONFIG.summary || []).filter(e => e.enabled).sort((a, b) => a.order - b.order).map(e => {
@@ -1056,6 +1177,15 @@ export default function MatchReportPage() {
                               {filterOptions.outcomes.map(o => <option key={o} value={o}>{o}</option>)}
                             </select>
                           </div>
+                          {filterOptions.types.length > 0 && (
+                            <div>
+                              <label className="block mb-1 text-gray-500">Type</label>
+                              <select className="w-full border-2 border-black p-1.5 font-black text-xs" value={distType} onChange={e => setDistType(e.target.value)}>
+                                <option value="ALL">All Types</option>
+                                {filterOptions.types.map(t => <option key={t} value={t}>{t}</option>)}
+                              </select>
+                            </div>
+                          )}
                           <div>
                             <label className="block mb-1 text-gray-500">Zone</label>
                             <div className="flex gap-1">
@@ -1329,14 +1459,15 @@ export default function MatchReportPage() {
                             const isExpanded = cacExpandedId === p.playerId
                             const rowBg = i === 0 ? 'bg-[#FFD166]' : i < 3 ? 'bg-[#fff9e6]' : 'hover:bg-gray-50'
                             const breakdown = [
-                              { label: 'Progressive Pass', pts: 1, count: p.progressive },
-                              { label: 'Key Pass',         pts: 2, count: p.keyPass    },
-                              { label: 'Assist',           pts: 3, count: p.assist     },
-                              { label: 'Shot Off-Target',  pts: 2, count: p.offTarget  },
-                              { label: 'Shot On-Target',   pts: 3, count: p.shotSoT    },
-                              { label: 'Goal',             pts: 4, count: p.goal       },
-                              { label: 'Ball Recovery',    pts: 2, count: p.recovery   },
-                              { label: 'Block',            pts: null, count: p.block   },
+                              { label: 'Progressive Pass', pts: 1,  count: p.progressive },
+                              { label: 'Key Pass',         pts: 3,  count: p.keyPass    },
+                              { label: 'Assist',           pts: 6,  count: p.assist     },
+                              { label: 'Shot Off-Target',  pts: 3,  count: p.offTarget  },
+                              { label: 'Shot On-Target',   pts: 5,  count: p.shotSoT    },
+                              { label: 'Goal',             pts: 10, count: p.goal       },
+                              { label: 'Dribble',          pts: 1,  count: p.dribble    },
+                              { label: 'Ball Recovery',    pts: 2,  count: p.recovery   },
+                              { label: 'Block',            pts: null, count: p.block    },
                             ].filter(b => b.count > 0)
                             return (
                               <>
@@ -1388,9 +1519,9 @@ export default function MatchReportPage() {
                     </div>
                     {/* point key */}
                     <div className="mt-4 pt-3 border-t-2 border-black flex flex-wrap gap-x-4 gap-y-1 text-[9px] font-bold uppercase text-gray-500">
-                      <span>Prog Pass +1</span><span>Key Pass +2</span><span>Assist +3</span>
-                      <span>Shot Off-Target +2</span><span>Shot On-Target +3</span><span>Goal +4</span>
-                      <span>Ball Recovery +2</span><span>Block Outside Box +1</span><span>Block Inside Box +2</span>
+                      <span>Prog Pass +1</span><span>Key Pass +3</span><span>Assist +6</span>
+                      <span>Shot Off-Target +3</span><span>Shot On-Target +5</span><span>Goal +10</span>
+                      <span>Dribble +1</span><span>Ball Recovery +2</span><span>Block Outside Box +1</span><span>Block Inside Box +2</span>
                     </div>
                   </BrutalistCard>
                 </section>
@@ -1535,6 +1666,12 @@ export default function MatchReportPage() {
                           <option value="ALL">All Outcomes</option>
                           {hlFilterOptions.outcomes.map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
+                        {hlFilterOptions.types.length > 0 && (
+                          <select className="border-2 border-black p-1 font-black text-[10px] uppercase" value={hlType} onChange={e => { setHlType(e.target.value); setHlBrushBounds(null) }}>
+                            <option value="ALL">All Types</option>
+                            {hlFilterOptions.types.map(t => <option key={t} value={t}>{t}</option>)}
+                          </select>
+                        )}
                       </div>
                       <div className="flex-1 overflow-y-auto no-scrollbar">
                         {hlPitchFilteredEvents.length === 0 ? (
@@ -1699,6 +1836,8 @@ export default function MatchReportPage() {
       <footer className="mt-20 p-8 border-t-4 border-black text-center text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
         <a href="https://calico-analysis-company.lovable.app" target="_blank" rel="noreferrer" className="hover:text-black transition-colors">CAC Analytics Engine</a>
       </footer>
+
+      {matchContext && <MatchChatBot matchContext={matchContext} />}
     </div>
   )
 }
