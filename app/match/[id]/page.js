@@ -1837,7 +1837,7 @@ export default function MatchReportPage() {
       </main>
 
       <footer className="mt-20 p-8 border-t-4 border-black text-center text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
-        <a href="https://calico-analysis-company.lovable.app" target="_blank" rel="noreferrer" className="hover:text-black transition-colors">CAC Analytics Engine</a>
+        <a href="https://calcioac.com" target="_blank" rel="noreferrer" className="hover:text-black transition-colors">CAC Analytics Engine</a>
       </footer>
 
       {matchContext && <MatchChatBot matchContext={matchContext} />}
