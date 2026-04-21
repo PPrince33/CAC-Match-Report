@@ -7,49 +7,78 @@ import { PITCH_CONFIG } from '../../lib/pitchConfig'
 const HOME_COLOR = '#0077B6'
 const AWAY_COLOR = '#D90429'
 const MIN_CONNECTIONS = 2
+const NODE_R = 13
+const NODE_R_HOVER = 16
 
-export default function PassingNetworkPitch({ events = [], lineups = [], homeTeamId, isFutsal, teamFilter = 'ALL' }) {
+function distToSegment(px, py, ax, ay, bx, by) {
+  const dx = bx - ax, dy = by - ay
+  const lenSq = dx * dx + dy * dy
+  if (lenSq === 0) return Math.hypot(px - ax, py - ay)
+  const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lenSq))
+  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy))
+}
+
+export default function PassingNetworkPitch({ events = [], lineups = [], homeTeamId, isFutsal, teamFilter = 'HOME' }) {
   const canvasRef = useRef(null)
   const [tooltip, setTooltip] = useState(null)
   const [hoverNode, setHoverNode] = useState(null)
+  const [hoverLine, setHoverLine] = useState(null)
+  const [playerFilter, setPlayerFilter] = useState('ALL')
+  const [selectedPlayers, setSelectedPlayers] = useState(new Set())
 
   const cfg = isFutsal ? PITCH_CONFIG.futsal : PITCH_CONFIG.football
 
   const playerMap = useMemo(() => {
     const map = {}
     lineups.forEach(p => {
-      map[p.player_id] = { name: p.player_name, jersey: p.jersey_no, teamId: p.team_id }
+      map[p.player_id] = { name: p.player_name, jersey: p.jersey_no, teamId: p.team_id, startingXI: p.starting_xi ?? false }
     })
     return map
   }, [lineups])
 
-  const { connections, positions } = useMemo(() => {
+  const teamPlayers = useMemo(() => {
+    return lineups.filter(p => teamFilter === 'HOME' ? p.team_id === homeTeamId : p.team_id !== homeTeamId)
+  }, [lineups, teamFilter, homeTeamId])
+
+  // When team changes, reset to ALL
+  useEffect(() => { setPlayerFilter('ALL'); setSelectedPlayers(new Set()) }, [teamFilter])
+
+  const { connections, positions, passStats, dirPasses } = useMemo(() => {
     const passActions = new Set(['Pass', 'Through Ball'])
     const successOutcomes = new Set(['Successful', 'Assist', 'Key Pass'])
 
     const connMap = {}
+    const pairMap = {}  // key -> { successful, unsuccessful }
     const posMap = {}
+    const statsMap = {}
 
     events.forEach(e => {
       if (!passActions.has(e.action)) return
+      if (!e.player_id) return
+
+      const pid = e.player_id
+      if (!statsMap[pid]) statsMap[pid] = { total: 0, successful: 0 }
+      statsMap[pid].total++
+      if (successOutcomes.has(e.outcome)) statsMap[pid].successful++
+
       if (!successOutcomes.has(e.outcome)) return
-      if (!e.player_id || !e.reaction_player_id) return
+      if (!e.reaction_player_id) return
       if (e.start_x == null || e.start_y == null) return
 
-      const passer = e.player_id
-      const receiver = e.reaction_player_id
+      if (!posMap[pid]) posMap[pid] = { sumX: 0, sumY: 0, count: 0, teamId: e.team_id }
+      posMap[pid].sumX += e.start_x
+      posMap[pid].sumY += e.start_y
+      posMap[pid].count++
+      if (e.team_id) posMap[pid].teamId = e.team_id
 
-      // accumulate positions
-      if (!posMap[passer]) posMap[passer] = { sumX: 0, sumY: 0, count: 0, teamId: e.team_id }
-      posMap[passer].sumX += e.start_x
-      posMap[passer].sumY += e.start_y
-      posMap[passer].count++
-      if (e.team_id) posMap[passer].teamId = e.team_id
-
-      // accumulate connections (undirected — use sorted key)
-      const key = [passer, receiver].sort().join('|')
-      if (!connMap[key]) connMap[key] = { a: passer, b: receiver, count: 0 }
+      const key = [pid, e.reaction_player_id].sort().join('|')
+      if (!connMap[key]) connMap[key] = { a: pid, b: e.reaction_player_id, count: 0 }
       connMap[key].count++
+
+      // Track directed: pid→receiver
+      const dirKey = `${pid}|${e.reaction_player_id}`
+      if (!pairMap[dirKey]) pairMap[dirKey] = 0
+      pairMap[dirKey]++
     })
 
     const avgPos = {}
@@ -57,9 +86,23 @@ export default function PassingNetworkPitch({ events = [], lineups = [], homeTea
       avgPos[pid] = { x: d.sumX / d.count, y: d.sumY / d.count, teamId: d.teamId }
     })
 
-    const conns = Object.values(connMap).filter(c => c.count >= MIN_CONNECTIONS)
-    return { connections: conns, positions: avgPos }
+    return {
+      connections: Object.values(connMap).filter(c => c.count >= MIN_CONNECTIONS),
+      positions: avgPos,
+      passStats: statsMap,
+      dirPasses: pairMap
+    }
   }, [events])
+
+  const isVisible = (pid) => {
+    const p = playerMap[pid]
+    if (!p) return false
+    if (teamFilter === 'HOME' && p.teamId !== homeTeamId) return false
+    if (teamFilter === 'AWAY' && p.teamId === homeTeamId) return false
+    if (playerFilter === 'XI' && !p.startingXI) return false
+    if (playerFilter === 'CUSTOM' && !selectedPlayers.has(pid)) return false
+    return true
+  }
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -75,41 +118,28 @@ export default function PassingNetworkPitch({ events = [], lineups = [], homeTea
     const drawH = h - pad * 2
     const scaleX = x => pad + (x / cfg.width) * drawW
     const scaleY = y => h - (pad + (y / cfg.height) * drawH)
-
     const maxCount = Math.max(...connections.map(c => c.count), 1)
 
-    const isVisible = (pid) => {
-      const p = playerMap[pid]
-      if (!p) return false
-      if (teamFilter === 'HOME') return p.teamId === homeTeamId
-      if (teamFilter === 'AWAY') return p.teamId !== homeTeamId
-      return true
-    }
-
-    // Draw connection lines
     connections.forEach(({ a, b, count }) => {
       if (!positions[a] || !positions[b]) return
       if (!isVisible(a) || !isVisible(b)) return
-      const pa = positions[a]
-      const pb = positions[b]
-      const aTeam = playerMap[a]?.teamId === homeTeamId
-      const bTeam = playerMap[b]?.teamId === homeTeamId
-      const sameTeam = aTeam === bTeam
-      if (!sameTeam) return
+      const aHome = playerMap[a]?.teamId === homeTeamId
+      const bHome = playerMap[b]?.teamId === homeTeamId
+      if (aHome !== bHome) return
 
-      const lineW = 1 + (count / maxCount) * 7
-      const alpha = 0.25 + (count / maxCount) * 0.65
-      const color = aTeam ? HOME_COLOR : AWAY_COLOR
+      const isHL = hoverLine && ((hoverLine.a === a && hoverLine.b === b) || (hoverLine.a === b && hoverLine.b === a))
+      const lineW = isHL ? 5 + (count / maxCount) * 6 : 1 + (count / maxCount) * 7
+      const alpha = isHL ? 1 : 0.25 + (count / maxCount) * 0.65
+      const color = aHome ? HOME_COLOR : AWAY_COLOR
 
       ctx.beginPath()
-      ctx.moveTo(scaleX(pa.x), scaleY(pa.y))
-      ctx.lineTo(scaleX(pb.x), scaleY(pb.y))
-      ctx.strokeStyle = color + Math.round(alpha * 255).toString(16).padStart(2, '0')
+      ctx.moveTo(scaleX(positions[a].x), scaleY(positions[a].y))
+      ctx.lineTo(scaleX(positions[b].x), scaleY(positions[b].y))
+      ctx.strokeStyle = isHL ? color : color + Math.round(alpha * 255).toString(16).padStart(2, '0')
       ctx.lineWidth = lineW
       ctx.stroke()
     })
 
-    // Draw player nodes
     Object.entries(positions).forEach(([pid, pos]) => {
       if (!isVisible(pid)) return
       const player = playerMap[pid]
@@ -118,100 +148,193 @@ export default function PassingNetworkPitch({ events = [], lineups = [], homeTea
       const color = isHome ? HOME_COLOR : AWAY_COLOR
       const cx = scaleX(pos.x)
       const cy = scaleY(pos.y)
-      const r = hoverNode === pid ? 16 : 13
+      const isHN = hoverNode === pid
+      const r = isHN ? NODE_R_HOVER : NODE_R
 
       ctx.beginPath()
       ctx.arc(cx, cy, r, 0, Math.PI * 2)
-      ctx.fillStyle = color
+      ctx.fillStyle = isHN ? '#FFD166' : color
       ctx.fill()
       ctx.strokeStyle = '#000'
-      ctx.lineWidth = 2
+      ctx.lineWidth = isHN ? 3 : 2
       ctx.stroke()
 
-      ctx.fillStyle = '#fff'
+      ctx.fillStyle = isHN ? '#000' : '#fff'
       ctx.font = `bold ${r < 14 ? 9 : 10}px monospace`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillText(player.jersey, cx, cy)
     })
-  }, [connections, positions, isFutsal, cfg, playerMap, homeTeamId, teamFilter, hoverNode])
+  }, [connections, positions, isFutsal, cfg, playerMap, homeTeamId, teamFilter, hoverNode, hoverLine, playerFilter, selectedPlayers])
 
-  const getNodeAt = (mx, my) => {
+  const getCanvasCoords = (mx, my) => {
     const canvas = canvasRef.current
     if (!canvas) return null
     const rect = canvas.getBoundingClientRect()
-    const scaleXFactor = canvas.width / rect.width
-    const scaleYFactor = canvas.height / rect.height
-    const cx = (mx - rect.left) * scaleXFactor
-    const cy = (my - rect.top) * scaleYFactor
+    const sx = canvas.width / rect.width
+    const sy = canvas.height / rect.height
     const pad = 30
     const drawW = canvas.width - pad * 2
     const drawH = canvas.height - pad * 2
-    const scaleX = x => pad + (x / cfg.width) * drawW
-    const scaleY = y => canvas.height - (pad + (y / cfg.height) * drawH)
-
-    for (const [pid, pos] of Object.entries(positions)) {
-      const dx = scaleX(pos.x) - cx
-      const dy = scaleY(pos.y) - cy
-      if (Math.sqrt(dx * dx + dy * dy) < 16) return pid
+    return {
+      cx: (mx - rect.left) * sx,
+      cy: (my - rect.top) * sy,
+      scaleX: x => pad + (x / cfg.width) * drawW,
+      scaleY: y => canvas.height - (pad + (y / cfg.height) * drawH)
     }
-    return null
   }
 
   const handleMouseMove = (e) => {
-    const pid = getNodeAt(e.clientX, e.clientY)
-    setHoverNode(pid)
-    if (pid) {
-      const player = playerMap[pid]
-      const pos = positions[pid]
-      const connectCount = connections.filter(c => (c.a === pid || c.b === pid)).reduce((s, c) => s + c.count, 0)
-      setTooltip({ pid, name: player?.name, jersey: player?.jersey, x: e.clientX, y: e.clientY, passes: connectCount })
+    const coords = getCanvasCoords(e.clientX, e.clientY)
+    if (!coords) return
+    const { cx, cy, scaleX, scaleY } = coords
+
+    // Node hover
+    for (const [pid, pos] of Object.entries(positions)) {
+      if (!isVisible(pid)) continue
+      if (Math.hypot(scaleX(pos.x) - cx, scaleY(pos.y) - cy) < NODE_R_HOVER) {
+        setHoverNode(pid); setHoverLine(null)
+        const player = playerMap[pid]
+        const s = passStats[pid] || { total: 0, successful: 0 }
+        const miss = s.total - s.successful
+        const rate = s.total > 0 ? Math.round((s.successful / s.total) * 100) : 0
+        setTooltip({ type: 'node', name: player?.name, jersey: player?.jersey, total: s.total, successful: s.successful, miss, rate, x: e.clientX, y: e.clientY })
+        return
+      }
+    }
+
+    // Line hover
+    let foundLine = null, minDist = Infinity
+    for (const conn of connections) {
+      const { a, b } = conn
+      if (!positions[a] || !positions[b]) continue
+      if (!isVisible(a) || !isVisible(b)) continue
+      const aHome = playerMap[a]?.teamId === homeTeamId
+      const bHome = playerMap[b]?.teamId === homeTeamId
+      if (aHome !== bHome) continue
+      const d = distToSegment(cx, cy, scaleX(positions[a].x), scaleY(positions[a].y), scaleX(positions[b].x), scaleY(positions[b].y))
+      if (d < 8 && d < minDist) { minDist = d; foundLine = conn }
+    }
+
+    if (foundLine) {
+      setHoverNode(null); setHoverLine(foundLine)
+      const pa = playerMap[foundLine.a]
+      const pb = playerMap[foundLine.b]
+      const sa = passStats[foundLine.a] || { total: 0, successful: 0 }
+      const sb = passStats[foundLine.b] || { total: 0, successful: 0 }
+      // Directed: A→B and B→A
+      const aToB = dirPasses[`${foundLine.a}|${foundLine.b}`] || 0
+      const bToA = dirPasses[`${foundLine.b}|${foundLine.a}`] || 0
+      // Success rate between pair = passes between them / total passes of each
+      const rateAtoB = sa.total > 0 ? Math.round((aToB / sa.total) * 100) : 0
+      const rateBtoA = sb.total > 0 ? Math.round((bToA / sb.total) * 100) : 0
+      // Overall individual pass accuracy
+      const accA = sa.total > 0 ? Math.round((sa.successful / sa.total) * 100) : 0
+      const accB = sb.total > 0 ? Math.round((sb.successful / sb.total) * 100) : 0
+      setTooltip({
+        type: 'line',
+        nameA: pa?.name, jerseyA: pa?.jersey,
+        nameB: pb?.name, jerseyB: pb?.jersey,
+        aToB, bToA, total: foundLine.count,
+        rateAtoB, rateBtoA, accA, accB,
+        x: e.clientX, y: e.clientY
+      })
     } else {
-      setTooltip(null)
+      setHoverNode(null); setHoverLine(null); setTooltip(null)
     }
   }
 
-  const handleMouseLeave = () => {
-    setHoverNode(null)
-    setTooltip(null)
+  const handleMouseLeave = () => { setHoverNode(null); setHoverLine(null); setTooltip(null) }
+
+  const togglePlayer = (pid) => {
+    setSelectedPlayers(prev => {
+      const next = new Set(prev)
+      next.has(pid) ? next.delete(pid) : next.add(pid)
+      return next
+    })
   }
 
-  const totalNodes = Object.keys(positions).filter(pid => {
-    const p = playerMap[pid]
-    if (!p) return false
-    if (teamFilter === 'HOME') return p.teamId === homeTeamId
-    if (teamFilter === 'AWAY') return p.teamId !== homeTeamId
-    return true
-  }).length
-
-  if (totalNodes === 0) {
-    return (
-      <div className="border-4 border-black p-8 text-center font-black uppercase text-gray-400">
-        No passing network data available
-      </div>
-    )
-  }
+  const color = teamFilter === 'HOME' ? HOME_COLOR : AWAY_COLOR
 
   return (
-    <div className="relative">
-      <canvas
-        ref={canvasRef}
-        width={700}
-        height={isFutsal ? 385 : 469}
-        className="w-full border-4 border-black"
-        style={{ cursor: hoverNode ? 'pointer' : 'default' }}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-      />
-      {tooltip && (
-        <div
-          className="fixed z-50 bg-black text-white text-[10px] font-black uppercase px-3 py-2 border-2 border-[#FFD166] pointer-events-none shadow-[4px_4px_0px_0px_#FFD166]"
-          style={{ left: tooltip.x + 12, top: tooltip.y - 40 }}
-        >
-          #{tooltip.jersey} {tooltip.name}<br />
-          <span className="text-[#FFD166]">{tooltip.passes} connected passes</span>
+    <div>
+      {/* Player filter row */}
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        {['ALL', 'XI', 'CUSTOM'].map(f => (
+          <button key={f} onClick={() => setPlayerFilter(f)}
+            className={`text-[10px] font-black uppercase border-2 border-black px-3 py-1 transition-all ${playerFilter === f ? 'bg-black text-white' : 'bg-white text-black hover:bg-[#FFD166]'}`}>
+            {f === 'ALL' ? 'All' : f === 'XI' ? 'Starting XI' : 'Select Players'}
+          </button>
+        ))}
+      </div>
+
+      {/* Player selection grid — shown when CUSTOM */}
+      {playerFilter === 'CUSTOM' && (
+        <div className="border-2 border-black p-3 mb-3 bg-white">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] font-black uppercase text-gray-500">Select players to display</span>
+            <div className="flex gap-1">
+              <button onClick={() => setSelectedPlayers(new Set(teamPlayers.map(p => p.player_id)))} className="text-[9px] font-bold uppercase border px-1.5 py-0.5 hover:bg-[#FFD166]">All</button>
+              <button onClick={() => setSelectedPlayers(new Set(teamPlayers.filter(p => p.starting_xi).map(p => p.player_id)))} className="text-[9px] font-bold uppercase border px-1.5 py-0.5 hover:bg-[#FFD166]">XI</button>
+              <button onClick={() => setSelectedPlayers(new Set())} className="text-[9px] font-bold uppercase border px-1.5 py-0.5 hover:bg-gray-100">None</button>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {teamPlayers.map(p => {
+              const active = selectedPlayers.has(p.player_id)
+              return (
+                <button key={p.player_id} onClick={() => togglePlayer(p.player_id)}
+                  title={`${p.player_name}${p.starting_xi ? ' (Starter)' : ' (Sub)'}`}
+                  className={`text-[10px] font-bold border-2 px-2 py-0.5 transition-all ${active ? 'text-white border-transparent' : 'bg-white text-black border-black hover:bg-gray-100'} ${!p.starting_xi ? 'border-dashed opacity-70' : ''}`}
+                  style={active ? { backgroundColor: color, borderColor: color } : {}}>
+                  #{p.jersey_no}{p.starting_xi ? '' : '°'}
+                </button>
+              )
+            })}
+          </div>
+          <p className="text-[9px] text-gray-400 font-bold mt-2 uppercase">Solid = Starter · Dashed + ° = Sub</p>
         </div>
       )}
+
+      <div className="relative">
+        <canvas ref={canvasRef} width={700} height={isFutsal ? 385 : 469}
+          className="w-full border-4 border-black"
+          style={{ cursor: (hoverNode || hoverLine) ? 'pointer' : 'default' }}
+          onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave} />
+
+        {tooltip && (
+          <div className="fixed z-50 bg-black text-white text-[10px] font-black uppercase px-3 py-2 border-2 border-[#FFD166] pointer-events-none shadow-[4px_4px_0px_0px_#FFD166] min-w-[170px]"
+            style={{ left: tooltip.x + 14, top: tooltip.y - 80 }}>
+            {tooltip.type === 'node' ? (
+              <>
+                <div className="text-[#FFD166] text-[11px] mb-1.5">#{tooltip.jersey} {tooltip.name}</div>
+                <div className="flex justify-between gap-4"><span>Total</span><span className="text-[#FFD166]">{tooltip.total}</span></div>
+                <div className="flex justify-between gap-4"><span>Successful</span><span className="text-[#06D6A0]">{tooltip.successful}</span></div>
+                <div className="flex justify-between gap-4"><span>Missed</span><span className="text-[#FF4D4D]">{tooltip.miss}</span></div>
+                <div className="flex justify-between gap-4 border-t border-gray-600 mt-1 pt-1"><span>Success Rate</span><span className="text-[#FFD166]">{tooltip.rate}%</span></div>
+              </>
+            ) : (
+              <>
+                <div className="text-[#FFD166] text-[11px] mb-1.5">#{tooltip.jerseyA} {tooltip.nameA} ↔ #{tooltip.jerseyB} {tooltip.nameB}</div>
+                <div className="text-gray-300 text-[9px] uppercase mb-1">Total passes: <span className="text-white">{tooltip.total}</span></div>
+                <div className="border-t border-gray-600 pt-1 space-y-0.5">
+                  <div className="flex justify-between gap-3">
+                    <span>#{tooltip.jerseyA}→#{tooltip.jerseyB}</span>
+                    <span><span className="text-[#06D6A0]">{tooltip.aToB}</span> passes · <span className="text-[#FFD166]">{tooltip.rateAtoB}%</span> of #{tooltip.jerseyA}'s</span>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <span>#{tooltip.jerseyB}→#{tooltip.jerseyA}</span>
+                    <span><span className="text-[#06D6A0]">{tooltip.bToA}</span> passes · <span className="text-[#FFD166]">{tooltip.rateBtoA}%</span> of #{tooltip.jerseyB}'s</span>
+                  </div>
+                  <div className="border-t border-gray-600 mt-1 pt-1 text-gray-300 text-[9px] uppercase">Overall accuracy</div>
+                  <div className="flex justify-between gap-3"><span>#{tooltip.jerseyA}</span><span className="text-[#FFD166]">{tooltip.accA}%</span></div>
+                  <div className="flex justify-between gap-3"><span>#{tooltip.jerseyB}</span><span className="text-[#FFD166]">{tooltip.accB}%</span></div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
