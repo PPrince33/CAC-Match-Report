@@ -84,6 +84,7 @@ export default function MatchReportPage() {
 
   // Player comparison state
   const [cacExpandedId, setCacExpandedId] = useState(null)
+  const [cacPointsOpen, setCacPointsOpen] = useState(false)
   const [analysisText, setAnalysisText] = useState('')
   const [analysisLoading, setAnalysisLoading] = useState(false)
   const [analysisSaved, setAnalysisSaved] = useState(false)
@@ -1507,8 +1508,14 @@ export default function MatchReportPage() {
 
                 {/* ── CAC POINTS TABLE ── */}
                 <section>
-                  <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-4">CAC Points System</h3>
-                  <div className="overflow-x-auto">
+                  <button
+                    onClick={() => setCacPointsOpen(o => !o)}
+                    className="flex items-center gap-3 text-xl font-black uppercase border-b-4 border-black pb-1 mb-4 hover:text-gray-600 transition-colors w-full text-left"
+                  >
+                    <span>CAC Points System</span>
+                    <span className="text-sm">{cacPointsOpen ? '▲' : '▼'}</span>
+                  </button>
+                  {cacPointsOpen && <><div className="overflow-x-auto">
                     <table className="border-4 border-black text-[11px] font-black uppercase w-full">
                       <thead>
                         <tr className="bg-black text-white">
@@ -1564,6 +1571,7 @@ export default function MatchReportPage() {
                     </table>
                   </div>
                   <p className="text-[9px] font-bold uppercase text-gray-400 mt-2">GK excluded from all rankings</p>
+                  </>}
                 </section>
 
                 {/* ── CAC PLAYER POINTS ── */}
