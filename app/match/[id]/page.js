@@ -93,6 +93,9 @@ export default function MatchReportPage() {
   const [p1PlayerId, setP1PlayerId] = useState(null)
   const [p2TeamId, setP2TeamId] = useState(null)
   const [p2PlayerId, setP2PlayerId] = useState(null)
+  const [cmpAction, setCmpAction] = useState('ALL')
+  const [cmpOutcome, setCmpOutcome] = useState('ALL')
+  const [cmpType, setCmpType] = useState('ALL')
 
   // Highlights state
   const [hlTeam, setHlTeam] = useState('ALL')
@@ -1702,6 +1705,74 @@ export default function MatchReportPage() {
                       <BrutalistCard className="py-8">
                         <RadarChart p1Data={p1Data} p2Data={p2Data} maxes={matchMaxes} />
                       </BrutalistCard>
+
+                      {/* ── PITCH COMPARISON ── */}
+                      <BrutalistCard>
+                        <h4 className="text-sm font-black uppercase text-gray-400 mb-4">Pitch Heatmap</h4>
+                        {/* Shared filters */}
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          <select
+                            className="border-2 border-black p-1.5 font-black text-[10px] uppercase flex-1 min-w-[120px]"
+                            value={cmpAction}
+                            onChange={e => { setCmpAction(e.target.value); setCmpOutcome('ALL'); setCmpType('ALL') }}
+                          >
+                            <option value="ALL">All Actions</option>
+                            {Array.from(new Set(enrichedEvents.map(e => e.action))).filter(Boolean).sort().map(a => (
+                              <option key={a} value={a}>{a}</option>
+                            ))}
+                          </select>
+                          <select
+                            className="border-2 border-black p-1.5 font-black text-[10px] uppercase flex-1 min-w-[120px]"
+                            value={cmpOutcome}
+                            onChange={e => { setCmpOutcome(e.target.value); setCmpType('ALL') }}
+                          >
+                            <option value="ALL">All Outcomes</option>
+                            {Array.from(new Set(enrichedEvents.filter(e => cmpAction === 'ALL' || e.action === cmpAction).map(e => e.outcome))).filter(Boolean).sort().map(o => (
+                              <option key={o} value={o}>{o}</option>
+                            ))}
+                          </select>
+                          <select
+                            className="border-2 border-black p-1.5 font-black text-[10px] uppercase flex-1 min-w-[120px]"
+                            value={cmpType}
+                            onChange={e => setCmpType(e.target.value)}
+                          >
+                            <option value="ALL">All Types</option>
+                            {Array.from(new Set(enrichedEvents.filter(e => (cmpAction === 'ALL' || e.action === cmpAction) && (cmpOutcome === 'ALL' || e.outcome === cmpOutcome)).map(e => e.type))).filter(t => t && t !== 'NA').sort().map(t => (
+                              <option key={t} value={t}>{t}</option>
+                            ))}
+                          </select>
+                          <button
+                            onClick={() => { setCmpAction('ALL'); setCmpOutcome('ALL'); setCmpType('ALL') }}
+                            className="border-2 border-black px-3 py-1.5 font-black text-[10px] uppercase bg-white hover:bg-[#FFD166] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
+                          >Reset</button>
+                        </div>
+                        {/* Side by side pitches */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-[10px] font-black uppercase text-[#0077B6] mb-1">
+                              #{p1Data.info.jersey_no} {p1Data.info.players?.player_name} — {enrichedEvents.filter(e => e.player_id === p1PlayerId && (cmpAction === 'ALL' || e.action === cmpAction) && (cmpOutcome === 'ALL' || e.outcome === cmpOutcome) && (cmpType === 'ALL' || e.type === cmpType)).length} events
+                            </p>
+                            <HeatmapPitch
+                              events={enrichedEvents.filter(e => e.player_id === p1PlayerId && (cmpAction === 'ALL' || e.action === cmpAction) && (cmpOutcome === 'ALL' || e.outcome === cmpOutcome) && (cmpType === 'ALL' || e.type === cmpType))}
+                              teamName={p1Data.name}
+                              isHome={true}
+                              isFutsal={isFutsal}
+                            />
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-black uppercase text-[#D90429] mb-1">
+                              #{p2Data.info.jersey_no} {p2Data.info.players?.player_name} — {enrichedEvents.filter(e => e.player_id === p2PlayerId && (cmpAction === 'ALL' || e.action === cmpAction) && (cmpOutcome === 'ALL' || e.outcome === cmpOutcome) && (cmpType === 'ALL' || e.type === cmpType)).length} events
+                            </p>
+                            <HeatmapPitch
+                              events={enrichedEvents.filter(e => e.player_id === p2PlayerId && (cmpAction === 'ALL' || e.action === cmpAction) && (cmpOutcome === 'ALL' || e.outcome === cmpOutcome) && (cmpType === 'ALL' || e.type === cmpType))}
+                              teamName={p2Data.name}
+                              isHome={false}
+                              isFutsal={isFutsal}
+                            />
+                          </div>
+                        </div>
+                      </BrutalistCard>
+
                       <BrutalistCard>
                         <h4 className="text-sm font-black uppercase text-gray-400 mb-4">Head-to-Head</h4>
                         <CompareRow label="Total Passes" homeVal={p1Data.stats.passes} awayVal={p2Data.stats.passes} />
