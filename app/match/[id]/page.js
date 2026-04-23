@@ -358,7 +358,7 @@ export default function MatchReportPage() {
       const assistPasses = passes.filter(p => p.outcome === 'Assist').length
       const assistThroughBalls = evs.filter(e => e.action === 'Through Ball' && e.outcome === 'Assist').length
       const assists = assistPasses + assistThroughBalls
-      const corners = evs.filter(e => e.action === 'Pass' && e.type === 'Corner Kick').length
+      const corners = evs.filter(e => e.type === 'Corner Kick').length
       const crosses = evs.filter(e => e.action === 'Pass' && e.type !== 'Corner Kick' && e.start_y !== null && (e.start_y < cfg.height * 0.2 || e.start_y > cfg.height * 0.8) && e.start_x > cfg.attackingThirdX).length
       const carries = evs.filter(e => e.action === 'Carry')
       const progCarries = carries.filter(c => c.end_x !== null && c.start_x !== null && (c.end_x - c.start_x) >= cfg.progressiveThreshold).length
