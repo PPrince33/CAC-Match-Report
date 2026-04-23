@@ -639,7 +639,7 @@ export default function MatchReportPage() {
           e.outcome === 'Successful' &&
           e.start_x != null && e.end_x != null &&
           (e.end_x - e.start_x) >= cfg.progressiveThreshold &&
-          e.end_x >= cfg.width / 2
+          (e.start_x >= cfg.attackingThirdX || e.end_x >= cfg.attackingThirdX)
         ) {
           add(e.player_id, 1, 'progressive')
         }
