@@ -410,11 +410,9 @@ export default function MatchReportPage() {
       const pressures = evs.filter(e => e.action === 'Pressure')
       const totalPressures = pressures.length
       const pressureFouls = pressures.filter(e => e.outcome === 'Foul').length
-      const discipline = evs.filter(e => e.action === 'Discipline')
-      const disciplineFouls = discipline.filter(e => e.outcome === 'Foul')
-      const totalFouls = disciplineFouls.length
-      const yellowCards = disciplineFouls.filter(e => e.type === 'Yellow Card').length
-      const redCards = disciplineFouls.filter(e => e.type === 'Red Card').length
+      const totalFouls = evs.filter(e => e.outcome === 'Foul').length
+      const yellowCards = evs.filter(e => e.type === 'Yellow Card').length
+      const redCards = evs.filter(e => e.type === 'Red Card').length
       const saves = evs.filter(e => e.action === 'Save')
       const totalSaves = saves.length
       const grippingSaves = saves.filter(e => e.outcome === 'Gripping').length
