@@ -632,23 +632,25 @@ export default function MatchReportPage() {
       // Passes & Through Balls
       if (e.action === 'Pass' || e.action === 'Through Ball') {
         if (e.outcome === 'Assist') {
-          add(e.player_id, 6, 'assist')
+          add(e.player_id, 15, 'assist')
         } else if (e.outcome === 'Key Pass') {
-          add(e.player_id, 3, 'keyPass')
+          const intoBox = e.end_x != null && e.end_y != null &&
+            e.end_x >= cfg.boxX && e.end_y >= cfg.boxYMin && e.end_y <= cfg.boxYMax
+          add(e.player_id, intoBox ? 7 : 5, 'keyPass')
         } else if (
           e.outcome === 'Successful' &&
           e.start_x != null && e.end_x != null &&
           (e.end_x - e.start_x) >= cfg.progressiveThreshold &&
           (e.start_x >= cfg.attackingThirdX || e.end_x >= cfg.attackingThirdX)
         ) {
-          add(e.player_id, 1, 'progressive')
+          add(e.player_id, 3, 'progressive')
         }
       }
 
       // Shots
       if (e.action === 'Shoot') {
-        if      (e.outcome === 'Goal')       add(e.player_id, 10, 'goal')
-        else if (e.outcome === 'Save')       add(e.player_id, 5, 'shotSoT')
+        if      (e.outcome === 'Goal')       add(e.player_id, 25, 'goal')
+        else if (e.outcome === 'Save')       add(e.player_id, 7, 'shotSoT')
         else if (e.outcome === 'Off-Target') add(e.player_id, 3, 'offTarget')
       }
 
@@ -657,7 +659,10 @@ export default function MatchReportPage() {
         ['Standing Tackle', 'Sliding Tackle', 'Pass Intercept'].includes(e.action) &&
         e.outcome === 'Successful' && e.type === 'With Possession'
       ) {
-        add(e.player_id, 2, 'recovery')
+        const inDefBox = e.start_x != null && e.start_y != null &&
+          e.start_x <= (cfg.width - cfg.boxX) &&
+          e.start_y >= cfg.boxYMin && e.start_y <= cfg.boxYMax
+        add(e.player_id, inDefBox ? 5 : 2, 'recovery')
       }
 
       // Dribbles
@@ -1466,6 +1471,45 @@ export default function MatchReportPage() {
             {activeTab === 'PLAYER' && (
               <div className="space-y-12">
 
+                {/* ── CAC POINTS TABLE ── */}
+                <section>
+                  <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-4">CAC Points System</h3>
+                  <div className="overflow-x-auto">
+                    <table className="border-4 border-black text-[11px] font-black uppercase w-full">
+                      <thead>
+                        <tr className="bg-black text-white">
+                          <th className="px-3 py-2 text-left border-r-2 border-gray-600">Action</th>
+                          <th className="px-3 py-2 text-center border-r-2 border-gray-600">Points</th>
+                          <th className="px-3 py-2 text-left text-gray-300 font-bold normal-case">Condition</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[
+                          { action: 'Goal',             pts: '+25',   note: 'Shoot → Goal' },
+                          { action: 'Assist',           pts: '+15',   note: 'Pass → Assist' },
+                          { action: 'Shot On-Target',   pts: '+7',    note: 'Shoot → Save' },
+                          { action: 'Key Pass (Box)',   pts: '+7',    note: 'Key pass ending inside penalty box' },
+                          { action: 'Key Pass',         pts: '+5',    note: 'Key pass outside penalty box' },
+                          { action: 'Ball Recovery (Def Box)', pts: '+5', note: 'Tackle/Intercept with possession in defensive box' },
+                          { action: 'Shot Off-Target',  pts: '+3',    note: 'Shoot → Off-Target' },
+                          { action: 'Progressive Pass', pts: '+3',    note: 'Successful pass forward ≥ threshold in/to att. third' },
+                          { action: 'Ball Recovery',    pts: '+2',    note: 'Tackle/Intercept with possession (outside def box)' },
+                          { action: 'Block (In Box)',   pts: '+2',    note: 'Block → Successful inside box' },
+                          { action: 'Dribble',          pts: '+1',    note: 'Dribble → Successful' },
+                          { action: 'Block (Outside)',  pts: '+1',    note: 'Block → Successful outside box' },
+                        ].map((row, i) => (
+                          <tr key={i} className={`border-b-2 border-black ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                            <td className="px-3 py-2 border-r-2 border-black">{row.action}</td>
+                            <td className="px-3 py-2 border-r-2 border-black text-center bg-[#FFD166]">{row.pts}</td>
+                            <td className="px-3 py-2 text-gray-500 normal-case font-bold">{row.note}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="text-[9px] font-bold uppercase text-gray-400 mt-2">GK excluded from all rankings</p>
+                </section>
+
                 {/* ── CAC PLAYER POINTS ── */}
                 <section>
                   <div className="border-b-4 border-black pb-2 mb-6 flex items-end gap-4">
@@ -1489,15 +1533,15 @@ export default function MatchReportPage() {
                             const isExpanded = cacExpandedId === p.playerId
                             const rowBg = i === 0 ? 'bg-[#FFD166]' : i < 3 ? 'bg-[#fff9e6]' : 'hover:bg-gray-50'
                             const breakdown = [
-                              { label: 'Progressive Pass', pts: 1,  count: p.progressive },
-                              { label: 'Key Pass',         pts: 3,  count: p.keyPass    },
-                              { label: 'Assist',           pts: 6,  count: p.assist     },
-                              { label: 'Shot Off-Target',  pts: 3,  count: p.offTarget  },
-                              { label: 'Shot On-Target',   pts: 5,  count: p.shotSoT    },
-                              { label: 'Goal',             pts: 10, count: p.goal       },
-                              { label: 'Dribble',          pts: 1,  count: p.dribble    },
-                              { label: 'Ball Recovery',    pts: 2,  count: p.recovery   },
-                              { label: 'Block',            pts: null, count: p.block    },
+                              { label: 'Progressive Pass', pts: 3,    count: p.progressive },
+                              { label: 'Key Pass (5–7)',   pts: null,  count: p.keyPass    },
+                              { label: 'Assist',           pts: 15,   count: p.assist     },
+                              { label: 'Shot Off-Target',  pts: 3,    count: p.offTarget  },
+                              { label: 'Shot On-Target',   pts: 7,    count: p.shotSoT    },
+                              { label: 'Goal',             pts: 25,   count: p.goal       },
+                              { label: 'Dribble',          pts: 1,    count: p.dribble    },
+                              { label: 'Recovery (2–5)',   pts: null,  count: p.recovery   },
+                              { label: 'Block',            pts: null,  count: p.block    },
                             ].filter(b => b.count > 0)
                             return (
                               <>
@@ -1549,9 +1593,9 @@ export default function MatchReportPage() {
                     </div>
                     {/* point key */}
                     <div className="mt-4 pt-3 border-t-2 border-black flex flex-wrap gap-x-4 gap-y-1 text-[9px] font-bold uppercase text-gray-500">
-                      <span>Prog Pass +1</span><span>Key Pass +3</span><span>Assist +6</span>
-                      <span>Shot Off-Target +3</span><span>Shot On-Target +5</span><span>Goal +10</span>
-                      <span>Dribble +1</span><span>Ball Recovery +2</span><span>Block Outside Box +1</span><span>Block Inside Box +2</span>
+                      <span>Prog Pass +3</span><span>Key Pass +5 / Into Box +7</span><span>Assist +15</span>
+                      <span>Shot Off-Target +3</span><span>Shot On-Target +7</span><span>Goal +25</span>
+                      <span>Dribble +1</span><span>Recovery +2 / In Def Box +5</span><span>Block Outside Box +1</span><span>Block Inside Box +2</span>
                     </div>
                   </BrutalistCard>
                 </section>
