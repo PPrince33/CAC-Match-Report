@@ -787,8 +787,8 @@ export default function MatchReportPage() {
       match: {
         homeName: match.home_team?.team_name,
         awayName: match.away_team?.team_name,
-        homeScore: match.home_team_score ?? computedScores?.home ?? 0,
-        awayScore: match.away_team_score ?? computedScores?.away ?? 0,
+        homeScore: computedScores?.home ?? match.home_team_score ?? 0,
+        awayScore: computedScores?.away ?? match.away_team_score ?? 0,
         tournament: match.tournament_name || 'CAC',
         date: match.match_date,
         sport: isFutsal ? 'Futsal' : 'Football',
@@ -926,8 +926,8 @@ export default function MatchReportPage() {
           match: {
             homeName: match.home_team?.team_name,
             awayName: match.away_team?.team_name,
-            homeScore: match.home_team_score ?? computedScores.home,
-            awayScore: match.away_team_score ?? computedScores.away,
+            homeScore: computedScores?.home ?? match.home_team_score ?? 0,
+            awayScore: computedScores?.away ?? match.away_team_score ?? 0,
             tournament: match.tournament_name || 'CAC',
             date: match.match_date,
             sport: isFutsal ? 'Futsal' : 'Football',
@@ -996,8 +996,8 @@ export default function MatchReportPage() {
     )
   }
 
-  const dbHomeScore = match.home_team_score ?? 0
-  const dbAwayScore = match.away_team_score ?? 0
+  const dbHomeScore = computedScores?.home ?? match.home_team_score ?? 0
+  const dbAwayScore = computedScores?.away ?? match.away_team_score ?? 0
   const tournamentName = match.tournament_name || 'CAC'
 
   return (
