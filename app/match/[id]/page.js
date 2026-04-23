@@ -637,8 +637,9 @@ export default function MatchReportPage() {
           const intoBox = e.end_x != null && e.end_y != null &&
             e.end_x >= cfg.boxX && e.end_y >= cfg.boxYMin && e.end_y <= cfg.boxYMax
           add(e.player_id, intoBox ? 7 : 5, 'keyPass')
-        } else if (
-          e.outcome === 'Successful' &&
+        }
+        if (
+          ['Successful', 'Key Pass', 'Assist'].includes(e.outcome) &&
           e.start_x != null && e.end_x != null &&
           (e.end_x - e.start_x) >= cfg.progressiveThreshold &&
           (e.start_x >= cfg.attackingThirdX || e.end_x >= cfg.attackingThirdX)
@@ -667,7 +668,10 @@ export default function MatchReportPage() {
 
       // Dribbles
       if (e.action === 'Dribble' && e.outcome === 'Successful') {
-        add(e.player_id, 1, 'dribble')
+        const progressive = e.start_x != null && e.end_x != null &&
+          (e.end_x - e.start_x) >= cfg.progressiveThreshold &&
+          (e.start_x >= cfg.attackingThirdX || e.end_x >= cfg.attackingThirdX)
+        add(e.player_id, progressive ? 4 : 1, 'dribble')
       }
 
       // Blocks
@@ -1495,7 +1499,8 @@ export default function MatchReportPage() {
                           { action: 'Progressive Pass', pts: '+3',    note: 'Successful pass forward ≥ threshold in/to att. third' },
                           { action: 'Ball Recovery',    pts: '+2',    note: 'Tackle/Intercept with possession (outside def box)' },
                           { action: 'Block (In Box)',   pts: '+2',    note: 'Block → Successful inside box' },
-                          { action: 'Dribble',          pts: '+1',    note: 'Dribble → Successful' },
+                          { action: 'Dribble (Progressive)', pts: '+4', note: 'Successful dribble forward ≥ threshold in/to att. third' },
+                          { action: 'Dribble',          pts: '+1',    note: 'Successful dribble (non-progressive)' },
                           { action: 'Block (Outside)',  pts: '+1',    note: 'Block → Successful outside box' },
                         ].map((row, i) => (
                           <tr key={i} className={`border-b-2 border-black ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
@@ -1539,7 +1544,7 @@ export default function MatchReportPage() {
                               { label: 'Shot Off-Target',  pts: 3,    count: p.offTarget  },
                               { label: 'Shot On-Target',   pts: 7,    count: p.shotSoT    },
                               { label: 'Goal',             pts: 25,   count: p.goal       },
-                              { label: 'Dribble',          pts: 1,    count: p.dribble    },
+                              { label: 'Dribble (1–4)',     pts: null,  count: p.dribble    },
                               { label: 'Recovery (2–5)',   pts: null,  count: p.recovery   },
                               { label: 'Block',            pts: null,  count: p.block    },
                             ].filter(b => b.count > 0)
@@ -1595,7 +1600,7 @@ export default function MatchReportPage() {
                     <div className="mt-4 pt-3 border-t-2 border-black flex flex-wrap gap-x-4 gap-y-1 text-[9px] font-bold uppercase text-gray-500">
                       <span>Prog Pass +3</span><span>Key Pass +5 / Into Box +7</span><span>Assist +15</span>
                       <span>Shot Off-Target +3</span><span>Shot On-Target +7</span><span>Goal +25</span>
-                      <span>Dribble +1</span><span>Recovery +2 / In Def Box +5</span><span>Block Outside Box +1</span><span>Block Inside Box +2</span>
+                      <span>Dribble +1 / Progressive +4</span><span>Recovery +2 / In Def Box +5</span><span>Block Outside Box +1</span><span>Block Inside Box +2</span>
                     </div>
                   </BrutalistCard>
                 </section>
