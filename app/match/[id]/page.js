@@ -610,7 +610,6 @@ export default function MatchReportPage() {
   const cacPlayerPoints = useMemo(() => {
     if (!enrichedEvents || !lineups || !match) return []
 
-    // Exclude goalkeepers: position = GK/Goalkeeper OR has any Save action
     const gkIds = new Set()
     lineups.forEach(l => {
       const pos = (l.position || l.players?.position || '').toLowerCase()
@@ -618,73 +617,102 @@ export default function MatchReportPage() {
     })
     enrichedEvents.forEach(e => { if (e.action === 'Save') gkIds.add(e.player_id) })
 
-    const pts = {}
-    const add = (pid, amount, cat) => {
-      if (!pid || gkIds.has(pid)) return
-      if (!pts[pid]) pts[pid] = { total: 0, progressive: 0, keyPass: 0, assist: 0, offTarget: 0, shotSoT: 0, goal: 0, recovery: 0, block: 0, dribble: 0 }
-      pts[pid].total += amount
-      pts[pid][cat]  += amount
+    const PTS = {
+      goal: 10, penaltyWon: 3, shotBox: 2, shotOut: 1, bigChanceMissed: -2,
+      assist: 6, keyPass: 3, passInBox: 2, progressive: 1, cross: 1,
+      blockDefBox: 3, blockDef3rd: 2, ballRecovery: 2, tackleWon: 2, interception: 2, clearance: 1, aerialWon: 1,
+      dribble: 1, foulDrawn: 1, dispossessed: -1,
+      foulCommitted: -1, yellowCard: -2, penaltyConceded: -4, ownGoal: -5, redCard: -6,
     }
+
+    const counts = {}
+    const inc = (pid, cat) => {
+      if (!pid || gkIds.has(pid)) return
+      if (!counts[pid]) counts[pid] = Object.fromEntries(Object.keys(PTS).map(k => [k, 0]))
+      counts[pid][cat] = (counts[pid][cat] || 0) + 1
+    }
+
+    const inAttBox = (x, y) => x != null && y != null && x >= cfg.boxX && y >= cfg.boxYMin && y <= cfg.boxYMax
+    const inDefBox = (x, y) => x != null && y != null && x <= (cfg.width - cfg.boxX) && y >= cfg.boxYMin && y <= cfg.boxYMax
+    const inDefThird = (x) => x != null && x <= (cfg.width - cfg.attackingThirdX)
+    const inAttThird = (x) => x != null && x >= cfg.attackingThirdX
+    const isWide = (y) => y != null && (y < cfg.height * 0.2 || y > cfg.height * 0.8)
 
     enrichedEvents.forEach(e => {
       if (!e.player_id) return
+      const { action, outcome, type, start_x: sx, start_y: sy, end_x: ex, end_y: ey, xg: xgVal } = e
 
-      // Passes & Through Balls
-      if (e.action === 'Pass' || e.action === 'Through Ball') {
-        if (e.outcome === 'Assist') {
-          add(e.player_id, 15, 'assist')
-        } else if (e.outcome === 'Key Pass') {
-          const intoBox = e.end_x != null && e.end_y != null &&
-            e.end_x >= cfg.boxX && e.end_y >= cfg.boxYMin && e.end_y <= cfg.boxYMax
-          add(e.player_id, intoBox ? 7 : 5, 'keyPass')
+      // Shooting
+      if (action === 'Shoot') {
+        if (outcome === 'Goal') {
+          if (type === 'Own Goal') inc(e.player_id, 'ownGoal')
+          else inc(e.player_id, 'goal')
+        } else if (outcome === 'Save') {
+          inAttBox(sx, sy) ? inc(e.player_id, 'shotBox') : inc(e.player_id, 'shotOut')
+        } else if ((outcome === 'Off-Target' || outcome === 'Block') && parseFloat(xgVal || 0) >= 0.3) {
+          inc(e.player_id, 'bigChanceMissed')
         }
+      }
+
+      // Passing
+      if (action === 'Pass' || action === 'Through Ball') {
+        if (outcome === 'Assist') {
+          inc(e.player_id, 'assist')
+        } else if (outcome === 'Key Pass') {
+          inc(e.player_id, 'keyPass')
+        } else if (outcome === 'Successful') {
+          if (isWide(sy) && inAttBox(ex, ey)) inc(e.player_id, 'cross')
+          else if (inAttBox(ex, ey)) inc(e.player_id, 'passInBox')
+        }
+        // Progressive pass
         if (
-          ['Successful', 'Key Pass', 'Assist'].includes(e.outcome) &&
-          e.start_x != null && e.end_x != null &&
-          (e.end_x - e.start_x) >= cfg.progressiveThreshold &&
-          (e.start_x >= cfg.attackingThirdX || e.end_x >= cfg.attackingThirdX)
+          ['Successful', 'Key Pass', 'Assist'].includes(outcome) &&
+          sx != null && ex != null &&
+          (ex - sx) >= cfg.progressiveThreshold &&
+          (inAttThird(sx) || inAttThird(ex))
         ) {
-          add(e.player_id, 3, 'progressive')
+          inc(e.player_id, 'progressive')
         }
       }
 
-      // Shots
-      if (e.action === 'Shoot') {
-        if      (e.outcome === 'Goal')       add(e.player_id, 25, 'goal')
-        else if (e.outcome === 'Save')       add(e.player_id, 7, 'shotSoT')
-        else if (e.outcome === 'Off-Target') add(e.player_id, 3, 'offTarget')
+      // Defending
+      if ((action === 'Standing Tackle' || action === 'Sliding Tackle') && outcome === 'Successful') {
+        inc(e.player_id, 'tackleWon')
+        if (type === 'With Possession') inc(e.player_id, 'ballRecovery')
+      }
+      if (action === 'Pass Intercept' && outcome === 'Successful') {
+        inc(e.player_id, 'interception')
+        if (type === 'With Possession') inc(e.player_id, 'ballRecovery')
+      }
+      if (action === 'Block' && outcome === 'Successful') {
+        if (inDefBox(sx, sy)) inc(e.player_id, 'blockDefBox')
+        else if (inDefThird(sx)) inc(e.player_id, 'blockDef3rd')
+      }
+      if (action === 'Clearance') inc(e.player_id, 'clearance')
+      if (action === 'Aerial Duel' && outcome === 'Successful') inc(e.player_id, 'aerialWon')
+      if (action !== 'Standing Tackle' && action !== 'Sliding Tackle' && action !== 'Pass Intercept' &&
+          type === 'With Possession' && outcome === 'Successful') {
+        inc(e.player_id, 'ballRecovery')
       }
 
-      // Ball recovery: successful tackle or interception that wins possession
-      if (
-        ['Standing Tackle', 'Sliding Tackle', 'Pass Intercept'].includes(e.action) &&
-        e.outcome === 'Successful' && e.type === 'With Possession'
-      ) {
-        const inDefBox = e.start_x != null && e.start_y != null &&
-          e.start_x <= (cfg.width - cfg.boxX) &&
-          e.start_y >= cfg.boxYMin && e.start_y <= cfg.boxYMax
-        add(e.player_id, inDefBox ? 5 : 2, 'recovery')
+      // Possession
+      if (action === 'Dribble' && outcome === 'Successful') inc(e.player_id, 'dribble')
+      if (outcome === 'Dispossessed') inc(e.player_id, 'dispossessed')
+      if (outcome === 'Foul Won') {
+        type === 'Penalty' ? inc(e.player_id, 'penaltyWon') : inc(e.player_id, 'foulDrawn')
       }
 
-      // Dribbles
-      if (e.action === 'Dribble' && e.outcome === 'Successful') {
-        const progressive = e.start_x != null && e.end_x != null &&
-          (e.end_x - e.start_x) >= cfg.progressiveThreshold &&
-          (e.start_x >= cfg.attackingThirdX || e.end_x >= cfg.attackingThirdX)
-        add(e.player_id, progressive ? 4 : 1, 'dribble')
+      // Discipline
+      if (outcome === 'Foul') {
+        type === 'Penalty' ? inc(e.player_id, 'penaltyConceded') : inc(e.player_id, 'foulCommitted')
       }
-
-      // Blocks
-      if (e.action === 'Block' && e.outcome === 'Successful') {
-        const inside =
-          e.start_x != null && e.start_x >= cfg.boxX &&
-          e.start_y != null && e.start_y >= cfg.boxYMin && e.start_y <= cfg.boxYMax
-        add(e.player_id, inside ? 2 : 1, 'block')
-      }
+      if (type === 'Yellow Card') inc(e.player_id, 'yellowCard')
+      if (type === 'Red Card') inc(e.player_id, 'redCard')
     })
 
-    return Object.entries(pts)
-      .map(([pid, p]) => {
+    return Object.entries(counts)
+      .map(([pid, cats]) => {
+        const total = Object.entries(cats).reduce((sum, [cat, cnt]) => sum + cnt * (PTS[cat] || 0), 0)
         const l = lineups.find(x => x.player_id === pid)
         const isHome = l?.team_id === match.home_team_id
         return {
@@ -693,10 +721,12 @@ export default function MatchReportPage() {
           jersey: l?.jersey_no || '-',
           teamName: isHome ? match.home_team?.team_name : match.away_team?.team_name,
           isHome,
-          ...p,
+          total,
+          cats,
+          PTS,
         }
       })
-      .filter(p => p.total > 0)
+      .filter(p => p.total !== 0)
       .sort((a, b) => b.total - a.total)
   }, [enrichedEvents, lineups, match, cfg])
 
@@ -1489,24 +1519,45 @@ export default function MatchReportPage() {
                       </thead>
                       <tbody>
                         {[
-                          { action: 'Goal',             pts: '+25',   note: 'Shoot → Goal' },
-                          { action: 'Assist',           pts: '+15',   note: 'Pass → Assist' },
-                          { action: 'Shot On-Target',   pts: '+7',    note: 'Shoot → Save' },
-                          { action: 'Key Pass (Box)',   pts: '+7',    note: 'Key pass ending inside penalty box' },
-                          { action: 'Key Pass',         pts: '+5',    note: 'Key pass outside penalty box' },
-                          { action: 'Ball Recovery (Def Box)', pts: '+5', note: 'Tackle/Intercept with possession in defensive box' },
-                          { action: 'Shot Off-Target',  pts: '+3',    note: 'Shoot → Off-Target' },
-                          { action: 'Progressive Pass', pts: '+3',    note: 'Successful pass forward ≥ threshold in/to att. third' },
-                          { action: 'Ball Recovery',    pts: '+2',    note: 'Tackle/Intercept with possession (outside def box)' },
-                          { action: 'Block (In Box)',   pts: '+2',    note: 'Block → Successful inside box' },
-                          { action: 'Dribble (Progressive)', pts: '+4', note: 'Successful dribble forward ≥ threshold in/to att. third' },
-                          { action: 'Dribble',          pts: '+1',    note: 'Successful dribble (non-progressive)' },
-                          { action: 'Block (Outside)',  pts: '+1',    note: 'Block → Successful outside box' },
-                        ].map((row, i) => (
-                          <tr key={i} className={`border-b-2 border-black ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                            <td className="px-3 py-2 border-r-2 border-black">{row.action}</td>
-                            <td className="px-3 py-2 border-r-2 border-black text-center bg-[#FFD166]">{row.pts}</td>
-                            <td className="px-3 py-2 text-gray-500 normal-case font-bold">{row.note}</td>
+                          { section: 'ATTACKING', bg: 'bg-[#0077B6] text-white' },
+                          { action: 'Goal',                    pts: '+10', note: 'Shoot → Goal' },
+                          { action: 'Penalty Won',             pts: '+3',  note: 'Foul Won → Penalty' },
+                          { action: 'Shot on Target (In Box)', pts: '+2',  note: 'Shoot → Save inside penalty box' },
+                          { action: 'Shot on Target (Out)',    pts: '+1',  note: 'Shoot → Save outside penalty box' },
+                          { action: 'Big Chance Missed',       pts: '−2',  note: 'Shoot off-target/blocked with xG ≥ 0.30', neg: true },
+                          { section: 'PASSING', bg: 'bg-[#06D6A0] text-black' },
+                          { action: 'Assist',                  pts: '+6',  note: 'Pass → Assist' },
+                          { action: 'Key Pass',                pts: '+3',  note: 'Pass → Key Pass' },
+                          { action: 'Pass into Box',           pts: '+2',  note: 'Successful pass ending inside attacking penalty box' },
+                          { action: 'Progressive Pass',        pts: '+1',  note: 'Successful forward pass ≥ threshold in/to attacking third' },
+                          { action: 'Accurate Cross',          pts: '+1',  note: 'Successful pass from wide position into attacking box' },
+                          { section: 'DEFENDING', bg: 'bg-[#8338EC] text-white' },
+                          { action: 'Block (Def Box)',         pts: '+3',  note: 'Successful block inside defensive penalty box' },
+                          { action: 'Block (Def 3rd)',         pts: '+2',  note: 'Successful block in defensive third (outside box)' },
+                          { action: 'Ball Recovery',           pts: '+2',  note: 'Possession won via any recovery/tackle/intercept' },
+                          { action: 'Tackle Won',              pts: '+2',  note: 'Standing/Sliding Tackle → Successful' },
+                          { action: 'Interception',            pts: '+2',  note: 'Pass Intercept → Successful' },
+                          { action: 'Clearance',               pts: '+1',  note: 'Clearance action' },
+                          { action: 'Aerial Duel Won',         pts: '+1',  note: 'Aerial Duel → Successful' },
+                          { section: 'POSSESSION', bg: 'bg-[#FFD166] text-black' },
+                          { action: 'Successful Dribble',      pts: '+1',  note: 'Dribble → Successful' },
+                          { action: 'Foul Drawn',              pts: '+1',  note: 'Foul Won (non-penalty)' },
+                          { action: 'Dispossessed',            pts: '−1',  note: 'Outcome → Dispossessed', neg: true },
+                          { section: 'DISCIPLINE', bg: 'bg-[#D90429] text-white' },
+                          { action: 'Foul Committed',          pts: '−1',  note: 'Outcome → Foul (non-penalty)', neg: true },
+                          { action: 'Yellow Card',             pts: '−2',  note: 'Type → Yellow Card', neg: true },
+                          { action: 'Penalty Conceded',        pts: '−4',  note: 'Outcome → Foul (Penalty)', neg: true },
+                          { action: 'Own Goal',                pts: '−5',  note: 'Shoot → Own Goal', neg: true },
+                          { action: 'Red Card',                pts: '−6',  note: 'Type → Red Card', neg: true },
+                        ].map((row, i) => row.section ? (
+                          <tr key={`s${i}`} className={row.bg}>
+                            <td colSpan={3} className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest">{row.section}</td>
+                          </tr>
+                        ) : (
+                          <tr key={i} className={`border-b border-black/10 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                            <td className="px-3 py-1.5 border-r-2 border-black">{row.action}</td>
+                            <td className={`px-3 py-1.5 border-r-2 border-black text-center font-black ${row.neg ? 'bg-[#D90429] text-white' : 'bg-[#FFD166]'}`}>{row.pts}</td>
+                            <td className="px-3 py-1.5 text-gray-500 normal-case font-bold">{row.note}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -1537,17 +1588,16 @@ export default function MatchReportPage() {
                           {cacPlayerPoints.map((p, i) => {
                             const isExpanded = cacExpandedId === p.playerId
                             const rowBg = i === 0 ? 'bg-[#FFD166]' : i < 3 ? 'bg-[#fff9e6]' : 'hover:bg-gray-50'
-                            const breakdown = [
-                              { label: 'Progressive Pass', pts: 3,    count: p.progressive },
-                              { label: 'Key Pass (5–7)',   pts: null,  count: p.keyPass    },
-                              { label: 'Assist',           pts: 15,   count: p.assist     },
-                              { label: 'Shot Off-Target',  pts: 3,    count: p.offTarget  },
-                              { label: 'Shot On-Target',   pts: 7,    count: p.shotSoT    },
-                              { label: 'Goal',             pts: 25,   count: p.goal       },
-                              { label: 'Dribble (1–4)',     pts: null,  count: p.dribble    },
-                              { label: 'Recovery (2–5)',   pts: null,  count: p.recovery   },
-                              { label: 'Block',            pts: null,  count: p.block    },
-                            ].filter(b => b.count > 0)
+                            const breakdown = Object.entries(p.cats || {})
+                              .filter(([, cnt]) => cnt !== 0)
+                              .map(([cat, cnt]) => ({
+                                label: cat.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase()),
+                                pts: p.PTS[cat],
+                                count: cnt,
+                                total: cnt * (p.PTS[cat] || 0),
+                                neg: (p.PTS[cat] || 0) < 0,
+                              }))
+                              .sort((a, b) => Math.abs(b.total) - Math.abs(a.total))
                             return (
                               <>
                                 <tr key={p.playerId} className={`border-b border-gray-200 ${rowBg}`}>
@@ -1575,10 +1625,8 @@ export default function MatchReportPage() {
                                         {breakdown.map((b, bi) => (
                                           <div key={bi} className="flex items-center gap-1.5 bg-white/10 border border-white/30 px-2 py-1 text-[10px] font-black uppercase">
                                             <span className="text-gray-300">{b.label}</span>
-                                            <span className="text-[#FFD166]">
-                                              {b.pts
-                                                ? `${Math.round(b.count / b.pts)} × ${b.pts} = ${b.count}`
-                                                : `${b.count} pts`}
+                                            <span className={b.neg ? 'text-[#ff6b6b]' : 'text-[#FFD166]'}>
+                                              {b.count} × {b.pts > 0 ? '+' : ''}{b.pts} = {b.total > 0 ? '+' : ''}{b.total}
                                             </span>
                                           </div>
                                         ))}
@@ -1598,9 +1646,10 @@ export default function MatchReportPage() {
                     </div>
                     {/* point key */}
                     <div className="mt-4 pt-3 border-t-2 border-black flex flex-wrap gap-x-4 gap-y-1 text-[9px] font-bold uppercase text-gray-500">
-                      <span>Prog Pass +3</span><span>Key Pass +5 / Into Box +7</span><span>Assist +15</span>
-                      <span>Shot Off-Target +3</span><span>Shot On-Target +7</span><span>Goal +25</span>
-                      <span>Dribble +1 / Progressive +4</span><span>Recovery +2 / In Def Box +5</span><span>Block Outside Box +1</span><span>Block Inside Box +2</span>
+                      <span className="text-[#0077B6]">Goal +10</span><span className="text-[#0077B6]">Pen Won +3</span><span className="text-[#0077B6]">SoT Box +2 / Out +1</span><span className="text-[#D90429]">Big Chance Missed −2</span>
+                      <span className="text-[#06D6A0]">Assist +6</span><span className="text-[#06D6A0]">Key Pass +3</span><span className="text-[#06D6A0]">Pass in Box +2</span><span className="text-[#06D6A0]">Prog Pass +1</span>
+                      <span className="text-[#8338EC]">Block Def Box +3</span><span className="text-[#8338EC]">Recovery/Tackle/Intercept +2</span><span className="text-[#8338EC]">Clearance +1</span>
+                      <span>Dribble +1</span><span>Foul Drawn +1</span><span className="text-[#D90429]">Yellow −2 · Red −6 · Pen Conceded −4 · OG −5</span>
                     </div>
                   </BrutalistCard>
                 </section>
