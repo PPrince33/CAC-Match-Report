@@ -20,6 +20,9 @@ function distToSegment(px, py, ax, ay, bx, by) {
 
 export default function PassingNetworkPitch({ events = [], lineups = [], homeTeamId, isFutsal, teamFilter = 'HOME' }) {
   const canvasRef = useRef(null)
+  const containerRef = useRef(null)
+  const sizeRef = useRef({ w: 700, h: 385 })
+  const [, setResizeTick] = useState(0)
   const [tooltip, setTooltip] = useState(null)
   const [hoverNode, setHoverNode] = useState(null)
   const [hoverLine, setHoverLine] = useState(null)
@@ -27,6 +30,7 @@ export default function PassingNetworkPitch({ events = [], lineups = [], homeTea
   const [selectedPlayers, setSelectedPlayers] = useState(new Set())
 
   const cfg = isFutsal ? PITCH_CONFIG.futsal : PITCH_CONFIG.football
+  const aspect = isFutsal ? 0.55 : 0.67
 
   const playerMap = useMemo(() => {
     const map = {}
@@ -104,12 +108,38 @@ export default function PassingNetworkPitch({ events = [], lineups = [], homeTea
     return true
   }
 
+  // Resize observer → re-render on container width change
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+    const ro = new ResizeObserver(() => setResizeTick(t => t + 1))
+    ro.observe(container)
+    return () => ro.disconnect()
+  }, [])
+
   useEffect(() => {
     const canvas = canvasRef.current
-    if (!canvas) return
+    const container = containerRef.current
+    if (!canvas || !container) return
     const ctx = canvas.getContext('2d')
-    const w = canvas.width
-    const h = canvas.height
+
+    // Compute logical CSS pixel size from container
+    const dpr = window.devicePixelRatio || 1
+    const cssW = Math.max(320, container.clientWidth)
+    const cssH = Math.round(cssW * aspect)
+
+    // Backing store at DPR for sharp output
+    canvas.width = Math.round(cssW * dpr)
+    canvas.height = Math.round(cssH * dpr)
+    canvas.style.width = cssW + 'px'
+    canvas.style.height = cssH + 'px'
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    ctx.imageSmoothingEnabled = true
+    ctx.imageSmoothingQuality = 'high'
+
+    sizeRef.current = { w: cssW, h: cssH }
+    const w = cssW
+    const h = cssH
 
     drawPitchMarkings(ctx, w, h, isFutsal, PITCH_CONFIG)
 
@@ -171,16 +201,15 @@ export default function PassingNetworkPitch({ events = [], lineups = [], homeTea
     const canvas = canvasRef.current
     if (!canvas) return null
     const rect = canvas.getBoundingClientRect()
-    const sx = canvas.width / rect.width
-    const sy = canvas.height / rect.height
+    const { w, h } = sizeRef.current
     const pad = 30
-    const drawW = canvas.width - pad * 2
-    const drawH = canvas.height - pad * 2
+    const drawW = w - pad * 2
+    const drawH = h - pad * 2
     return {
-      cx: (mx - rect.left) * sx,
-      cy: (my - rect.top) * sy,
+      cx: mx - rect.left,
+      cy: my - rect.top,
       scaleX: x => pad + (x / cfg.width) * drawW,
-      scaleY: y => canvas.height - (pad + (y / cfg.height) * drawH)
+      scaleY: y => h - (pad + (y / cfg.height) * drawH)
     }
   }
 
@@ -296,9 +325,9 @@ export default function PassingNetworkPitch({ events = [], lineups = [], homeTea
         </div>
       )}
 
-      <div className="relative">
-        <canvas ref={canvasRef} width={700} height={isFutsal ? 385 : 469}
-          className="w-full border-4 border-black"
+      <div className="relative" ref={containerRef}>
+        <canvas ref={canvasRef}
+          className="block border-4 border-black"
           style={{ cursor: (hoverNode || hoverLine) ? 'pointer' : 'default' }}
           onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave} />
 
