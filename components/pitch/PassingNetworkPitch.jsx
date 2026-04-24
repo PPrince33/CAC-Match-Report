@@ -7,8 +7,8 @@ import { PITCH_CONFIG } from '../../lib/pitchConfig'
 const HOME_COLOR = '#0077B6'
 const AWAY_COLOR = '#D90429'
 const MIN_CONNECTIONS = 2
-const NODE_R = 13
-const NODE_R_HOVER = 16
+const NODE_R = 18
+const NODE_R_HOVER = 22
 
 function distToSegment(px, py, ax, ay, bx, by) {
   const dx = bx - ax, dy = by - ay
@@ -158,8 +158,8 @@ export default function PassingNetworkPitch({ events = [], lineups = [], homeTea
       if (aHome !== bHome) return
 
       const isHL = hoverLine && ((hoverLine.a === a && hoverLine.b === b) || (hoverLine.a === b && hoverLine.b === a))
-      const lineW = isHL ? 5 + (count / maxCount) * 6 : 1 + (count / maxCount) * 7
-      const alpha = isHL ? 1 : 0.25 + (count / maxCount) * 0.65
+      const lineW = isHL ? 8 + (count / maxCount) * 8 : 2.5 + (count / maxCount) * 9
+      const alpha = isHL ? 1 : 0.35 + (count / maxCount) * 0.6
       const color = aHome ? HOME_COLOR : AWAY_COLOR
 
       ctx.beginPath()
@@ -186,11 +186,11 @@ export default function PassingNetworkPitch({ events = [], lineups = [], homeTea
       ctx.fillStyle = isHN ? '#FFD166' : color
       ctx.fill()
       ctx.strokeStyle = '#000'
-      ctx.lineWidth = isHN ? 3 : 2
+      ctx.lineWidth = isHN ? 4 : 3
       ctx.stroke()
 
       ctx.fillStyle = isHN ? '#000' : '#fff'
-      ctx.font = `bold ${r < 14 ? 9 : 10}px monospace`
+      ctx.font = `bold ${Math.round(r * 0.75)}px monospace`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillText(player.jersey, cx, cy)
@@ -242,7 +242,7 @@ export default function PassingNetworkPitch({ events = [], lineups = [], homeTea
       const bHome = playerMap[b]?.teamId === homeTeamId
       if (aHome !== bHome) continue
       const d = distToSegment(cx, cy, scaleX(positions[a].x), scaleY(positions[a].y), scaleX(positions[b].x), scaleY(positions[b].y))
-      if (d < 8 && d < minDist) { minDist = d; foundLine = conn }
+      if (d < 12 && d < minDist) { minDist = d; foundLine = conn }
     }
 
     if (foundLine) {
