@@ -503,8 +503,21 @@ export default function MatchReportPage() {
     const awayPassEvents = enrichedEvents.filter(e => e.team_id === match.away_team_id && (e.action === 'Pass' || e.action === 'Through Ball')).length
     const totalPassEvents = homePassEvents + awayPassEvents
     const possessionHome = totalPassEvents ? Math.round((homePassEvents / totalPassEvents) * 100) : 50
+    // Map: player_id -> { direction: 'off'|'on', minute, partnerId }
+    const subMap = {}
+    enrichedEvents.forEach(e => {
+      if (e.action !== 'Substitution') return
+      const minute = e.match_minute ?? (e.match_time_seconds ? Math.floor(e.match_time_seconds / 60) : null)
+      if (e.player_id) {
+        subMap[e.player_id] = { direction: 'off', minute, partnerId: e.reaction_player_id }
+      }
+      if (e.reaction_player_id) {
+        subMap[e.reaction_player_id] = { direction: 'on', minute, partnerId: e.player_id }
+      }
+    })
+    const attachSub = (p) => ({ ...p, sub: subMap[p.player_id] || null })
     const processRoster = (teamId) => {
-      const matchLineup = lineups.filter(l => l.team_id === teamId)
+      const matchLineup = lineups.filter(l => l.team_id === teamId).map(attachSub)
       return {
         starters: matchLineup.filter(l => l.starting_xi),
         subs: matchLineup.filter(l => !l.starting_xi),
@@ -1754,9 +1767,10 @@ export default function MatchReportPage() {
                             </p>
                             <HeatmapPitch
                               events={enrichedEvents.filter(e => e.player_id === p1PlayerId && (cmpAction === 'ALL' || e.action === cmpAction) && (cmpOutcome === 'ALL' || e.outcome === cmpOutcome) && (cmpType === 'ALL' || e.type === cmpType))}
-                              teamName={p1Data.name}
+                              teamName={p1Data.info.players?.player_name}
                               isHome={true}
                               isFutsal={isFutsal}
+                              showEvents={cmpAction !== 'ALL' || cmpOutcome !== 'ALL' || cmpType !== 'ALL'}
                             />
                           </div>
                           <div>
@@ -1765,9 +1779,10 @@ export default function MatchReportPage() {
                             </p>
                             <HeatmapPitch
                               events={enrichedEvents.filter(e => e.player_id === p2PlayerId && (cmpAction === 'ALL' || e.action === cmpAction) && (cmpOutcome === 'ALL' || e.outcome === cmpOutcome) && (cmpType === 'ALL' || e.type === cmpType))}
-                              teamName={p2Data.name}
+                              teamName={p2Data.info.players?.player_name}
                               isHome={false}
                               isFutsal={isFutsal}
+                              showEvents={cmpAction !== 'ALL' || cmpOutcome !== 'ALL' || cmpType !== 'ALL'}
                             />
                           </div>
                         </div>
