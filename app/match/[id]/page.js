@@ -16,6 +16,7 @@ import AveragePositionsPitch from '../../../components/pitch/AveragePositionsPit
 import ShotMapPitch from '../../../components/pitch/ShotMapPitch.jsx'
 import ShotPlacementPitch from '../../../components/pitch/ShotPlacementPitch.jsx'
 import HeatmapPitch, { PASS_OUTCOME_LEGEND } from '../../../components/pitch/HeatmapPitch.jsx'
+import IntervalLineChart from '../../../components/charts/IntervalLineChart.jsx'
 import HighlightsPitch from '../../../components/pitch/HighlightsPitch.jsx'
 import RadarChart from '../../../components/RadarChart.jsx'
 import LeaderCard from '../../../components/LeaderCard.jsx'
@@ -929,6 +930,52 @@ export default function MatchReportPage() {
     return { home: computePassStats(home), away: computePassStats(away) }
   }, [passFilteredEvents, match, cfg])
 
+  // 5-minute interval breakdowns for the over-time line charts
+  const passIntervalSeries = useMemo(() => {
+    if (!match) return { all: [], long: [] }
+    const passActs = new Set(['Pass', 'Through Ball'])
+    const passEvs = passFilteredEvents.filter(e => passActs.has(e.action))
+    const longTh = cfg.longBallThreshold
+
+    const buildSeries = (predicate) => {
+      const buckets = {}  // intervalStart -> { home: {c,i,t}, away: {c,i,t} }
+      passEvs.filter(predicate).forEach(e => {
+        const min = e.match_minute ?? (e.match_time_seconds != null ? Math.floor(e.match_time_seconds / 60) : null)
+        if (min == null) return
+        const interval = Math.floor(min / 5) * 5
+        const side = e.team_id === match.home_team_id ? 'home' : (e.team_id === match.away_team_id ? 'away' : null)
+        if (!side) return
+        if (!buckets[interval]) buckets[interval] = { home: { c: 0, i: 0 }, away: { c: 0, i: 0 } }
+        if (PASS_SUCCESS.has(e.outcome)) buckets[interval][side].c++
+        else if (PASS_INCOMPLETE.has(e.outcome)) buckets[interval][side].i++
+      })
+
+      // ensure every interval in the visible range exists (no gaps in the line)
+      const lo = Math.floor(passMinMin / 5) * 5
+      const hi = Math.floor(passMaxMin / 5) * 5
+      const intervals = []
+      for (let v = lo; v <= hi; v += 5) intervals.push(v)
+      return intervals.map(interval => {
+        const b = buckets[interval] || { home: { c: 0, i: 0 }, away: { c: 0, i: 0 } }
+        return {
+          interval,
+          homeY: b.home.c,
+          homeIncomplete: b.home.i,
+          homeTotal: b.home.c + b.home.i,
+          awayY: b.away.c,
+          awayIncomplete: b.away.i,
+          awayTotal: b.away.c + b.away.i,
+        }
+      })
+    }
+
+    const dist = (e) => Math.hypot((e.end_x ?? e.start_x ?? 0) - (e.start_x ?? 0), (e.end_y ?? e.start_y ?? 0) - (e.start_y ?? 0))
+    return {
+      all: buildSeries(() => true),
+      long: buildSeries(e => dist(e) >= longTh),
+    }
+  }, [passFilteredEvents, match, cfg, passMinMin, passMaxMin])
+
   const passStatsForSelectedPlayer = useMemo(() => {
     if (!passSelectedPlayer) return null
     const evs = passFilteredEvents.filter(e => e.player_id === passSelectedPlayer)
@@ -1668,6 +1715,33 @@ export default function MatchReportPage() {
                     ))}
                     <p className="text-[9px] font-bold uppercase text-gray-400 mt-2 border-t-2 border-black pt-2">Values shown as successful / total · success = Successful, Key Pass, Assist · incomplete = Missed, Intercepted, Off-Side</p>
                   </BrutalistCard>
+                </section>
+
+                {/* Over-time charts */}
+                <section>
+                  <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Passing Tempo</h3>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <BrutalistCard>
+                      <h4 className="text-sm font-black uppercase text-gray-400 mb-3 flex items-center gap-2"><Layers size={14} /> Completed Passes / 5-min</h4>
+                      <IntervalLineChart
+                        data={passIntervalSeries.all}
+                        yLabel="Completed"
+                        homeName={match.home_team?.team_name}
+                        awayName={match.away_team?.team_name}
+                        metricLabel="Completed"
+                      />
+                    </BrutalistCard>
+                    <BrutalistCard>
+                      <h4 className="text-sm font-black uppercase text-gray-400 mb-3 flex items-center gap-2"><Layers size={14} /> Successful Long Balls / 5-min</h4>
+                      <IntervalLineChart
+                        data={passIntervalSeries.long}
+                        yLabel="Successful"
+                        homeName={match.home_team?.team_name}
+                        awayName={match.away_team?.team_name}
+                        metricLabel="Successful"
+                      />
+                    </BrutalistCard>
+                  </div>
                 </section>
 
                 {/* Passing Network */}
