@@ -1586,61 +1586,57 @@ export default function MatchReportPage() {
                 <section>
                   <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Team Passing Stats</h3>
                   <BrutalistCard>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-[11px] font-black uppercase">
-                        <thead>
-                          <tr className="border-b-4 border-black text-[10px]">
-                            <th className="py-2 text-left text-gray-500">Metric</th>
-                            <th className="py-2 text-right text-[#0077B6] pl-3">{match.home_team?.team_name}</th>
-                            <th className="py-2 text-center text-gray-400 w-20">vs</th>
-                            <th className="py-2 text-left text-[#D90429] pr-3">{match.away_team?.team_name}</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {[
-                            { group: 'OVERALL' },
-                            { label: 'Total Passes', h: passStatsByTeam.home.total, a: passStatsByTeam.away.total },
-                            { label: 'Complete', h: passStatsByTeam.home.complete, a: passStatsByTeam.away.complete },
-                            { label: 'Incomplete', h: passStatsByTeam.home.incomplete, a: passStatsByTeam.away.incomplete },
-                            { label: 'Pass Accuracy', h: `${passStatsByTeam.home.accuracy}%`, a: `${passStatsByTeam.away.accuracy}%`, highlight: true },
-                            { group: 'INCOMPLETE BREAKDOWN' },
-                            { label: 'Missed', h: passStatsByTeam.home.missed, a: passStatsByTeam.away.missed },
-                            { label: 'Intercepted', h: passStatsByTeam.home.intercepted, a: passStatsByTeam.away.intercepted },
-                            { label: 'Off-Side', h: passStatsByTeam.home.offside, a: passStatsByTeam.away.offside },
-                            { group: 'PITCH HALVES' },
-                            { label: 'Own Half', h: `${passStatsByTeam.home.ownHalfSucc}/${passStatsByTeam.home.ownHalfTot}`, a: `${passStatsByTeam.away.ownHalfSucc}/${passStatsByTeam.away.ownHalfTot}` },
-                            { label: 'Opp Half', h: `${passStatsByTeam.home.oppHalfSucc}/${passStatsByTeam.home.oppHalfTot}`, a: `${passStatsByTeam.away.oppHalfSucc}/${passStatsByTeam.away.oppHalfTot}` },
-                            { group: 'ATTACKING THIRD' },
-                            { label: 'In Att 3rd', h: `${passStatsByTeam.home.inAtt3Succ}/${passStatsByTeam.home.inAtt3Tot}`, a: `${passStatsByTeam.away.inAtt3Succ}/${passStatsByTeam.away.inAtt3Tot}` },
-                            { label: 'Into Att 3rd', h: `${passStatsByTeam.home.intoAtt3Succ}/${passStatsByTeam.home.intoAtt3Tot}`, a: `${passStatsByTeam.away.intoAtt3Succ}/${passStatsByTeam.away.intoAtt3Tot}` },
-                            { group: 'PENALTY BOX' },
-                            { label: 'Into Box', h: `${passStatsByTeam.home.intoBoxSucc}/${passStatsByTeam.home.intoBoxTot}`, a: `${passStatsByTeam.away.intoBoxSucc}/${passStatsByTeam.away.intoBoxTot}` },
-                            { label: 'Inside Box', h: `${passStatsByTeam.home.insideBoxSucc}/${passStatsByTeam.home.insideBoxTot}`, a: `${passStatsByTeam.away.insideBoxSucc}/${passStatsByTeam.away.insideBoxTot}` },
-                            { label: 'Crosses', h: `${passStatsByTeam.home.crossSucc}/${passStatsByTeam.home.crossTot}`, a: `${passStatsByTeam.away.crossSucc}/${passStatsByTeam.away.crossTot}` },
-                            { group: 'PROGRESSION' },
-                            { label: 'Progressive', h: `${passStatsByTeam.home.progSucc}/${passStatsByTeam.home.progTot}`, a: `${passStatsByTeam.away.progSucc}/${passStatsByTeam.away.progTot}` },
-                            { label: 'Progressive (Opp Half)', h: `${passStatsByTeam.home.progOppSucc}/${passStatsByTeam.home.progOppTot}`, a: `${passStatsByTeam.away.progOppSucc}/${passStatsByTeam.away.progOppTot}` },
-                            { label: 'Long Balls', h: `${passStatsByTeam.home.longSucc}/${passStatsByTeam.home.longTot}`, a: `${passStatsByTeam.away.longSucc}/${passStatsByTeam.away.longTot}` },
-                            { group: 'SET PIECES' },
-                            { label: 'Throw-ins', h: `${passStatsByTeam.home.throwSucc}/${passStatsByTeam.home.throwTot}`, a: `${passStatsByTeam.away.throwSucc}/${passStatsByTeam.away.throwTot}` },
-                            { label: 'Free Kicks', h: `${passStatsByTeam.home.freeKickSucc}/${passStatsByTeam.home.freeKickTot}`, a: `${passStatsByTeam.away.freeKickSucc}/${passStatsByTeam.away.freeKickTot}` },
-                            { label: 'Corners', h: `${passStatsByTeam.home.cornerSucc}/${passStatsByTeam.home.cornerTot}`, a: `${passStatsByTeam.away.cornerSucc}/${passStatsByTeam.away.cornerTot}` },
-                          ].map((row, i) => row.group ? (
-                            <tr key={`g${i}`} className="bg-black text-white">
-                              <td colSpan={4} className="px-2 py-1.5 text-[10px] tracking-widest">{row.group}</td>
-                            </tr>
-                          ) : (
-                            <tr key={i} className={`border-b border-gray-200 ${row.highlight ? 'bg-[#FFD166]' : (i % 2 === 0 ? 'bg-white' : 'bg-gray-50')}`}>
-                              <td className="py-2 text-left">{row.label}</td>
-                              <td className="py-2 text-right text-[#0077B6] pl-3">{row.h}</td>
-                              <td className="py-2 text-center text-gray-400">·</td>
-                              <td className="py-2 text-left text-[#D90429] pr-3">{row.a}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    <p className="text-[9px] font-bold uppercase text-gray-400 mt-3">Format: successful / total · success = Successful, Key Pass, Assist · incomplete = Missed, Intercepted, Off-Side</p>
+                    {[
+                      { title: 'Overall', rows: [
+                        { label: 'Total Passes', h: passStatsByTeam.home.total, a: passStatsByTeam.away.total },
+                        { label: 'Complete', h: passStatsByTeam.home.complete, a: passStatsByTeam.away.complete },
+                        { label: 'Incomplete', h: passStatsByTeam.home.incomplete, a: passStatsByTeam.away.incomplete },
+                        { label: 'Pass Accuracy', h: `${passStatsByTeam.home.accuracy}%`, a: `${passStatsByTeam.away.accuracy}%`, highlight: true, info: 'Complete ÷ (Complete + Incomplete). Outcomes excluded from total: anything other than Successful, Key Pass, Assist, Missed, Intercepted, Off-Side.' },
+                      ]},
+                      { title: 'Incomplete Breakdown', rows: [
+                        { label: 'Missed', h: passStatsByTeam.home.missed, a: passStatsByTeam.away.missed },
+                        { label: 'Intercepted', h: passStatsByTeam.home.intercepted, a: passStatsByTeam.away.intercepted },
+                        { label: 'Off-Side', h: passStatsByTeam.home.offside, a: passStatsByTeam.away.offside },
+                      ]},
+                      { title: 'Pitch Halves (Complete / Total)', rows: [
+                        { label: 'Own Half', h: `${passStatsByTeam.home.ownHalfSucc}/${passStatsByTeam.home.ownHalfTot}`, a: `${passStatsByTeam.away.ownHalfSucc}/${passStatsByTeam.away.ownHalfTot}` },
+                        { label: 'Opp Half', h: `${passStatsByTeam.home.oppHalfSucc}/${passStatsByTeam.home.oppHalfTot}`, a: `${passStatsByTeam.away.oppHalfSucc}/${passStatsByTeam.away.oppHalfTot}` },
+                      ]},
+                      { title: 'Attacking Third', rows: [
+                        { label: 'In Att 3rd', h: `${passStatsByTeam.home.inAtt3Succ}/${passStatsByTeam.home.inAtt3Tot}`, a: `${passStatsByTeam.away.inAtt3Succ}/${passStatsByTeam.away.inAtt3Tot}`, info: 'Passes that start AND end in the attacking third.' },
+                        { label: 'Into Att 3rd', h: `${passStatsByTeam.home.intoAtt3Succ}/${passStatsByTeam.home.intoAtt3Tot}`, a: `${passStatsByTeam.away.intoAtt3Succ}/${passStatsByTeam.away.intoAtt3Tot}`, info: 'Passes that start outside and end inside the attacking third.' },
+                      ]},
+                      { title: 'Penalty Box', rows: [
+                        { label: 'Into Box', h: `${passStatsByTeam.home.intoBoxSucc}/${passStatsByTeam.home.intoBoxTot}`, a: `${passStatsByTeam.away.intoBoxSucc}/${passStatsByTeam.away.intoBoxTot}`, info: 'Passes that start outside and end inside the attacking penalty box.' },
+                        { label: 'Inside Box', h: `${passStatsByTeam.home.insideBoxSucc}/${passStatsByTeam.home.insideBoxTot}`, a: `${passStatsByTeam.away.insideBoxSucc}/${passStatsByTeam.away.insideBoxTot}`, info: 'Passes that start AND end inside the attacking penalty box.' },
+                        { label: 'Crosses', h: `${passStatsByTeam.home.crossSucc}/${passStatsByTeam.home.crossTot}`, a: `${passStatsByTeam.away.crossSucc}/${passStatsByTeam.away.crossTot}`, info: 'Passes from a wide attacking position into the box (excluding throw-ins).' },
+                      ]},
+                      { title: 'Progression', rows: [
+                        { label: 'Progressive', h: `${passStatsByTeam.home.progSucc}/${passStatsByTeam.home.progTot}`, a: `${passStatsByTeam.away.progSucc}/${passStatsByTeam.away.progTot}`, info: `Forward passes covering at least ${cfg.progressiveThreshold} units of the pitch.` },
+                        { label: 'Progressive (Opp Half)', h: `${passStatsByTeam.home.progOppSucc}/${passStatsByTeam.home.progOppTot}`, a: `${passStatsByTeam.away.progOppSucc}/${passStatsByTeam.away.progOppTot}` },
+                        { label: 'Long Balls', h: `${passStatsByTeam.home.longSucc}/${passStatsByTeam.home.longTot}`, a: `${passStatsByTeam.away.longSucc}/${passStatsByTeam.away.longTot}`, info: `Passes covering at least ${cfg.longBallThreshold} units of distance.` },
+                      ]},
+                      { title: 'Set Pieces', rows: [
+                        { label: 'Throw-ins', h: `${passStatsByTeam.home.throwSucc}/${passStatsByTeam.home.throwTot}`, a: `${passStatsByTeam.away.throwSucc}/${passStatsByTeam.away.throwTot}` },
+                        { label: 'Free Kicks', h: `${passStatsByTeam.home.freeKickSucc}/${passStatsByTeam.home.freeKickTot}`, a: `${passStatsByTeam.away.freeKickSucc}/${passStatsByTeam.away.freeKickTot}` },
+                        { label: 'Corners', h: `${passStatsByTeam.home.cornerSucc}/${passStatsByTeam.home.cornerTot}`, a: `${passStatsByTeam.away.cornerSucc}/${passStatsByTeam.away.cornerTot}` },
+                      ]},
+                    ].map(section => (
+                      <div key={section.title} className="mb-6 last:mb-0">
+                        <h4 className="text-sm font-black uppercase text-gray-400 mb-2 flex items-center gap-2"><Layers size={14} /> {section.title}</h4>
+                        {section.rows.map((row, i) => (
+                          <CompareRow
+                            key={i}
+                            label={row.label}
+                            homeVal={row.h}
+                            awayVal={row.a}
+                            highlight={row.highlight || false}
+                            info={row.info}
+                          />
+                        ))}
+                      </div>
+                    ))}
+                    <p className="text-[9px] font-bold uppercase text-gray-400 mt-2 border-t-2 border-black pt-2">Values shown as successful / total · success = Successful, Key Pass, Assist · incomplete = Missed, Intercepted, Off-Side</p>
                   </BrutalistCard>
                 </section>
 
