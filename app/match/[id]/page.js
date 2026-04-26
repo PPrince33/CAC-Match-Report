@@ -15,7 +15,7 @@ import DistributionPitch from '../../../components/pitch/DistributionPitch.jsx'
 import AveragePositionsPitch from '../../../components/pitch/AveragePositionsPitch.jsx'
 import ShotMapPitch from '../../../components/pitch/ShotMapPitch.jsx'
 import ShotPlacementPitch from '../../../components/pitch/ShotPlacementPitch.jsx'
-import HeatmapPitch from '../../../components/pitch/HeatmapPitch.jsx'
+import HeatmapPitch, { PASS_OUTCOME_LEGEND } from '../../../components/pitch/HeatmapPitch.jsx'
 import HighlightsPitch from '../../../components/pitch/HighlightsPitch.jsx'
 import RadarChart from '../../../components/RadarChart.jsx'
 import LeaderCard from '../../../components/LeaderCard.jsx'
@@ -1810,7 +1810,15 @@ export default function MatchReportPage() {
                             showEvents={true}
                           />
                         </div>
-                        <p className="text-[9px] font-bold uppercase text-gray-400 mt-3">Arrows = start → end · color reflects outcome (green = successful, red = off-target/missed, etc.)</p>
+                        <div className="mt-3 pt-2 border-t border-gray-200 flex items-center gap-x-4 gap-y-1 flex-wrap">
+                          <span className="text-[9px] font-bold uppercase text-gray-400">Arrows: start → end</span>
+                          {PASS_OUTCOME_LEGEND.map(([label, color]) => (
+                            <span key={label} className="inline-flex items-center gap-1 text-[9px] font-black uppercase text-gray-600">
+                              <span className="inline-block w-3 h-[3px]" style={{ backgroundColor: color }} />
+                              {label}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   )

@@ -5,10 +5,15 @@ import { drawPitchMarkings } from './PitchDrawing.js'
 import { PITCH_CONFIG } from '../../lib/pitchConfig.js'
 
 const OUTCOME_COLORS = {
+  // Pass outcomes
+  'Successful':  '#22c55e',  // green
+  'Key Pass':    '#8b5cf6',  // purple
+  'Assist':      '#0ea5e9',  // sky blue
+  'Missed':      '#ef4444',  // red
+  'Intercepted': '#f97316',  // orange
+  'Off-Side':    '#eab308',  // yellow
+  // Other / non-pass outcomes
   'Goal':        '#16a34a',
-  'Assist':      '#0ea5e9',
-  'Key Pass':    '#8b5cf6',
-  'Successful':  '#22c55e',
   'Save':        '#f97316',
   'Off-Target':  '#ef4444',
   'Block':       '#f59e0b',
@@ -16,6 +21,15 @@ const OUTCOME_COLORS = {
   'Foul Won':    '#84cc16',
   'Unsuccessful':'#94a3b8',
 }
+
+export const PASS_OUTCOME_LEGEND = [
+  ['Successful',  '#22c55e'],
+  ['Key Pass',    '#8b5cf6'],
+  ['Assist',      '#0ea5e9'],
+  ['Missed',      '#ef4444'],
+  ['Intercepted', '#f97316'],
+  ['Off-Side',    '#eab308'],
+]
 
 function drawArrow(ctx, x1, y1, x2, y2, color, lineWidth = 1.5) {
   const headLen = Math.max(5, lineWidth * 3)
