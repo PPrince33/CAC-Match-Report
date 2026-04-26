@@ -835,6 +835,9 @@ export default function MatchReportPage() {
     const throwTot = passEvs.filter(e => e.type === 'Throw-in').length
     const throwSucc = passEvs.filter(e => e.type === 'Throw-in' && isSucc(e)).length
 
+    const freeKickTot = passEvs.filter(e => e.type === 'Free Kick').length
+    const freeKickSucc = passEvs.filter(e => e.type === 'Free Kick' && isSucc(e)).length
+
     const cornerTot = allEvs.filter(ck).length
     const cornerSucc = allEvs.filter(e => ck(e) && isSucc(e)).length
 
@@ -878,7 +881,7 @@ export default function MatchReportPage() {
     return {
       total, complete, incomplete, accuracy,
       ownHalfTot, ownHalfSucc, oppHalfTot, oppHalfSucc,
-      throwTot, throwSucc, cornerTot, cornerSucc,
+      throwTot, throwSucc, freeKickTot, freeKickSucc, cornerTot, cornerSucc,
       longTot, longSucc, inAtt3Tot, inAtt3Succ,
       intoAtt3Tot, intoAtt3Succ, crossTot, crossSucc,
       missed, intercepted, offside,
@@ -1620,6 +1623,7 @@ export default function MatchReportPage() {
                             { label: 'Long Balls', h: `${passStatsByTeam.home.longSucc}/${passStatsByTeam.home.longTot}`, a: `${passStatsByTeam.away.longSucc}/${passStatsByTeam.away.longTot}` },
                             { group: 'SET PIECES' },
                             { label: 'Throw-ins', h: `${passStatsByTeam.home.throwSucc}/${passStatsByTeam.home.throwTot}`, a: `${passStatsByTeam.away.throwSucc}/${passStatsByTeam.away.throwTot}` },
+                            { label: 'Free Kicks', h: `${passStatsByTeam.home.freeKickSucc}/${passStatsByTeam.home.freeKickTot}`, a: `${passStatsByTeam.away.freeKickSucc}/${passStatsByTeam.away.freeKickTot}` },
                             { label: 'Corners', h: `${passStatsByTeam.home.cornerSucc}/${passStatsByTeam.home.cornerTot}`, a: `${passStatsByTeam.away.cornerSucc}/${passStatsByTeam.away.cornerTot}` },
                           ].map((row, i) => row.group ? (
                             <tr key={`g${i}`} className="bg-black text-white">
@@ -1711,6 +1715,7 @@ export default function MatchReportPage() {
                                 ['Long Balls', `${ps.longSucc}/${ps.longTot}`],
                                 ['—', null],
                                 ['Throw-ins', `${ps.throwSucc}/${ps.throwTot}`],
+                                ['Free Kicks', `${ps.freeKickSucc}/${ps.freeKickTot}`],
                                 ['Corners', `${ps.cornerSucc}/${ps.cornerTot}`],
                               ].map((row, i) => row[0] === '—' ? (
                                 <div key={i} className="border-t border-gray-200 my-1.5"></div>
