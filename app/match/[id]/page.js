@@ -65,6 +65,7 @@ export default function MatchReportPage() {
   const [passMinMin, setPassMinMin] = useState(0)
   const [passMaxMin, setPassMaxMin] = useState(120)
   const [passSelectedPlayer, setPassSelectedPlayer] = useState(null)
+  const [passModal, setPassModal] = useState(null)  // { title, filterFn } or null
 
   // Distribution filters
   const [netTeam, setNetTeam] = useState('HOME')
@@ -895,6 +896,32 @@ export default function MatchReportPage() {
   const passFilteredEvents = useMemo(() => applyPassFilters(enrichedEvents),
     [enrichedEvents, passHalf, passZone, passMinMin, passMaxMin, cfg])
 
+  // Filter functions for clickable metric labels (operate on Pass/Through Ball events)
+  const passMapFilters = useMemo(() => {
+    const passActs = new Set(['Pass', 'Through Ball'])
+    const passOnly = (e) => passActs.has(e.action)
+    const att3 = cfg.attackingThirdX
+    const bx = cfg.boxX, byMin = cfg.boxYMin, byMax = cfg.boxYMax
+    const inBox = (x, y) => x != null && y != null && x >= bx && y >= byMin && y <= byMax
+    const yNarrow = cfg.crossStartYNarrow
+    const longTh = cfg.longBallThreshold
+    const dist = (e) => Math.hypot((e.end_x ?? e.start_x ?? 0) - (e.start_x ?? 0), (e.end_y ?? e.start_y ?? 0) - (e.start_y ?? 0))
+
+    return {
+      'Missed':       e => passOnly(e) && e.outcome === 'Missed',
+      'Intercepted':  e => passOnly(e) && e.outcome === 'Intercepted',
+      'Long Balls':   e => passOnly(e) && dist(e) >= longTh,
+      'In Att 3rd':   e => passOnly(e) && e.start_x != null && e.end_x != null && e.start_x >= att3 && e.end_x >= att3,
+      'Into Att 3rd': e => passOnly(e) && e.start_x != null && e.end_x != null && e.start_x < att3 && e.end_x >= att3,
+      'Into Box':     e => passOnly(e) && !inBox(e.start_x, e.start_y) && inBox(e.end_x, e.end_y),
+      'Inside Box':   e => passOnly(e) && inBox(e.start_x, e.start_y) && inBox(e.end_x, e.end_y),
+      'Crosses':      e => passOnly(e) && e.start_x != null && e.start_y != null && e.end_x != null && e.end_y != null &&
+        e.start_x >= cfg.crossStartXMin &&
+        (e.start_y <= yNarrow || e.start_y >= (cfg.height - yNarrow)) &&
+        inBox(e.end_x, e.end_y) && e.type !== 'Throw-in',
+    }
+  }, [cfg])
+
   const passStatsByTeam = useMemo(() => {
     if (!match) return null
     const home = passFilteredEvents.filter(e => e.team_id === match.home_team_id)
@@ -1595,8 +1622,8 @@ export default function MatchReportPage() {
                         { label: 'Pass Accuracy', h: `${passStatsByTeam.home.accuracy}%`, a: `${passStatsByTeam.away.accuracy}%`, highlight: true, info: 'Complete ÷ (Complete + Incomplete). Outcomes excluded from total: anything other than Successful, Key Pass, Assist, Missed, Intercepted, Off-Side.' },
                       ]},
                       { title: 'Incomplete Breakdown', rows: [
-                        { label: 'Missed', h: passStatsByTeam.home.missed, a: passStatsByTeam.away.missed, lowerIsBetter: true },
-                        { label: 'Intercepted', h: passStatsByTeam.home.intercepted, a: passStatsByTeam.away.intercepted, lowerIsBetter: true },
+                        { label: 'Missed', h: passStatsByTeam.home.missed, a: passStatsByTeam.away.missed, lowerIsBetter: true, mapKey: 'Missed' },
+                        { label: 'Intercepted', h: passStatsByTeam.home.intercepted, a: passStatsByTeam.away.intercepted, lowerIsBetter: true, mapKey: 'Intercepted' },
                         { label: 'Off-Side', h: passStatsByTeam.home.offside, a: passStatsByTeam.away.offside, lowerIsBetter: true },
                       ]},
                       { title: 'Pitch Halves (Complete / Total)', rows: [
@@ -1604,18 +1631,18 @@ export default function MatchReportPage() {
                         { label: 'Opp Half', h: `${passStatsByTeam.home.oppHalfSucc}/${passStatsByTeam.home.oppHalfTot}`, a: `${passStatsByTeam.away.oppHalfSucc}/${passStatsByTeam.away.oppHalfTot}` },
                       ]},
                       { title: 'Attacking Third', rows: [
-                        { label: 'In Att 3rd', h: `${passStatsByTeam.home.inAtt3Succ}/${passStatsByTeam.home.inAtt3Tot}`, a: `${passStatsByTeam.away.inAtt3Succ}/${passStatsByTeam.away.inAtt3Tot}`, info: 'Passes that start AND end in the attacking third.' },
-                        { label: 'Into Att 3rd', h: `${passStatsByTeam.home.intoAtt3Succ}/${passStatsByTeam.home.intoAtt3Tot}`, a: `${passStatsByTeam.away.intoAtt3Succ}/${passStatsByTeam.away.intoAtt3Tot}`, info: 'Passes that start outside and end inside the attacking third.' },
+                        { label: 'In Att 3rd', h: `${passStatsByTeam.home.inAtt3Succ}/${passStatsByTeam.home.inAtt3Tot}`, a: `${passStatsByTeam.away.inAtt3Succ}/${passStatsByTeam.away.inAtt3Tot}`, info: 'Passes that start AND end in the attacking third.', mapKey: 'In Att 3rd' },
+                        { label: 'Into Att 3rd', h: `${passStatsByTeam.home.intoAtt3Succ}/${passStatsByTeam.home.intoAtt3Tot}`, a: `${passStatsByTeam.away.intoAtt3Succ}/${passStatsByTeam.away.intoAtt3Tot}`, info: 'Passes that start outside and end inside the attacking third.', mapKey: 'Into Att 3rd' },
                       ]},
                       { title: 'Penalty Box', rows: [
-                        { label: 'Into Box', h: `${passStatsByTeam.home.intoBoxSucc}/${passStatsByTeam.home.intoBoxTot}`, a: `${passStatsByTeam.away.intoBoxSucc}/${passStatsByTeam.away.intoBoxTot}`, info: 'Passes that start outside and end inside the attacking penalty box.' },
-                        { label: 'Inside Box', h: `${passStatsByTeam.home.insideBoxSucc}/${passStatsByTeam.home.insideBoxTot}`, a: `${passStatsByTeam.away.insideBoxSucc}/${passStatsByTeam.away.insideBoxTot}`, info: 'Passes that start AND end inside the attacking penalty box.' },
-                        { label: 'Crosses', h: `${passStatsByTeam.home.crossSucc}/${passStatsByTeam.home.crossTot}`, a: `${passStatsByTeam.away.crossSucc}/${passStatsByTeam.away.crossTot}`, info: 'Passes from a wide attacking position into the box (excluding throw-ins).' },
+                        { label: 'Into Box', h: `${passStatsByTeam.home.intoBoxSucc}/${passStatsByTeam.home.intoBoxTot}`, a: `${passStatsByTeam.away.intoBoxSucc}/${passStatsByTeam.away.intoBoxTot}`, info: 'Passes that start outside and end inside the attacking penalty box.', mapKey: 'Into Box' },
+                        { label: 'Inside Box', h: `${passStatsByTeam.home.insideBoxSucc}/${passStatsByTeam.home.insideBoxTot}`, a: `${passStatsByTeam.away.insideBoxSucc}/${passStatsByTeam.away.insideBoxTot}`, info: 'Passes that start AND end inside the attacking penalty box.', mapKey: 'Inside Box' },
+                        { label: 'Crosses', h: `${passStatsByTeam.home.crossSucc}/${passStatsByTeam.home.crossTot}`, a: `${passStatsByTeam.away.crossSucc}/${passStatsByTeam.away.crossTot}`, info: 'Passes from a wide attacking position into the box (excluding throw-ins).', mapKey: 'Crosses' },
                       ]},
                       { title: 'Progression', rows: [
                         { label: 'Progressive', h: `${passStatsByTeam.home.progSucc}/${passStatsByTeam.home.progTot}`, a: `${passStatsByTeam.away.progSucc}/${passStatsByTeam.away.progTot}`, info: `Forward passes covering at least ${cfg.progressiveThreshold} units of the pitch.` },
                         { label: 'Progressive (Opp Half)', h: `${passStatsByTeam.home.progOppSucc}/${passStatsByTeam.home.progOppTot}`, a: `${passStatsByTeam.away.progOppSucc}/${passStatsByTeam.away.progOppTot}` },
-                        { label: 'Long Balls', h: `${passStatsByTeam.home.longSucc}/${passStatsByTeam.home.longTot}`, a: `${passStatsByTeam.away.longSucc}/${passStatsByTeam.away.longTot}`, info: `Passes covering at least ${cfg.longBallThreshold} units of distance.` },
+                        { label: 'Long Balls', h: `${passStatsByTeam.home.longSucc}/${passStatsByTeam.home.longTot}`, a: `${passStatsByTeam.away.longSucc}/${passStatsByTeam.away.longTot}`, info: `Passes covering at least ${cfg.longBallThreshold} units of distance.`, mapKey: 'Long Balls' },
                       ]},
                       { title: 'Set Pieces', rows: [
                         { label: 'Throw-ins', h: `${passStatsByTeam.home.throwSucc}/${passStatsByTeam.home.throwTot}`, a: `${passStatsByTeam.away.throwSucc}/${passStatsByTeam.away.throwTot}` },
@@ -1634,6 +1661,7 @@ export default function MatchReportPage() {
                             highlight={row.highlight || false}
                             info={row.info}
                             lowerIsBetter={row.lowerIsBetter || false}
+                            onLabelClick={row.mapKey ? () => setPassModal({ title: row.label, filterFn: passMapFilters[row.mapKey] }) : null}
                           />
                         ))}
                       </div>
@@ -1734,6 +1762,59 @@ export default function MatchReportPage() {
                     </BrutalistCard>
                   </div>
                 </section>
+
+                {/* Pass Map Modal */}
+                {passModal && (() => {
+                  const filteredHome = passFilteredEvents.filter(e => e.team_id === match.home_team_id && passModal.filterFn(e))
+                  const filteredAway = passFilteredEvents.filter(e => e.team_id === match.away_team_id && passModal.filterFn(e))
+                  return (
+                    <div
+                      className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto"
+                      onClick={() => setPassModal(null)}
+                    >
+                      <div
+                        className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] max-w-6xl w-full p-5 my-auto"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="flex items-start justify-between border-b-2 border-black pb-3 mb-4">
+                          <div>
+                            <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Pass Map</p>
+                            <h3 className="text-2xl font-black uppercase tracking-tighter">{passModal.title}</h3>
+                            <p className="text-[10px] font-bold uppercase text-gray-500 mt-1">
+                              <span style={{ color: '#0077B6' }}>{match.home_team?.team_name}: {filteredHome.length}</span>
+                              {' · '}
+                              <span style={{ color: '#D90429' }}>{match.away_team?.team_name}: {filteredAway.length}</span>
+                              {(passHalf !== 'ALL' || passZone !== 'ALL' || passMinMin > 0 || passMaxMin < absoluteMaxMinute) && (
+                                <span className="text-gray-400 italic"> · filters applied</span>
+                              )}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => setPassModal(null)}
+                            className="border-2 border-black px-3 py-1 font-black text-sm bg-white hover:bg-[#FFD166] shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[1px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
+                          >✕ CLOSE</button>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <HeatmapPitch
+                            events={filteredHome}
+                            teamName={match.home_team?.team_name}
+                            isHome={true}
+                            isFutsal={isFutsal}
+                            showEvents={true}
+                          />
+                          <HeatmapPitch
+                            events={filteredAway}
+                            teamName={match.away_team?.team_name}
+                            isHome={false}
+                            isFutsal={isFutsal}
+                            showEvents={true}
+                          />
+                        </div>
+                        <p className="text-[9px] font-bold uppercase text-gray-400 mt-3">Arrows = start → end · color reflects outcome (green = successful, red = off-target/missed, etc.)</p>
+                      </div>
+                    </div>
+                  )
+                })()}
               </div>
             )}
 

@@ -13,7 +13,7 @@ const parseScore = (v) => {
   return Number.isFinite(n) ? n : null
 }
 
-export default function CompareRow({ label, homeVal, awayVal, highlight = false, info, lowerIsBetter = false, compareBetter = true }) {
+export default function CompareRow({ label, homeVal, awayVal, highlight = false, info, lowerIsBetter = false, compareBetter = true, onLabelClick = null }) {
   const [show, setShow] = useState(false)
 
   let better = null
@@ -34,7 +34,14 @@ export default function CompareRow({ label, homeVal, awayVal, highlight = false,
         <span className={better === 'home' ? winLine : ''} style={better === 'home' ? { borderColor: WIN } : {}}>{homeVal}</span>
       </div>
       <div className="w-1/3 text-center text-[10px] sm:text-[11px] font-black uppercase text-gray-500 tracking-widest leading-tight relative">
-        {label}
+        {onLabelClick ? (
+          <button
+            type="button"
+            onClick={onLabelClick}
+            className="hover:text-black underline decoration-dotted decoration-gray-400 underline-offset-4 hover:decoration-black focus:outline-none focus:text-black"
+            title="Click to view pitch map"
+          >{label}</button>
+        ) : label}
         {info && (
           <span className="relative inline-block ml-1 align-middle">
             <button
