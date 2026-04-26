@@ -1,7 +1,26 @@
 {
   "permissions": {
     "allow": [
-      "Read(//Users/preciousprince/Desktop/**)"
+      "Read(//Users/preciousprince/Desktop/**)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(curl -s 'https://pxhbxewnijavotdwiueo.supabase.co/rest/v1/matches?select=match_id,match_name,status,is_futsal,home_team_score,away_team_score&limit=10' -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4aGJ4ZXduaWphdm90ZHdpdWVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNjIwODIsImV4cCI6MjA4OTkzODA4Mn0.UD55F-XT43KYbZpKRiwuD70eSNLpJvAQT5n-V5bYL00' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4aGJ4ZXduaWphdm90ZHdpdWVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNjIwODIsImV4cCI6MjA4OTkzODA4Mn0.UD55F-XT43KYbZpKRiwuD70eSNLpJvAQT5n-V5bYL00')",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -s https://pxhbxewnijavotdwiueo.supabase.co/rest/v1/matches -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4aGJ4ZXduaWphdm90ZHdpdWVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNjIwODIsImV4cCI6MjA4OTkzODA4Mn0.UD55F-XT43KYbZpKRiwuD70eSNLpJvAQT5n-V5bYL00' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4aGJ4ZXduaWphdm90ZHdpdWVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNjIwODIsImV4cCI6MjA4OTkzODA4Mn0.UD55F-XT43KYbZpKRiwuD70eSNLpJvAQT5n-V5bYL00' -H 'Prefer: count=exact' -I)",
+      "Bash(curl -s 'https://pxhbxewnijavotdwiueo.supabase.co/rest/v1/processed_match_events?limit=1' -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4aGJ4ZXduaWphdm90ZHdpdWVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNjIwODIsImV4cCI6MjA4OTkzODA4Mn0.UD55F-XT43KYbZpKRiwuD70eSNLpJvAQT5n-V5bYL00' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4aGJ4ZXduaWphdm90ZHdpdWVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNjIwODIsImV4cCI6MjA4OTkzODA4Mn0.UD55F-XT43KYbZpKRiwuD70eSNLpJvAQT5n-V5bYL00' -H 'Prefer: count=exact' -I)",
+      "Bash(curl -s 'https://pxhbxewnijavotdwiueo.supabase.co/rest/v1/matches?select=match_id,match_name,status&order=match_date.desc' -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4aGJ4ZXduaWphdm90ZHdpdWVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNjIwODIsImV4cCI6MjA4OTkzODA4Mn0.UD55F-XT43KYbZpKRiwuD70eSNLpJvAQT5n-V5bYL00' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4aGJ4ZXduaWphdm90ZHdpdWVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNjIwODIsImV4cCI6MjA4OTkzODA4Mn0.UD55F-XT43KYbZpKRiwuD70eSNLpJvAQT5n-V5bYL00')",
+      "WebFetch(domain:torvaney.github.io)",
+      "Bash(npm list *)",
+      "Bash(npm audit *)",
+      "Bash(python3 -c \"import sys,json; logs=json.load\\(sys.stdin\\); errors=[l for l in logs if 'error' in l.get\\('type',''\\).lower\\(\\) or 'Error' in l.get\\('text',''\\)]; print\\(json.dumps\\(errors[-20:], indent=2\\)\\)\")",
+      "Bash(curl -s \"https://pxhbxewnijavotdwiueo.supabase.co/rest/v1/processed_match_events?match_id=eq.73e4da6b-83ca-450b-b1e3-5e48e47a92a9&action=eq.Substitution&limit=3\" -H \"apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4aGJ4ZXduaWphdm90ZHdpdWVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNjIwODIsImV4cCI6MjA4OTkzODA4Mn0.UD55F-XT43KYbZpKRiwuD70eSNLpJvAQT5n-V5bYL00\")",
+      "Bash(curl -s \"https://pxhbxewnijavotdwiueo.supabase.co/rest/v1/processed_match_events?action=eq.Substitution&limit=3\" -H \"apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4aGJ4ZXduaWphdm90ZHdpdWVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNjIwODIsImV4cCI6MjA4OTkzODA4Mn0.UD55F-XT43KYbZpKRiwuD70eSNLpJvAQT5n-V5bYL00\")",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }

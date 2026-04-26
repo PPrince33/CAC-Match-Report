@@ -18,7 +18,7 @@ function distToSegment(px, py, ax, ay, bx, by) {
   return Math.hypot(px - (ax + t * dx), py - (ay + t * dy))
 }
 
-export default function PassingNetworkPitch({ events = [], lineups = [], homeTeamId, isFutsal, teamFilter = 'HOME' }) {
+export default function PassingNetworkPitch({ events = [], lineups = [], homeTeamId, isFutsal, teamFilter = 'HOME', selectedPlayerId = null, onSelectPlayer = null }) {
   const canvasRef = useRef(null)
   const containerRef = useRef(null)
   const sizeRef = useRef({ w: 700, h: 385 })
@@ -35,7 +35,12 @@ export default function PassingNetworkPitch({ events = [], lineups = [], homeTea
   const playerMap = useMemo(() => {
     const map = {}
     lineups.forEach(p => {
-      map[p.player_id] = { name: p.player_name, jersey: p.jersey_no, teamId: p.team_id, startingXI: p.starting_xi ?? false }
+      map[p.player_id] = {
+        name: p.players?.player_name || p.player_name,
+        jersey: p.jersey_no,
+        teamId: p.team_id,
+        startingXI: p.starting_xi ?? false,
+      }
     })
     return map
   }, [lineups])
@@ -50,6 +55,7 @@ export default function PassingNetworkPitch({ events = [], lineups = [], homeTea
   const { connections, positions, passStats, dirPasses } = useMemo(() => {
     const passActions = new Set(['Pass', 'Through Ball'])
     const successOutcomes = new Set(['Successful', 'Assist', 'Key Pass'])
+    const incompleteOutcomes = new Set(['Missed', 'Intercepted', 'Off-Side'])
 
     const connMap = {}
     const pairMap = {}  // key -> { successful, unsuccessful }
@@ -61,11 +67,17 @@ export default function PassingNetworkPitch({ events = [], lineups = [], homeTea
       if (!e.player_id) return
 
       const pid = e.player_id
-      if (!statsMap[pid]) statsMap[pid] = { total: 0, successful: 0 }
-      statsMap[pid].total++
-      if (successOutcomes.has(e.outcome)) statsMap[pid].successful++
+      const isSucc = successOutcomes.has(e.outcome)
+      const isInc = incompleteOutcomes.has(e.outcome)
 
-      if (!successOutcomes.has(e.outcome)) return
+      // Only count passes whose outcome falls in the strict success/incomplete buckets
+      if (isSucc || isInc) {
+        if (!statsMap[pid]) statsMap[pid] = { total: 0, successful: 0 }
+        statsMap[pid].total++
+        if (isSucc) statsMap[pid].successful++
+      }
+
+      if (!isSucc) return
       if (!e.reaction_player_id) return
       if (e.start_x == null || e.start_y == null) return
 
@@ -179,14 +191,24 @@ export default function PassingNetworkPitch({ events = [], lineups = [], homeTea
       const cx = scaleX(pos.x)
       const cy = scaleY(pos.y)
       const isHN = hoverNode === pid
-      const r = isHN ? NODE_R_HOVER : NODE_R
+      const isSel = selectedPlayerId === pid
+      const r = isHN || isSel ? NODE_R_HOVER : NODE_R
+
+      // Selected ring (under fill)
+      if (isSel) {
+        ctx.beginPath()
+        ctx.arc(cx, cy, r + 5, 0, Math.PI * 2)
+        ctx.strokeStyle = '#FFD166'
+        ctx.lineWidth = 4
+        ctx.stroke()
+      }
 
       ctx.beginPath()
       ctx.arc(cx, cy, r, 0, Math.PI * 2)
-      ctx.fillStyle = isHN ? '#FFD166' : color
+      ctx.fillStyle = isHN ? '#FFD166' : (isSel ? '#000' : color)
       ctx.fill()
-      ctx.strokeStyle = '#000'
-      ctx.lineWidth = isHN ? 4 : 3
+      ctx.strokeStyle = isSel ? '#FFD166' : '#000'
+      ctx.lineWidth = isHN || isSel ? 4 : 3
       ctx.stroke()
 
       ctx.fillStyle = isHN ? '#000' : '#fff'
@@ -195,7 +217,7 @@ export default function PassingNetworkPitch({ events = [], lineups = [], homeTea
       ctx.textBaseline = 'middle'
       ctx.fillText(player.jersey, cx, cy)
     })
-  }, [connections, positions, isFutsal, cfg, playerMap, homeTeamId, teamFilter, hoverNode, hoverLine, playerFilter, selectedPlayers])
+  }, [connections, positions, isFutsal, cfg, playerMap, homeTeamId, teamFilter, hoverNode, hoverLine, playerFilter, selectedPlayers, selectedPlayerId])
 
   const getCanvasCoords = (mx, my) => {
     const canvas = canvasRef.current
@@ -275,6 +297,21 @@ export default function PassingNetworkPitch({ events = [], lineups = [], homeTea
 
   const handleMouseLeave = () => { setHoverNode(null); setHoverLine(null); setTooltip(null) }
 
+  const handleClick = (e) => {
+    if (!onSelectPlayer) return
+    const coords = getCanvasCoords(e.clientX, e.clientY)
+    if (!coords) return
+    const { cx, cy, scaleX, scaleY } = coords
+    for (const [pid, pos] of Object.entries(positions)) {
+      if (!isVisible(pid)) continue
+      if (Math.hypot(scaleX(pos.x) - cx, scaleY(pos.y) - cy) < NODE_R_HOVER) {
+        onSelectPlayer(pid === selectedPlayerId ? null : pid)
+        return
+      }
+    }
+    if (selectedPlayerId) onSelectPlayer(null) // click empty space deselects
+  }
+
   const togglePlayer = (pid) => {
     setSelectedPlayers(prev => {
       const next = new Set(prev)
@@ -329,7 +366,7 @@ export default function PassingNetworkPitch({ events = [], lineups = [], homeTea
         <canvas ref={canvasRef}
           className="block border-4 border-black"
           style={{ cursor: (hoverNode || hoverLine) ? 'pointer' : 'default' }}
-          onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave} />
+          onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave} onClick={handleClick} />
 
         {tooltip && (
           <div className="fixed z-50 bg-black text-white text-[10px] font-black uppercase px-3 py-2 border-2 border-[#FFD166] pointer-events-none shadow-[4px_4px_0px_0px_#FFD166] min-w-[170px]"

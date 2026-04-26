@@ -24,7 +24,7 @@ import MatchChatBot from '../../../components/ui/MatchChatBot.jsx'
 import PassingNetworkPitch from '../../../components/pitch/PassingNetworkPitch.jsx'
 import {
   ChevronLeft, Activity, Map as MapIcon, Target, Shield, Users, Video, Edit3,
-  Filter, Layers, Clock, RefreshCw
+  Filter, Layers, Clock, RefreshCw, GitBranch
 } from 'lucide-react'
 
 const renderStatRows = (sectionKey, homeStats, awayStats) => {
@@ -57,6 +57,13 @@ export default function MatchReportPage() {
   const [lineups, setLineups] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('SUMMARY')
+
+  // Passes tab filters (shared by stats table + passing network)
+  const [passHalf, setPassHalf] = useState('ALL')      // ALL / 1st / 2nd
+  const [passZone, setPassZone] = useState('ALL')      // ALL / DEF / MID / ATT (by start_x)
+  const [passMinMin, setPassMinMin] = useState(0)
+  const [passMaxMin, setPassMaxMin] = useState(120)
+  const [passSelectedPlayer, setPassSelectedPlayer] = useState(null)
 
   // Distribution filters
   const [netTeam, setNetTeam] = useState('HOME')
@@ -162,9 +169,11 @@ export default function MatchReportPage() {
           const finalMax = calculatedMax > 0 ? calculatedMax : defaultMax
           setMaxMinute(finalMax)
           setAvgMaxMinute(finalMax)
+          setPassMaxMin(finalMax)
         } else {
           setMaxMinute(defaultMax)
           setAvgMaxMinute(defaultMax)
+          setPassMaxMin(defaultMax)
         }
       } catch (err) {
         console.error('Data fetch failed', err)
@@ -769,6 +778,132 @@ export default function MatchReportPage() {
     })
   }, [enrichedEvents, lineups, match])
 
+  // ───────────────────────────────────────────────────────────────────────
+  // Passes tab — outcome buckets per spec
+  // ───────────────────────────────────────────────────────────────────────
+  const PASS_SUCCESS = new Set(['Successful', 'Key Pass', 'Assist'])
+  const PASS_INCOMPLETE = new Set(['Missed', 'Intercepted', 'Off-Side'])
+
+  // Apply Passes-tab filters (half / time range / zone) to any event list
+  const applyPassFilters = (evs) => {
+    return evs.filter(e => {
+      if (passHalf !== 'ALL') {
+        const half = e.half || ''
+        if (passHalf === '1ST' && !half.includes('1st')) return false
+        if (passHalf === '2ND' && !half.includes('2nd')) return false
+      }
+      const min = e.match_minute ?? (e.match_time_seconds != null ? Math.floor(e.match_time_seconds / 60) : null)
+      if (min != null) {
+        if (min < passMinMin || min > passMaxMin) return false
+      }
+      if (passZone !== 'ALL' && e.start_x != null) {
+        const third = cfg.width / 3
+        if (passZone === 'DEF' && e.start_x > third) return false
+        if (passZone === 'MID' && (e.start_x <= third || e.start_x >= 2 * third)) return false
+        if (passZone === 'ATT' && e.start_x < 2 * third) return false
+      }
+      return true
+    })
+  }
+
+  // Compute the full pass stats block (matches Python spec) for any event subset
+  const computePassStats = (allEvs) => {
+    const passActs = new Set(['Pass', 'Through Ball'])
+    const passEvs = allEvs.filter(e => passActs.has(e.action))
+    const ck = (e) => e.type === 'Corner Kick'
+    const isSucc = (e) => PASS_SUCCESS.has(e.outcome)
+    const isInc = (e) => PASS_INCOMPLETE.has(e.outcome)
+    const dist = (e) => Math.hypot((e.end_x ?? e.start_x ?? 0) - (e.start_x ?? 0), (e.end_y ?? e.start_y ?? 0) - (e.start_y ?? 0))
+
+    const halfX = cfg.width / 2
+    const att3 = cfg.attackingThirdX
+    const bx = cfg.boxX, byMin = cfg.boxYMin, byMax = cfg.boxYMax
+    const inBox = (x, y) => x != null && y != null && x >= bx && y >= byMin && y <= byMax
+    const longTh = cfg.longBallThreshold
+    const progTh = cfg.progressiveThreshold
+
+    const total = passEvs.length
+    const complete = passEvs.filter(isSucc).length
+    const incomplete = passEvs.filter(isInc).length
+
+    const ownHalfTot = passEvs.filter(e => e.start_x != null && e.start_x <= halfX).length
+    const ownHalfSucc = passEvs.filter(e => e.start_x != null && e.start_x <= halfX && isSucc(e)).length
+
+    const oppHalfTot = passEvs.filter(e => e.start_x != null && e.start_x >= halfX).length
+    const oppHalfSucc = passEvs.filter(e => e.start_x != null && e.start_x >= halfX && isSucc(e)).length
+
+    const throwTot = passEvs.filter(e => e.type === 'Throw-in').length
+    const throwSucc = passEvs.filter(e => e.type === 'Throw-in' && isSucc(e)).length
+
+    const cornerTot = allEvs.filter(ck).length
+    const cornerSucc = allEvs.filter(e => ck(e) && isSucc(e)).length
+
+    const longTot = passEvs.filter(e => dist(e) >= longTh).length
+    const longSucc = passEvs.filter(e => dist(e) >= longTh && isSucc(e)).length
+
+    const inAtt3Tot = passEvs.filter(e => e.start_x != null && e.end_x != null && e.start_x >= att3 && e.end_x >= att3).length
+    const inAtt3Succ = passEvs.filter(e => e.start_x != null && e.end_x != null && e.start_x >= att3 && e.end_x >= att3 && isSucc(e)).length
+
+    const intoAtt3Tot = passEvs.filter(e => e.start_x != null && e.end_x != null && e.start_x < att3 && e.end_x >= att3).length
+    const intoAtt3Succ = passEvs.filter(e => e.start_x != null && e.end_x != null && e.start_x < att3 && e.end_x >= att3 && isSucc(e)).length
+
+    const yNarrow = cfg.crossStartYNarrow
+    const isCross = (e) => e.start_x != null && e.start_y != null && e.end_x != null && e.end_y != null &&
+      e.start_x >= cfg.crossStartXMin &&
+      (e.start_y <= yNarrow || e.start_y >= (cfg.height - yNarrow)) &&
+      inBox(e.end_x, e.end_y) &&
+      e.type !== 'Throw-in'
+    const crossTot = passEvs.filter(isCross).length
+    const crossSucc = passEvs.filter(e => isCross(e) && isSucc(e)).length
+
+    const missed = passEvs.filter(e => e.outcome === 'Missed').length
+    const intercepted = passEvs.filter(e => e.outcome === 'Intercepted').length
+    const offside = passEvs.filter(e => e.outcome === 'Off-Side').length
+
+    const isProg = (e) => e.start_x != null && e.end_x != null && e.end_x > e.start_x && (e.end_x - e.start_x) > progTh
+    const progTot = passEvs.filter(isProg).length
+    const progSucc = passEvs.filter(e => isProg(e) && isSucc(e)).length
+    const progOppTot = passEvs.filter(e => isProg(e) && e.start_x >= halfX).length
+    const progOppSucc = passEvs.filter(e => isProg(e) && e.start_x >= halfX && isSucc(e)).length
+
+    // Into box: not starting in box, ends in box
+    const intoBoxTot = passEvs.filter(e => !inBox(e.start_x, e.start_y) && inBox(e.end_x, e.end_y)).length
+    const intoBoxSucc = passEvs.filter(e => !inBox(e.start_x, e.start_y) && inBox(e.end_x, e.end_y) && isSucc(e)).length
+
+    const insideBoxTot = passEvs.filter(e => inBox(e.start_x, e.start_y) && inBox(e.end_x, e.end_y)).length
+    const insideBoxSucc = passEvs.filter(e => inBox(e.start_x, e.start_y) && inBox(e.end_x, e.end_y) && isSucc(e)).length
+
+    const accuracy = total > 0 ? Math.round((complete / total) * 100) : 0
+
+    return {
+      total, complete, incomplete, accuracy,
+      ownHalfTot, ownHalfSucc, oppHalfTot, oppHalfSucc,
+      throwTot, throwSucc, cornerTot, cornerSucc,
+      longTot, longSucc, inAtt3Tot, inAtt3Succ,
+      intoAtt3Tot, intoAtt3Succ, crossTot, crossSucc,
+      missed, intercepted, offside,
+      progTot, progSucc, progOppTot, progOppSucc,
+      intoBoxTot, intoBoxSucc, insideBoxTot, insideBoxSucc,
+    }
+  }
+
+  // Filtered events for the Passes tab (used by table & network)
+  const passFilteredEvents = useMemo(() => applyPassFilters(enrichedEvents),
+    [enrichedEvents, passHalf, passZone, passMinMin, passMaxMin, cfg])
+
+  const passStatsByTeam = useMemo(() => {
+    if (!match) return null
+    const home = passFilteredEvents.filter(e => e.team_id === match.home_team_id)
+    const away = passFilteredEvents.filter(e => e.team_id === match.away_team_id)
+    return { home: computePassStats(home), away: computePassStats(away) }
+  }, [passFilteredEvents, match, cfg])
+
+  const passStatsForSelectedPlayer = useMemo(() => {
+    if (!passSelectedPlayer) return null
+    const evs = passFilteredEvents.filter(e => e.player_id === passSelectedPlayer)
+    return computePassStats(evs)
+  }, [passFilteredEvents, passSelectedPlayer, cfg])
+
   const playerPassStats = useMemo(() => {
     if (!enrichedEvents || !lineups || !match) return []
     const map = {}
@@ -1022,6 +1157,7 @@ export default function MatchReportPage() {
   const tabs = [
     { id: 'SUMMARY', label: 'Summary', icon: Activity },
     { id: 'DISTRIBUTION', label: 'Distribution', icon: MapIcon },
+    { id: 'PASSES', label: 'Passes', icon: GitBranch },
     { id: 'ATTACK', label: 'Attack', icon: Target },
     { id: 'DEFENSE', label: 'Defense', icon: Shield },
     { id: 'PLAYER', label: 'Player', icon: Users },
@@ -1316,33 +1452,6 @@ export default function MatchReportPage() {
                 )}
 
                 <section>
-                  <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Passing Network</h3>
-                  <div className="flex gap-2 mb-4">
-                    {['HOME', 'AWAY'].map(t => (
-                      <button
-                        key={t}
-                        onClick={() => setNetTeam(t)}
-                        className={`text-xs font-black uppercase border-2 border-black px-4 py-1.5 transition-all ${netTeam === t ? 'bg-black text-white' : 'bg-white text-black hover:bg-[#FFD166]'}`}
-                      >
-                        {t === 'HOME' ? match.home_team?.team_name : match.away_team?.team_name}
-                      </button>
-                    ))}
-                  </div>
-                  <PassingNetworkPitch
-                    events={enrichedEvents}
-                    lineups={lineups}
-                    homeTeamId={match.home_team_id}
-                    isFutsal={isFutsal}
-                    teamFilter={netTeam}
-                  />
-                  <div className="flex gap-6 text-[10px] font-black uppercase mt-3">
-                    <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-[#0077B6]"></div> {match.home_team?.team_name}</div>
-                    <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-[#D90429]"></div> {match.away_team?.team_name}</div>
-                    <div className="flex items-center gap-1 text-gray-400 italic ml-auto">* Line thickness = pass frequency · Hover for details</div>
-                  </div>
-                </section>
-
-                <section>
                   <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Average Positions</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                     <div>
@@ -1426,6 +1535,200 @@ export default function MatchReportPage() {
                         <p className="text-[9px] text-gray-400 font-bold mt-2 uppercase">Solid border = Starter · Dashed + ° = Sub</p>
                       </div>
                     ))}
+                  </div>
+                </section>
+              </div>
+            )}
+
+            {/* PASSES TAB */}
+            {activeTab === 'PASSES' && passStatsByTeam && (
+              <div className="space-y-12">
+                {/* Filters */}
+                <section>
+                  <BrutalistCard>
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-[10px] font-black uppercase text-gray-400"><Filter size={12} className="inline" /> Filters</h4>
+                      <button onClick={() => { setPassHalf('ALL'); setPassZone('ALL'); setPassMinMin(0); setPassMaxMin(absoluteMaxMinute); setPassSelectedPlayer(null) }} className="text-[10px] font-black uppercase border-2 border-black px-2 py-0.5 hover:bg-[#06D6A0]">Reset</button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-bold uppercase">
+                      <div>
+                        <label className="block mb-1 text-gray-500">Half</label>
+                        <div className="flex gap-1">
+                          {['ALL', '1ST', '2ND'].map(h => (
+                            <button key={h} onClick={() => setPassHalf(h)} className={`flex-1 border-2 border-black p-1.5 font-black text-[11px] ${passHalf === h ? 'bg-black text-white' : 'bg-white hover:bg-[#FFD166]'}`}>{h}</button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block mb-1 text-gray-500">Zone (by start)</label>
+                        <div className="flex gap-1">
+                          {[['ALL','All'],['DEF','Def 3rd'],['MID','Mid 3rd'],['ATT','Att 3rd']].map(([k,l]) => (
+                            <button key={k} onClick={() => setPassZone(k)} className={`flex-1 border-2 border-black p-1.5 font-black text-[10px] ${passZone === k ? 'bg-black text-white' : 'bg-white hover:bg-[#FFD166]'}`}>{l}</button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block mb-1 text-gray-500">Time Range (min)</label>
+                        <div className="flex items-center gap-2">
+                          <input type="number" className="w-1/2 border-2 border-black p-1.5 text-xs font-black" value={passMinMin} min={0} max={absoluteMaxMinute} onChange={e => setPassMinMin(parseInt(e.target.value) || 0)} />
+                          <span className="text-xs font-black">TO</span>
+                          <input type="number" className="w-1/2 border-2 border-black p-1.5 text-xs font-black" value={passMaxMin} min={0} max={absoluteMaxMinute} onChange={e => setPassMaxMin(parseInt(e.target.value) || absoluteMaxMinute)} />
+                        </div>
+                      </div>
+                    </div>
+                  </BrutalistCard>
+                </section>
+
+                {/* Team-level passing stats */}
+                <section>
+                  <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Team Passing Stats</h3>
+                  <BrutalistCard>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-[11px] font-black uppercase">
+                        <thead>
+                          <tr className="border-b-4 border-black text-[10px]">
+                            <th className="py-2 text-left text-gray-500">Metric</th>
+                            <th className="py-2 text-right text-[#0077B6] pl-3">{match.home_team?.team_name}</th>
+                            <th className="py-2 text-center text-gray-400 w-20">vs</th>
+                            <th className="py-2 text-left text-[#D90429] pr-3">{match.away_team?.team_name}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {[
+                            { group: 'OVERALL' },
+                            { label: 'Total Passes', h: passStatsByTeam.home.total, a: passStatsByTeam.away.total },
+                            { label: 'Complete', h: passStatsByTeam.home.complete, a: passStatsByTeam.away.complete },
+                            { label: 'Incomplete', h: passStatsByTeam.home.incomplete, a: passStatsByTeam.away.incomplete },
+                            { label: 'Pass Accuracy', h: `${passStatsByTeam.home.accuracy}%`, a: `${passStatsByTeam.away.accuracy}%`, highlight: true },
+                            { group: 'INCOMPLETE BREAKDOWN' },
+                            { label: 'Missed', h: passStatsByTeam.home.missed, a: passStatsByTeam.away.missed },
+                            { label: 'Intercepted', h: passStatsByTeam.home.intercepted, a: passStatsByTeam.away.intercepted },
+                            { label: 'Off-Side', h: passStatsByTeam.home.offside, a: passStatsByTeam.away.offside },
+                            { group: 'PITCH HALVES' },
+                            { label: 'Own Half', h: `${passStatsByTeam.home.ownHalfSucc}/${passStatsByTeam.home.ownHalfTot}`, a: `${passStatsByTeam.away.ownHalfSucc}/${passStatsByTeam.away.ownHalfTot}` },
+                            { label: 'Opp Half', h: `${passStatsByTeam.home.oppHalfSucc}/${passStatsByTeam.home.oppHalfTot}`, a: `${passStatsByTeam.away.oppHalfSucc}/${passStatsByTeam.away.oppHalfTot}` },
+                            { group: 'ATTACKING THIRD' },
+                            { label: 'In Att 3rd', h: `${passStatsByTeam.home.inAtt3Succ}/${passStatsByTeam.home.inAtt3Tot}`, a: `${passStatsByTeam.away.inAtt3Succ}/${passStatsByTeam.away.inAtt3Tot}` },
+                            { label: 'Into Att 3rd', h: `${passStatsByTeam.home.intoAtt3Succ}/${passStatsByTeam.home.intoAtt3Tot}`, a: `${passStatsByTeam.away.intoAtt3Succ}/${passStatsByTeam.away.intoAtt3Tot}` },
+                            { group: 'PENALTY BOX' },
+                            { label: 'Into Box', h: `${passStatsByTeam.home.intoBoxSucc}/${passStatsByTeam.home.intoBoxTot}`, a: `${passStatsByTeam.away.intoBoxSucc}/${passStatsByTeam.away.intoBoxTot}` },
+                            { label: 'Inside Box', h: `${passStatsByTeam.home.insideBoxSucc}/${passStatsByTeam.home.insideBoxTot}`, a: `${passStatsByTeam.away.insideBoxSucc}/${passStatsByTeam.away.insideBoxTot}` },
+                            { label: 'Crosses', h: `${passStatsByTeam.home.crossSucc}/${passStatsByTeam.home.crossTot}`, a: `${passStatsByTeam.away.crossSucc}/${passStatsByTeam.away.crossTot}` },
+                            { group: 'PROGRESSION' },
+                            { label: 'Progressive', h: `${passStatsByTeam.home.progSucc}/${passStatsByTeam.home.progTot}`, a: `${passStatsByTeam.away.progSucc}/${passStatsByTeam.away.progTot}` },
+                            { label: 'Progressive (Opp Half)', h: `${passStatsByTeam.home.progOppSucc}/${passStatsByTeam.home.progOppTot}`, a: `${passStatsByTeam.away.progOppSucc}/${passStatsByTeam.away.progOppTot}` },
+                            { label: 'Long Balls', h: `${passStatsByTeam.home.longSucc}/${passStatsByTeam.home.longTot}`, a: `${passStatsByTeam.away.longSucc}/${passStatsByTeam.away.longTot}` },
+                            { group: 'SET PIECES' },
+                            { label: 'Throw-ins', h: `${passStatsByTeam.home.throwSucc}/${passStatsByTeam.home.throwTot}`, a: `${passStatsByTeam.away.throwSucc}/${passStatsByTeam.away.throwTot}` },
+                            { label: 'Corners', h: `${passStatsByTeam.home.cornerSucc}/${passStatsByTeam.home.cornerTot}`, a: `${passStatsByTeam.away.cornerSucc}/${passStatsByTeam.away.cornerTot}` },
+                          ].map((row, i) => row.group ? (
+                            <tr key={`g${i}`} className="bg-black text-white">
+                              <td colSpan={4} className="px-2 py-1.5 text-[10px] tracking-widest">{row.group}</td>
+                            </tr>
+                          ) : (
+                            <tr key={i} className={`border-b border-gray-200 ${row.highlight ? 'bg-[#FFD166]' : (i % 2 === 0 ? 'bg-white' : 'bg-gray-50')}`}>
+                              <td className="py-2 text-left">{row.label}</td>
+                              <td className="py-2 text-right text-[#0077B6] pl-3">{row.h}</td>
+                              <td className="py-2 text-center text-gray-400">·</td>
+                              <td className="py-2 text-left text-[#D90429] pr-3">{row.a}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <p className="text-[9px] font-bold uppercase text-gray-400 mt-3">Format: successful / total · success = Successful, Key Pass, Assist · incomplete = Missed, Intercepted, Off-Side</p>
+                  </BrutalistCard>
+                </section>
+
+                {/* Passing Network */}
+                <section>
+                  <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Passing Network</h3>
+                  <div className="flex gap-2 mb-4">
+                    {['HOME', 'AWAY'].map(t => (
+                      <button
+                        key={t}
+                        onClick={() => { setNetTeam(t); setPassSelectedPlayer(null) }}
+                        className={`text-xs font-black uppercase border-2 border-black px-4 py-1.5 transition-all ${netTeam === t ? 'bg-black text-white' : 'bg-white text-black hover:bg-[#FFD166]'}`}
+                      >
+                        {t === 'HOME' ? match.home_team?.team_name : match.away_team?.team_name}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div className="lg:col-span-2">
+                      <PassingNetworkPitch
+                        events={passFilteredEvents}
+                        lineups={lineups}
+                        homeTeamId={match.home_team_id}
+                        isFutsal={isFutsal}
+                        teamFilter={netTeam}
+                        selectedPlayerId={passSelectedPlayer}
+                        onSelectPlayer={setPassSelectedPlayer}
+                      />
+                      <div className="flex gap-6 text-[10px] font-black uppercase mt-3 flex-wrap">
+                        <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-[#0077B6]"></div> {match.home_team?.team_name}</div>
+                        <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-[#D90429]"></div> {match.away_team?.team_name}</div>
+                        <div className="flex items-center gap-1 text-gray-400 italic ml-auto">* Click a player for breakdown · Hover for details</div>
+                      </div>
+                    </div>
+                    {/* Player breakdown panel */}
+                    <BrutalistCard className="lg:col-span-1">
+                      {passSelectedPlayer && passStatsForSelectedPlayer ? (() => {
+                        const lp = lineups.find(l => l.player_id === passSelectedPlayer)
+                        const isHomeP = lp?.team_id === match.home_team_id
+                        const ps = passStatsForSelectedPlayer
+                        return (
+                          <>
+                            <div className={`-m-4 mb-3 p-3 border-b-2 border-black ${isHomeP ? 'bg-[#0077B6]' : 'bg-[#D90429]'} text-white flex items-center justify-between`}>
+                              <div>
+                                <div className="text-[9px] font-bold uppercase opacity-80">#{lp?.jersey_no}</div>
+                                <h4 className="text-sm font-black uppercase leading-tight">{lp?.players?.player_name}</h4>
+                              </div>
+                              <button onClick={() => setPassSelectedPlayer(null)} className="text-white/80 hover:text-white text-xs font-black border border-white/50 px-2 py-0.5">×</button>
+                            </div>
+                            <div className="space-y-1 text-[11px] font-black uppercase">
+                              {[
+                                ['Total', ps.total],
+                                ['Complete', ps.complete],
+                                ['Incomplete', ps.incomplete],
+                                ['Accuracy', `${ps.accuracy}%`, true],
+                                ['—', null],
+                                ['Missed', ps.missed],
+                                ['Intercepted', ps.intercepted],
+                                ['Off-Side', ps.offside],
+                                ['—', null],
+                                ['Own Half', `${ps.ownHalfSucc}/${ps.ownHalfTot}`],
+                                ['Opp Half', `${ps.oppHalfSucc}/${ps.oppHalfTot}`],
+                                ['—', null],
+                                ['In Att 3rd', `${ps.inAtt3Succ}/${ps.inAtt3Tot}`],
+                                ['Into Att 3rd', `${ps.intoAtt3Succ}/${ps.intoAtt3Tot}`],
+                                ['Into Box', `${ps.intoBoxSucc}/${ps.intoBoxTot}`],
+                                ['Inside Box', `${ps.insideBoxSucc}/${ps.insideBoxTot}`],
+                                ['Crosses', `${ps.crossSucc}/${ps.crossTot}`],
+                                ['—', null],
+                                ['Progressive', `${ps.progSucc}/${ps.progTot}`],
+                                ['Prog (Opp)', `${ps.progOppSucc}/${ps.progOppTot}`],
+                                ['Long Balls', `${ps.longSucc}/${ps.longTot}`],
+                                ['—', null],
+                                ['Throw-ins', `${ps.throwSucc}/${ps.throwTot}`],
+                                ['Corners', `${ps.cornerSucc}/${ps.cornerTot}`],
+                              ].map((row, i) => row[0] === '—' ? (
+                                <div key={i} className="border-t border-gray-200 my-1.5"></div>
+                              ) : (
+                                <div key={i} className={`flex items-center justify-between px-1.5 py-0.5 ${row[2] ? 'bg-[#FFD166]' : ''}`}>
+                                  <span className="text-gray-600">{row[0]}</span>
+                                  <span>{row[1]}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        )
+                      })() : (
+                        <div className="flex items-center justify-center h-full min-h-[300px] text-center px-4">
+                          <p className="text-[11px] font-bold uppercase text-gray-400">Click a player on the network to see their pass breakdown here.</p>
+                        </div>
+                      )}
+                    </BrutalistCard>
                   </div>
                 </section>
               </div>
