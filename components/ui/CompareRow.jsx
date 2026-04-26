@@ -2,12 +2,36 @@
 
 import { useState } from 'react'
 
-export default function CompareRow({ label, homeVal, awayVal, highlight = false, info }) {
+// Parse a comparable numeric value out of common formats: number, "84%", "37/55"
+const parseScore = (v) => {
+  if (v == null) return null
+  if (typeof v === 'number') return v
+  const s = String(v).trim()
+  if (s.endsWith('%')) return parseFloat(s.slice(0, -1))
+  if (s.includes('/')) return parseFloat(s.split('/')[0])
+  const n = parseFloat(s)
+  return Number.isFinite(n) ? n : null
+}
+
+export default function CompareRow({ label, homeVal, awayVal, highlight = false, info, lowerIsBetter = false, compareBetter = true }) {
   const [show, setShow] = useState(false)
+
+  let better = null
+  if (compareBetter) {
+    const h = parseScore(homeVal)
+    const a = parseScore(awayVal)
+    if (h != null && a != null && h !== a) {
+      const homeBetter = lowerIsBetter ? h < a : h > a
+      better = homeBetter ? 'home' : 'away'
+    }
+  }
+  const WIN = '#0ad69f'
+  const homeColor = better === 'home' ? WIN : '#0077B6'
+  const awayColor = better === 'away' ? WIN : '#D90429'
 
   return (
     <div className={`flex items-center justify-between border-b-2 border-dashed border-gray-300 last:border-0 py-2.5 ${highlight ? 'bg-[#FFD166] -mx-4 px-4 border-solid border-black border-y-2' : ''}`}>
-      <div className="w-1/3 text-left font-black text-lg text-[#0077B6]">{homeVal}</div>
+      <div className="w-1/3 text-left font-black text-lg" style={{ color: homeColor }}>{homeVal}</div>
       <div className="w-1/3 text-center text-[10px] sm:text-[11px] font-black uppercase text-gray-500 tracking-widest leading-tight relative">
         {label}
         {info && (
@@ -29,7 +53,7 @@ export default function CompareRow({ label, homeVal, awayVal, highlight = false,
           </span>
         )}
       </div>
-      <div className="w-1/3 text-right font-black text-lg text-[#D90429]">{awayVal}</div>
+      <div className="w-1/3 text-right font-black text-lg" style={{ color: awayColor }}>{awayVal}</div>
     </div>
   )
 }

@@ -43,6 +43,7 @@ const renderStatRows = (sectionKey, homeStats, awayStats) => {
           awayVal={def.getA(awayStats)}
           highlight={def.highlight || false}
           info={def.info}
+          lowerIsBetter={def.lowerIsBetter || false}
         />
       )
     })
@@ -1590,13 +1591,13 @@ export default function MatchReportPage() {
                       { title: 'Overall', rows: [
                         { label: 'Total Passes', h: passStatsByTeam.home.total, a: passStatsByTeam.away.total },
                         { label: 'Complete', h: passStatsByTeam.home.complete, a: passStatsByTeam.away.complete },
-                        { label: 'Incomplete', h: passStatsByTeam.home.incomplete, a: passStatsByTeam.away.incomplete },
+                        { label: 'Incomplete', h: passStatsByTeam.home.incomplete, a: passStatsByTeam.away.incomplete, lowerIsBetter: true },
                         { label: 'Pass Accuracy', h: `${passStatsByTeam.home.accuracy}%`, a: `${passStatsByTeam.away.accuracy}%`, highlight: true, info: 'Complete ÷ (Complete + Incomplete). Outcomes excluded from total: anything other than Successful, Key Pass, Assist, Missed, Intercepted, Off-Side.' },
                       ]},
                       { title: 'Incomplete Breakdown', rows: [
-                        { label: 'Missed', h: passStatsByTeam.home.missed, a: passStatsByTeam.away.missed },
-                        { label: 'Intercepted', h: passStatsByTeam.home.intercepted, a: passStatsByTeam.away.intercepted },
-                        { label: 'Off-Side', h: passStatsByTeam.home.offside, a: passStatsByTeam.away.offside },
+                        { label: 'Missed', h: passStatsByTeam.home.missed, a: passStatsByTeam.away.missed, lowerIsBetter: true },
+                        { label: 'Intercepted', h: passStatsByTeam.home.intercepted, a: passStatsByTeam.away.intercepted, lowerIsBetter: true },
+                        { label: 'Off-Side', h: passStatsByTeam.home.offside, a: passStatsByTeam.away.offside, lowerIsBetter: true },
                       ]},
                       { title: 'Pitch Halves (Complete / Total)', rows: [
                         { label: 'Own Half', h: `${passStatsByTeam.home.ownHalfSucc}/${passStatsByTeam.home.ownHalfTot}`, a: `${passStatsByTeam.away.ownHalfSucc}/${passStatsByTeam.away.ownHalfTot}` },
@@ -1632,6 +1633,7 @@ export default function MatchReportPage() {
                             awayVal={row.a}
                             highlight={row.highlight || false}
                             info={row.info}
+                            lowerIsBetter={row.lowerIsBetter || false}
                           />
                         ))}
                       </div>
