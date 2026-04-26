@@ -375,9 +375,9 @@ export default function PassingNetworkPitch({ events = [], lineups = [], homeTea
               <>
                 <div className="text-[#FFD166] text-[11px] mb-1.5">#{tooltip.jersey} {tooltip.name}</div>
                 <div className="flex justify-between gap-4"><span>Total</span><span className="text-[#FFD166]">{tooltip.total}</span></div>
-                <div className="flex justify-between gap-4"><span>Successful</span><span className="text-[#06D6A0]">{tooltip.successful}</span></div>
-                <div className="flex justify-between gap-4"><span>Missed</span><span className="text-[#FF4D4D]">{tooltip.miss}</span></div>
-                <div className="flex justify-between gap-4 border-t border-gray-600 mt-1 pt-1"><span>Success Rate</span><span className="text-[#FFD166]">{tooltip.rate}%</span></div>
+                <div className="flex justify-between gap-4"><span>Completed</span><span className="text-[#06D6A0]">{tooltip.successful}</span></div>
+                <div className="flex justify-between gap-4"><span>Incompleted</span><span className="text-[#FF4D4D]">{tooltip.miss}</span></div>
+                <div className="flex justify-between gap-4 border-t border-gray-600 mt-1 pt-1"><span>Accuracy</span><span className="text-[#FFD166]">{tooltip.rate}%</span></div>
               </>
             ) : (
               <>
