@@ -2155,6 +2155,15 @@ export default function MatchReportPage() {
                               (e.action === 'Dribble' && (e.outcome === 'Successful' || e.outcome === 'Foul Won')) ||
                               (['Standing Tackle', 'Sliding Tackle'].includes(e.action) && e.outcome === 'Successful' && e.type === 'With Possession'),
                           }),
+                          defense_aerial_duels_won: () => setDefenseModal({
+                            title: 'Aerial Duels Won',
+                            filterFn: e =>
+                              e.action === 'Pass Intercept' && e.outcome === 'Successful' && e.body_part === 'Head',
+                          }),
+                          defense_lost_ball_control: () => setDefenseModal({
+                            title: 'Lost Ball Control',
+                            filterFn: e => e.action === 'Ball Control',
+                          }),
                         })}
                       </div>
                     ))}
