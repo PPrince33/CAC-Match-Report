@@ -28,7 +28,7 @@ import {
   Filter, Layers, Clock, RefreshCw, GitBranch
 } from 'lucide-react'
 
-const renderStatRows = (sectionKey, homeStats, awayStats) => {
+const renderStatRows = (sectionKey, homeStats, awayStats, clickHandlers = {}) => {
   if (!homeStats || !awayStats) return null
   return (STATS_CONFIG[sectionKey] || [])
     .filter(e => e.enabled)
@@ -45,6 +45,7 @@ const renderStatRows = (sectionKey, homeStats, awayStats) => {
           highlight={def.highlight || false}
           info={def.info}
           lowerIsBetter={def.lowerIsBetter || false}
+          onLabelClick={clickHandlers[e.id] || null}
         />
       )
     })
@@ -68,6 +69,7 @@ export default function MatchReportPage() {
   const [passSelectedPlayer, setPassSelectedPlayer] = useState(null)
   const [passModal, setPassModal] = useState(null)  // { title, filterFn } or null
   const [selectedShotId, setSelectedShotId] = useState(null)
+  const [defenseModal, setDefenseModal] = useState(null)  // { title, filterFn }
 
   // Distribution filters
   const [netTeam, setNetTeam] = useState('HOME')
@@ -2139,11 +2141,73 @@ export default function MatchReportPage() {
                     ].map(section => (
                       <div key={section.key} className="mb-6 last:mb-0">
                         <h4 className="text-sm font-black uppercase text-gray-400 mb-2 flex items-center gap-2"><Shield size={14} /> {section.title}</h4>
-                        {renderStatRows(section.key, defenseStats?.home, defenseStats?.away)}
+                        {renderStatRows(section.key, defenseStats?.home, defenseStats?.away, {
+                          defense_total_regained: () => setDefenseModal({
+                            title: 'Total Regained Possession',
+                            filterFn: e =>
+                              ['Pass Intercept', 'Standing Tackle', 'Sliding Tackle', 'Block'].includes(e.action) &&
+                              e.outcome === 'Successful' &&
+                              e.type === 'With Possession',
+                          }),
+                          defense_ground_duels_won: () => setDefenseModal({
+                            title: 'Ground Duels Won',
+                            filterFn: e =>
+                              (e.action === 'Dribble' && (e.outcome === 'Successful' || e.outcome === 'Foul Won')) ||
+                              (['Standing Tackle', 'Sliding Tackle'].includes(e.action) && e.outcome === 'Successful' && e.type === 'With Possession'),
+                          }),
+                        })}
                       </div>
                     ))}
                   </BrutalistCard>
                 </section>
+
+                {/* Defense Modal — pitch view of ball-winning event locations */}
+                {defenseModal && (() => {
+                  const filteredHome = enrichedEvents.filter(e => e.team_id === match.home_team_id && defenseModal.filterFn(e))
+                  const filteredAway = enrichedEvents.filter(e => e.team_id === match.away_team_id && defenseModal.filterFn(e))
+                  return (
+                    <div
+                      className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto"
+                      onClick={() => setDefenseModal(null)}
+                    >
+                      <div
+                        className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] max-w-6xl w-full p-5 my-auto"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="flex items-start justify-between border-b-2 border-black pb-3 mb-4">
+                          <div>
+                            <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Defense Map</p>
+                            <h3 className="text-2xl font-black uppercase tracking-tighter">{defenseModal.title}</h3>
+                            <p className="text-[10px] font-bold uppercase text-gray-500 mt-1">
+                              <span style={{ color: '#0077B6' }}>{match.home_team?.team_name}: {filteredHome.length}</span>
+                              {' · '}
+                              <span style={{ color: '#D90429' }}>{match.away_team?.team_name}: {filteredAway.length}</span>
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => setDefenseModal(null)}
+                            className="border-2 border-black px-3 py-1 font-black text-sm bg-white hover:bg-[#FFD166] shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[1px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
+                          >✕ CLOSE</button>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <HeatmapPitch
+                            events={filteredHome}
+                            teamName={match.home_team?.team_name}
+                            isHome={true}
+                            isFutsal={isFutsal}
+                          />
+                          <HeatmapPitch
+                            events={filteredAway}
+                            teamName={match.away_team?.team_name}
+                            isHome={false}
+                            isFutsal={isFutsal}
+                          />
+                        </div>
+                        <p className="text-[9px] font-bold uppercase text-gray-400 mt-3">Heat density shows where each team's ball-winning events occurred on the pitch.</p>
+                      </div>
+                    </div>
+                  )
+                })()}
               </div>
             )}
 
