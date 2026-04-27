@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { fetchSupabase, upsertSupabase } from '../../../lib/supabase.js'
 import { PITCH_CONFIG } from '../../../lib/pitchConfig.js'
-import { calculateXG } from '../../../lib/xg.js'
+import { calculateXG, calculateXGOT } from '../../../lib/xg.js'
 import { CAC_LOGIC } from '../../../lib/cacLogic.js'
 import { STATS_REGISTRY, STATS_CONFIG } from '../../../lib/statsRegistry.js'
 import BrutalistCard from '../../../components/ui/BrutalistCard.jsx'
@@ -196,11 +196,12 @@ export default function MatchReportPage() {
       .filter(e => e.action !== 'Match Time')
       .map(e => {
         const teamId = lineups.find(l => l.player_id === e.player_id)?.team_id
-        let xg = 0
+        let xg = 0, xgot = 0
         if (e.action === 'Shoot' && e.start_x !== null && e.start_y !== null) {
-          xg = calculateXG(e.start_x, e.start_y, cfg.width, cfg.height)
+          xg = calculateXG(e, cfg)
+          xgot = calculateXGOT(e, xg, cfg)
         }
-        return { ...e, team_id: teamId, xg }
+        return { ...e, team_id: teamId, xg, xgot }
       })
   }, [events, lineups, cfg, match])
 
@@ -360,12 +361,25 @@ export default function MatchReportPage() {
     const calcTeamAttack = (teamId) => {
       const evs = enrichedEvents.filter(e => e.team_id === teamId)
       const shots = evs.filter(e => e.action === 'Shoot')
-      const goals = shots.filter(e => e.outcome === 'Goal').length
-      const sot = shots.filter(e => ['Goal', 'Save'].includes(e.outcome)).length
+      const totalShots = shots.length
+      // Goals per spec: any (Shoot → Goal) or (Type=Own Goal) credited to Act Team
+      const goals = evs.filter(e =>
+        (e.action === 'Shoot' && e.outcome === 'Goal') || e.type === 'Own Goal'
+      ).length
+      // Shots on Target: Goal + Save + goal-line block
+      const goalLineX = cfg.width - 2.5
+      const sot = shots.filter(s =>
+        s.outcome === 'Goal' || s.outcome === 'Save' ||
+        (s.outcome === 'Block' && s.end_x != null && s.end_x >= goalLineX &&
+         s.end_y != null && s.end_y >= cfg.goalYMin && s.end_y <= cfg.goalYMax)
+      ).length
       const boxShots = shots.filter(e => e.start_x !== null && e.start_x >= cfg.boxX && e.start_y >= cfg.boxYMin && e.start_y <= cfg.boxYMax).length
-      const xg = shots.reduce((acc, s) => acc + (parseFloat(s.xg) || 0), 0).toFixed(2)
-      const xgPerShot = shots.length ? (xg / shots.length).toFixed(2) : 0
+      const xg = +(shots.reduce((acc, s) => acc + (parseFloat(s.xg) || 0), 0)).toFixed(2)
+      const xgot = +(shots.reduce((acc, s) => acc + (parseFloat(s.xgot) || 0), 0)).toFixed(2)
+      const xgPerShot = totalShots ? (xg / totalShots).toFixed(2) : 0
       const xgDiff = (goals - xg).toFixed(2)
+      const conversionRate = totalShots > 0 ? +(goals / totalShots * 100).toFixed(1) : 0
+      const shootingAccuracy = totalShots > 0 ? +(sot / totalShots * 100).toFixed(1) : 0
       const passes = evs.filter(e => e.action === 'Pass')
       const succPasses = passes.filter(p => ['Successful', 'Assist', 'Key Pass'].includes(p.outcome)).length
       const progPasses = passes.filter(p => p.end_x !== null && p.start_x !== null && (p.end_x - p.start_x) >= cfg.progressiveThreshold).length
@@ -386,7 +400,8 @@ export default function MatchReportPage() {
       const succPassesUnderPressure = passesUnderPressure.filter(p => ['Successful', 'Assist', 'Key Pass'].includes(p.outcome)).length
       const pressPassAcc = passesUnderPressure.length ? Math.round((succPassesUnderPressure / passesUnderPressure.length) * 100) : 0
       return {
-        shots: shots.length, goals, sot, boxShots, outBoxShots: shots.length - boxShots, xg, xgPerShot, xgDiff,
+        shots: totalShots, goals, sot, boxShots, outBoxShots: totalShots - boxShots,
+        xg, xgot, xgPerShot, xgDiff, conversionRate, shootingAccuracy,
         passes: passes.length, succPasses, passAcc: passes.length ? Math.round((succPasses / passes.length) * 100) : 0,
         progPasses, keyPasses, assists, throughBalls, crosses, corners,
         carries: carries.length, progCarries, final3rdCarries,
