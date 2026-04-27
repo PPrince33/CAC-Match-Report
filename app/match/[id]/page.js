@@ -481,6 +481,7 @@ export default function MatchReportPage() {
           opponentId: best.pass.reaction_player_id,  // intended receiver = the attacker
           teamId: intercept.team_id,
           dist: best.d,
+          event: intercept,
         })
       }
     })

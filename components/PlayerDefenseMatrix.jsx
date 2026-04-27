@@ -35,16 +35,25 @@ export default function PlayerDefenseMatrix({
     return m
   }, [lineups])
 
-  const matrix = useMemo(() => {
+  const { matrix, details } = useMemo(() => {
     const m = {}     // defender_id -> { attacker_id -> count }
+    const dt = {}    // defender_id -> { attacker_id -> [{ minute, action, outcome }, ...] }
     const teamOf = (pid) => lineupById[pid]?.team_id
 
-    const add = (defId, attId) => {
+    const add = (defId, attId, e, labelOverride = null) => {
       if (!defId || !attId) return
       if (teamOf(defId) !== defenderTeamId) return
       if (teamOf(attId) !== attackerTeamId) return
       if (!m[defId]) m[defId] = {}
       m[defId][attId] = (m[defId][attId] || 0) + 1
+      if (!dt[defId]) dt[defId] = {}
+      if (!dt[defId][attId]) dt[defId][attId] = []
+      const minute = e?.match_minute ?? (e?.match_time_seconds != null ? Math.floor(e.match_time_seconds / 60) : null)
+      dt[defId][attId].push({
+        minute,
+        action: labelOverride || e?.action || '?',
+        outcome: e?.outcome || '',
+      })
     }
 
     // Helper: is this event a "successful" defensive action?
@@ -57,30 +66,28 @@ export default function PlayerDefenseMatrix({
     const STANDARD_ACTIONS = ['Pass Intercept', 'Standing Tackle', 'Sliding Tackle', 'Block', 'Save', 'Pressure']
 
     if (actionFilter === 'Aerial Duels') {
-      // already won by construction (matched intercepts)
-      aerialMatches.forEach(d => add(d.defenderId, d.opponentId))
+      aerialMatches.forEach(d => add(d.defenderId, d.opponentId, d.event, 'Aerial Duel'))
     } else if (actionFilter === 'Ground Duels') {
-      // Tackles that won possession
       events.forEach(e => {
         if (!['Standing Tackle', 'Sliding Tackle'].includes(e.action)) return
         if (e.outcome !== 'Successful' || e.type !== 'With Possession') return
-        add(e.player_id, e.reaction_player_id)
+        add(e.player_id, e.reaction_player_id, e)
       })
     } else if (actionFilter === 'ALL') {
       events.forEach(e => {
         if (!STANDARD_ACTIONS.includes(e.action)) return
         if (!isSuccessful(e)) return
-        add(e.player_id, e.reaction_player_id)
+        add(e.player_id, e.reaction_player_id, e)
       })
     } else if (STANDARD_ACTIONS.includes(actionFilter)) {
       events.forEach(e => {
         if (e.action !== actionFilter) return
         if (!isSuccessful(e)) return
-        add(e.player_id, e.reaction_player_id)
+        add(e.player_id, e.reaction_player_id, e)
       })
     }
 
-    return m
+    return { matrix: m, details: dt }
   }, [events, lineupById, defenderTeamId, attackerTeamId, actionFilter, aerialMatches])
 
   // Players with at least one event in this matrix, sorted by jersey
@@ -171,7 +178,21 @@ export default function PlayerDefenseMatrix({
       </div>
       {hoverCell && hoverCell.count > 0 && (
         <div className="px-3 py-2 border-t-2 border-black bg-black text-white text-[10px] font-bold uppercase">
-          <span style={{ color: '#FFD166' }}>{hoverCell.count}</span> · {hoverCell.defName} → {hoverCell.attName}
+          <div className="flex items-center gap-2 border-b border-white/20 pb-1 mb-1.5">
+            <span style={{ color: '#FFD166' }} className="text-sm">{hoverCell.count}</span>
+            <span>{hoverCell.defName} → {hoverCell.attName}</span>
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {(details[hoverCell.row]?.[hoverCell.col] || [])
+              .slice()
+              .sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0))
+              .map((d, i) => (
+                <span key={i} className="border border-white/30 px-1.5 py-0.5 bg-white/10 normal-case">
+                  <span className="text-[#FFD166]">{d.minute != null ? `${d.minute}'` : '?'}</span>
+                  {' '}{d.action}{d.outcome && d.outcome !== 'Successful' ? ` · ${d.outcome}` : ''}
+                </span>
+              ))}
+          </div>
         </div>
       )}
     </div>
