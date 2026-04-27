@@ -4,7 +4,7 @@ import { useRef, useState, useEffect } from 'react'
 import { drawPitchMarkings } from './PitchDrawing.js'
 import { PITCH_CONFIG } from '../../lib/pitchConfig.js'
 
-export default function ShotMapPitch({ shots, teamName, isHome, lineups, isFutsal = true }) {
+export default function ShotMapPitch({ shots, teamName, isHome, lineups, isFutsal = true, selectedShotId = null, onSelectShot = null }) {
   const canvasRef = useRef(null)
   const containerRef = useRef(null)
   const [tooltip, setTooltip] = useState({ visible: false, x: 0, y: 0, transform: '', shot: null })
@@ -39,41 +39,42 @@ export default function ShotMapPitch({ shots, teamName, isHome, lineups, isFutsa
     const primaryColor = isHome ? '#0077B6' : '#D90429'
     const sortedShots = [...shots].sort((a, b) => (parseFloat(b.xg) || 0) - (parseFloat(a.xg) || 0))
 
-    // First pass: dotted trajectory + end-point markers (drawn behind the start bubbles)
+    // First pass: dotted trajectory + end-point markers — ONLY for the
+    // currently-selected shot (click a start bubble to select it).
     sortedShots.forEach(s => {
+      if (s.processed_event_id !== selectedShotId) return
       if (s.start_x == null || s.start_y == null) return
       if (s.end_x == null || s.end_y == null) return
       const sX = scaleX(s.start_x), sY = scaleY(s.start_y)
       const eX = scaleX(s.end_x),   eY = scaleY(s.end_y)
-      const isHovered = tooltip.shot && tooltip.shot.processed_event_id === s.processed_event_id
       const color = getOutcomeColor(s)
 
       // Dotted line from start → end
       ctx.save()
       ctx.beginPath()
       ctx.setLineDash([4, 4])
-      ctx.lineWidth = isHovered ? 2.5 : 1.5
+      ctx.lineWidth = 2.5
       ctx.strokeStyle = color
-      ctx.globalAlpha = isHovered ? 0.95 : 0.7
+      ctx.globalAlpha = 0.95
       ctx.moveTo(sX, sY)
       ctx.lineTo(eX, eY)
       ctx.stroke()
       ctx.restore()
 
-      // End-point marker (filled for Goal/Save, hollow ring for misses/blocks)
+      // End-point marker
       ctx.beginPath()
-      ctx.arc(eX, eY, isHovered ? 5 : 4, 0, Math.PI * 2)
+      ctx.arc(eX, eY, 6, 0, Math.PI * 2)
       if (s.outcome === 'Goal' || s.outcome === 'Save') {
         ctx.fillStyle = color
         ctx.fill()
         ctx.strokeStyle = '#000'
-        ctx.lineWidth = 1
+        ctx.lineWidth = 1.5
         ctx.stroke()
       } else {
         ctx.fillStyle = '#fff'
         ctx.fill()
         ctx.strokeStyle = color
-        ctx.lineWidth = 2
+        ctx.lineWidth = 2.5
         ctx.stroke()
       }
     })
@@ -111,7 +112,33 @@ export default function ShotMapPitch({ shots, teamName, isHome, lineups, isFutsa
     window.addEventListener('resize', handleResize)
     handleResize()
     return () => window.removeEventListener('resize', handleResize)
-  }, [shots, tooltip.shot, isFutsal])
+  }, [shots, tooltip.shot, isFutsal, selectedShotId])
+
+  const handleClick = (e) => {
+    if (!onSelectShot || !canvasRef.current) return
+    const canvas = canvasRef.current
+    const rect = canvas.getBoundingClientRect()
+    const mouseX = (e.clientX - rect.left) * (canvas.width / rect.width)
+    const mouseY = (e.clientY - rect.top) * (canvas.height / rect.height)
+    const pad = 30
+    const drawW = canvas.width - pad * 2
+    const drawH = canvas.height - pad * 2
+    const scaleX = (x) => pad + (x / pitchWidth) * drawW
+    const scaleY = (y) => canvas.height - (pad + (y / pitchHeight) * drawH)
+    // smallest first so small bubbles win the hit-test if overlapping
+    const sortedShots = [...shots].sort((a, b) => (parseFloat(a.xg) || 0) - (parseFloat(b.xg) || 0))
+    for (const s of sortedShots) {
+      if (s.start_x == null || s.start_y == null) continue
+      const evX = scaleX(s.start_x), evY = scaleY(s.start_y)
+      const r = getRadiusForXg(s.xg)
+      if (Math.hypot(mouseX - evX, mouseY - evY) <= r + 2) {
+        onSelectShot(s.processed_event_id === selectedShotId ? null : s.processed_event_id)
+        return
+      }
+    }
+    // click on empty space deselects
+    if (selectedShotId) onSelectShot(null)
+  }
 
   const handleMouseMove = (e) => {
     if (!canvasRef.current) return
@@ -161,8 +188,10 @@ export default function ShotMapPitch({ shots, teamName, isHome, lineups, isFutsa
       <canvas
         ref={canvasRef}
         className="w-full block"
+        style={{ cursor: onSelectShot ? 'pointer' : 'crosshair' }}
         onMouseMove={handleMouseMove}
         onMouseLeave={() => setTooltip({ visible: false, x: 0, y: 0, transform: '', shot: null })}
+        onClick={handleClick}
       />
       {tooltip.visible && tooltip.shot && (
         <div

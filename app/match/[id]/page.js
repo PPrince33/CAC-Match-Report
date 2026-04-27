@@ -67,6 +67,7 @@ export default function MatchReportPage() {
   const [passMaxMin, setPassMaxMin] = useState(120)
   const [passSelectedPlayer, setPassSelectedPlayer] = useState(null)
   const [passModal, setPassModal] = useState(null)  // { title, filterFn } or null
+  const [selectedShotId, setSelectedShotId] = useState(null)
 
   // Distribution filters
   const [netTeam, setNetTeam] = useState('HOME')
@@ -1953,20 +1954,28 @@ export default function MatchReportPage() {
                 <section>
                   <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Shot Maps (xG)</h3>
                   <div className="flex flex-wrap gap-8 mb-8">
-                    <ShotMapPitch shots={enrichedEvents.filter(e => e.action === 'Shoot' && e.team_id === match.home_team_id)} teamName={match.home_team?.team_name} isHome={true} lineups={lineups} isFutsal={isFutsal} />
-                    <ShotMapPitch shots={enrichedEvents.filter(e => e.action === 'Shoot' && e.team_id === match.away_team_id)} teamName={match.away_team?.team_name} isHome={false} lineups={lineups} isFutsal={isFutsal} />
+                    <ShotMapPitch shots={enrichedEvents.filter(e => e.action === 'Shoot' && e.team_id === match.home_team_id)} teamName={match.home_team?.team_name} isHome={true} lineups={lineups} isFutsal={isFutsal} selectedShotId={selectedShotId} onSelectShot={setSelectedShotId} />
+                    <ShotMapPitch shots={enrichedEvents.filter(e => e.action === 'Shoot' && e.team_id === match.away_team_id)} teamName={match.away_team?.team_name} isHome={false} lineups={lineups} isFutsal={isFutsal} selectedShotId={selectedShotId} onSelectShot={setSelectedShotId} />
                   </div>
                   <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-[10px] font-black uppercase text-gray-500 items-center">
                     <span className="text-gray-400">Bubble (start):</span>
                     <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-[#0077B6]"></div> Goal</div>
                     <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full border-2 border-[#D90429] opacity-60"></div> No Goal</div>
-                    <span className="text-gray-300">·</span>
-                    <span className="text-gray-400">End point:</span>
-                    <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#16a34a' }}></div> Goal</div>
-                    <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#f97316' }}></div> Save</div>
-                    <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-white border-2" style={{ borderColor: '#ef4444' }}></div> Off-Target</div>
-                    <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-white border-2" style={{ borderColor: '#eab308' }}></div> Block</div>
-                    <div className="ml-auto italic">* Bubble size = xG · dotted line = shot trajectory</div>
+                    {selectedShotId ? (
+                      <>
+                        <span className="text-gray-300">·</span>
+                        <span className="text-gray-400">End point:</span>
+                        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#16a34a' }}></div> Goal</div>
+                        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#f97316' }}></div> Save</div>
+                        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-white border-2" style={{ borderColor: '#ef4444' }}></div> Off-Target</div>
+                        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-white border-2" style={{ borderColor: '#eab308' }}></div> Block</div>
+                        <button
+                          onClick={() => setSelectedShotId(null)}
+                          className="ml-2 border-2 border-black bg-white px-2 py-0.5 text-[9px] font-black uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-[#FFD166]"
+                        >✕ Clear</button>
+                      </>
+                    ) : null}
+                    <div className="ml-auto italic">* Bubble size = xG · click a start bubble to see its trajectory</div>
                   </div>
                 </section>
                 <section>
