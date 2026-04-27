@@ -96,6 +96,16 @@ export default function MatchReportPage() {
   // Defense heatmap state
   const [defActionFilter, setDefActionFilter] = useState(() => new Set())  // empty = ALL
   const [defOutcomeFilter, setDefOutcomeFilter] = useState(() => new Set()) // empty = ALL
+
+  // Per-tab Half / Zone / Time-range filters
+  const [atkHalf, setAtkHalf] = useState('ALL')
+  const [atkZone, setAtkZone] = useState('ALL')
+  const [atkMinMin, setAtkMinMin] = useState(0)
+  const [atkMaxMin, setAtkMaxMin] = useState(120)
+  const [defHalf, setDefHalf] = useState('ALL')
+  const [defZone, setDefZone] = useState('ALL')
+  const [defMinMin, setDefMinMin] = useState(0)
+  const [defMaxMin, setDefMaxMin] = useState(120)
   const defActions = useMemo(() => ['Standing Tackle', 'Sliding Tackle', 'Block', 'Save', 'Pass Intercept'], [])
 
   // Player comparison state
@@ -179,10 +189,14 @@ export default function MatchReportPage() {
           setMaxMinute(finalMax)
           setAvgMaxMinute(finalMax)
           setPassMaxMin(finalMax)
+          setAtkMaxMin(finalMax)
+          setDefMaxMin(finalMax)
         } else {
           setMaxMinute(defaultMax)
           setAvgMaxMinute(defaultMax)
           setPassMaxMin(defaultMax)
+          setAtkMaxMin(defaultMax)
+          setDefMaxMin(defaultMax)
         }
       } catch (err) {
         console.error('Data fetch failed', err)
@@ -362,10 +376,10 @@ export default function MatchReportPage() {
     })
   }, [filteredEvents, lineups])
 
-  const attackStats = useMemo(() => {
-    if (!match || !enrichedEvents || enrichedEvents.length === 0) return null
+  const buildAttackStats = (eventsList) => {
+    if (!match || !eventsList || eventsList.length === 0) return null
     const calcTeamAttack = (teamId) => {
-      const evs = enrichedEvents.filter(e => e.team_id === teamId)
+      const evs = eventsList.filter(e => e.team_id === teamId)
       const shots = evs.filter(e => e.action === 'Shoot')
       const totalShots = shots.length
       // Goals per spec: any (Shoot → Goal) or (Type=Own Goal) credited to Act Team
@@ -448,18 +462,18 @@ export default function MatchReportPage() {
       }
     }
     return { home: calcTeamAttack(match.home_team_id), away: calcTeamAttack(match.away_team_id) }
-  }, [enrichedEvents, match, cfg])
+  }
 
-  const defenseStats = useMemo(() => {
-    if (!match || !enrichedEvents || enrichedEvents.length === 0) return null
+  const buildDefenseStats = (eventsList) => {
+    if (!match || !eventsList || eventsList.length === 0) return null
 
     // ── Aerial Duels Won (header interceptions matched to intercepted passes) ──
     // Footballed-specific. We scan once and bucket by team.
     const distScale = cfg.width / 120   // football units → cfg-equivalent
     const distThreshold = 3.0 * distScale
     const timeThreshold = 8.0
-    const intendedPasses = enrichedEvents.filter(e => e.action === 'Pass' && e.outcome === 'Intercepted')
-    const headerIntercepts = enrichedEvents.filter(e => e.action === 'Pass Intercept' && e.outcome === 'Successful' && e.body_part === 'Head')
+    const intendedPasses = eventsList.filter(e => e.action === 'Pass' && e.outcome === 'Intercepted')
+    const headerIntercepts = eventsList.filter(e => e.action === 'Pass Intercept' && e.outcome === 'Successful' && e.body_part === 'Head')
     const aerialByTeam = {}
     const aerialMatches = []   // [{ defenderId, opponentId, teamId, dist }]
     headerIntercepts.forEach(intercept => {
@@ -488,8 +502,8 @@ export default function MatchReportPage() {
     })
 
     const calcTeamDefense = (teamId, opponentId) => {
-      const evs = enrichedEvents.filter(e => e.team_id === teamId)
-      const oppEvs = enrichedEvents.filter(e => e.team_id === opponentId)
+      const evs = eventsList.filter(e => e.team_id === teamId)
+      const oppEvs = eventsList.filter(e => e.team_id === opponentId)
 
       const lostBallControl = evs.filter(e => e.action === 'Ball Control').length
 
@@ -596,7 +610,43 @@ export default function MatchReportPage() {
       away: calcTeamDefense(match.away_team_id, match.home_team_id),
       aerialMatches,
     }
-  }, [enrichedEvents, match, cfg])
+  }
+
+  // Generic Half / Zone / Time-range filter — reused by Passes / Attack / Defense tabs
+  const applyHalfZoneTime = (evs, half, zone, minMin, maxMin) => {
+    return evs.filter(e => {
+      if (half !== 'ALL') {
+        const h = e.half || ''
+        if (half === '1ST' && !h.includes('1st')) return false
+        if (half === '2ND' && !h.includes('2nd')) return false
+      }
+      const m = e.match_minute ?? (e.match_time_seconds != null ? Math.floor(e.match_time_seconds / 60) : null)
+      if (m != null) {
+        if (m < minMin || m > maxMin) return false
+      }
+      if (zone !== 'ALL' && e.start_x != null) {
+        const third = cfg.width / 3
+        if (zone === 'DEF' && e.start_x > third) return false
+        if (zone === 'MID' && (e.start_x <= third || e.start_x >= 2 * third)) return false
+        if (zone === 'ATT' && e.start_x < 2 * third) return false
+      }
+      return true
+    })
+  }
+
+  // Filtered event lists per tab
+  const atkFilteredEvents = useMemo(() => applyHalfZoneTime(enrichedEvents, atkHalf, atkZone, atkMinMin, atkMaxMin),
+    [enrichedEvents, atkHalf, atkZone, atkMinMin, atkMaxMin, cfg])
+  const defFilteredEvents = useMemo(() => applyHalfZoneTime(enrichedEvents, defHalf, defZone, defMinMin, defMaxMin),
+    [enrichedEvents, defHalf, defZone, defMinMin, defMaxMin, cfg])
+
+  // Global stats (unfiltered) — used by Summary, chat / AI context
+  const attackStats = useMemo(() => buildAttackStats(enrichedEvents), [enrichedEvents, match, cfg])
+  const defenseStats = useMemo(() => buildDefenseStats(enrichedEvents), [enrichedEvents, match, cfg])
+
+  // Filtered stats — used by the Attack / Defense tab UI
+  const attackStatsFiltered = useMemo(() => buildAttackStats(atkFilteredEvents), [atkFilteredEvents, match, cfg])
+  const defenseStatsFiltered = useMemo(() => buildDefenseStats(defFilteredEvents), [defFilteredEvents, match, cfg])
 
   const computedScores = useMemo(() => {
     if (!match) return { home: 0, away: 0 }
@@ -2044,11 +2094,47 @@ export default function MatchReportPage() {
             {/* ATTACK TAB */}
             {activeTab === 'ATTACK' && (
               <div className="space-y-12">
+                {/* Half / Zone / Time filters (Attack-tab scoped) */}
+                <section>
+                  <BrutalistCard>
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-[10px] font-black uppercase text-gray-400"><Filter size={12} className="inline" /> Filters</h4>
+                      <button onClick={() => { setAtkHalf('ALL'); setAtkZone('ALL'); setAtkMinMin(0); setAtkMaxMin(absoluteMaxMinute); setSelectedShotId(null) }} className="text-[10px] font-black uppercase border-2 border-black px-2 py-0.5 hover:bg-[#06D6A0]">Reset</button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-bold uppercase">
+                      <div>
+                        <label className="block mb-1 text-gray-500">Half</label>
+                        <div className="flex gap-1">
+                          {['ALL', '1ST', '2ND'].map(h => (
+                            <button key={h} onClick={() => setAtkHalf(h)} className={`flex-1 border-2 border-black p-1.5 font-black text-[11px] ${atkHalf === h ? 'bg-black text-white' : 'bg-white hover:bg-[#FFD166]'}`}>{h}</button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block mb-1 text-gray-500">Zone (by start)</label>
+                        <div className="flex gap-1">
+                          {[['ALL','All'],['DEF','Def 3rd'],['MID','Mid 3rd'],['ATT','Att 3rd']].map(([k,l]) => (
+                            <button key={k} onClick={() => setAtkZone(k)} className={`flex-1 border-2 border-black p-1.5 font-black text-[10px] ${atkZone === k ? 'bg-black text-white' : 'bg-white hover:bg-[#FFD166]'}`}>{l}</button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block mb-1 text-gray-500">Time Range (min)</label>
+                        <div className="flex items-center gap-2">
+                          <input type="number" className="w-1/2 border-2 border-black p-1.5 text-xs font-black" value={atkMinMin} min={0} max={absoluteMaxMinute} onChange={e => setAtkMinMin(parseInt(e.target.value) || 0)} />
+                          <span className="text-xs font-black">TO</span>
+                          <input type="number" className="w-1/2 border-2 border-black p-1.5 text-xs font-black" value={atkMaxMin} min={0} max={absoluteMaxMinute} onChange={e => setAtkMaxMin(parseInt(e.target.value) || absoluteMaxMinute)} />
+                        </div>
+                      </div>
+                    </div>
+                  </BrutalistCard>
+                </section>
+
                 <section>
                   <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Shot Maps (xG)</h3>
                   <div className="flex flex-wrap gap-8 mb-8">
-                    <ShotMapPitch shots={enrichedEvents.filter(e => e.action === 'Shoot' && e.team_id === match.home_team_id)} teamName={match.home_team?.team_name} isHome={true} lineups={lineups} isFutsal={isFutsal} selectedShotId={selectedShotId} onSelectShot={setSelectedShotId} />
-                    <ShotMapPitch shots={enrichedEvents.filter(e => e.action === 'Shoot' && e.team_id === match.away_team_id)} teamName={match.away_team?.team_name} isHome={false} lineups={lineups} isFutsal={isFutsal} selectedShotId={selectedShotId} onSelectShot={setSelectedShotId} />
+                    <ShotMapPitch shots={atkFilteredEvents.filter(e => e.action === 'Shoot' && e.team_id === match.home_team_id)} teamName={match.home_team?.team_name} isHome={true} lineups={lineups} isFutsal={isFutsal} selectedShotId={selectedShotId} onSelectShot={setSelectedShotId} />
+                    <ShotMapPitch shots={atkFilteredEvents.filter(e => e.action === 'Shoot' && e.team_id === match.away_team_id)} teamName={match.away_team?.team_name} isHome={false} lineups={lineups} isFutsal={isFutsal} selectedShotId={selectedShotId} onSelectShot={setSelectedShotId} />
                   </div>
                   <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-[10px] font-black uppercase text-gray-500 items-center">
                     <span className="text-gray-400">Bubble (start):</span>
@@ -2074,8 +2160,8 @@ export default function MatchReportPage() {
                 <section>
                   <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Shot Placement (Goal Face)</h3>
                   <div className="flex flex-wrap gap-8">
-                    <ShotPlacementPitch shots={enrichedEvents.filter(e => e.action === 'Shoot' && e.team_id === match.home_team_id)} teamName={match.home_team?.team_name} isHome={true} lineups={lineups} isFutsal={isFutsal} />
-                    <ShotPlacementPitch shots={enrichedEvents.filter(e => e.action === 'Shoot' && e.team_id === match.away_team_id)} teamName={match.away_team?.team_name} isHome={false} lineups={lineups} isFutsal={isFutsal} />
+                    <ShotPlacementPitch shots={atkFilteredEvents.filter(e => e.action === 'Shoot' && e.team_id === match.home_team_id)} teamName={match.home_team?.team_name} isHome={true} lineups={lineups} isFutsal={isFutsal} />
+                    <ShotPlacementPitch shots={atkFilteredEvents.filter(e => e.action === 'Shoot' && e.team_id === match.away_team_id)} teamName={match.away_team?.team_name} isHome={false} lineups={lineups} isFutsal={isFutsal} />
                   </div>
                   <div className="flex gap-4 mt-3 text-[10px] font-black uppercase text-gray-500">
                     <div className="flex items-center gap-2"><div className="w-4 h-4 rounded-full bg-[#0077B6]"></div> Goal (Filled)</div>
@@ -2093,7 +2179,7 @@ export default function MatchReportPage() {
                     ].map(section => (
                       <div key={section.key} className="mb-6 last:mb-0">
                         <h4 className="text-sm font-black uppercase text-gray-400 mb-2 flex items-center gap-2"><Layers size={14} /> {section.title}</h4>
-                        {renderStatRows(section.key, attackStats?.home, attackStats?.away)}
+                        {renderStatRows(section.key, attackStatsFiltered?.home, attackStatsFiltered?.away)}
                       </div>
                     ))}
                   </BrutalistCard>
@@ -2104,6 +2190,42 @@ export default function MatchReportPage() {
             {/* DEFENSE TAB */}
             {activeTab === 'DEFENSE' && (
               <div className="space-y-12">
+                {/* Half / Zone / Time filters (Defense-tab scoped) */}
+                <section>
+                  <BrutalistCard>
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-[10px] font-black uppercase text-gray-400"><Filter size={12} className="inline" /> Filters</h4>
+                      <button onClick={() => { setDefHalf('ALL'); setDefZone('ALL'); setDefMinMin(0); setDefMaxMin(absoluteMaxMinute) }} className="text-[10px] font-black uppercase border-2 border-black px-2 py-0.5 hover:bg-[#06D6A0]">Reset</button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-bold uppercase">
+                      <div>
+                        <label className="block mb-1 text-gray-500">Half</label>
+                        <div className="flex gap-1">
+                          {['ALL', '1ST', '2ND'].map(h => (
+                            <button key={h} onClick={() => setDefHalf(h)} className={`flex-1 border-2 border-black p-1.5 font-black text-[11px] ${defHalf === h ? 'bg-black text-white' : 'bg-white hover:bg-[#FFD166]'}`}>{h}</button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block mb-1 text-gray-500">Zone (by start)</label>
+                        <div className="flex gap-1">
+                          {[['ALL','All'],['DEF','Def 3rd'],['MID','Mid 3rd'],['ATT','Att 3rd']].map(([k,l]) => (
+                            <button key={k} onClick={() => setDefZone(k)} className={`flex-1 border-2 border-black p-1.5 font-black text-[10px] ${defZone === k ? 'bg-black text-white' : 'bg-white hover:bg-[#FFD166]'}`}>{l}</button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block mb-1 text-gray-500">Time Range (min)</label>
+                        <div className="flex items-center gap-2">
+                          <input type="number" className="w-1/2 border-2 border-black p-1.5 text-xs font-black" value={defMinMin} min={0} max={absoluteMaxMinute} onChange={e => setDefMinMin(parseInt(e.target.value) || 0)} />
+                          <span className="text-xs font-black">TO</span>
+                          <input type="number" className="w-1/2 border-2 border-black p-1.5 text-xs font-black" value={defMaxMin} min={0} max={absoluteMaxMinute} onChange={e => setDefMaxMin(parseInt(e.target.value) || absoluteMaxMinute)} />
+                        </div>
+                      </div>
+                    </div>
+                  </BrutalistCard>
+                </section>
+
                 <section>
                   <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Defensive Density Heatmaps</h3>
                   <div className="space-y-3 mb-6">
@@ -2154,7 +2276,7 @@ export default function MatchReportPage() {
                     {(() => {
                       const matchActionSet = (e) => defActionFilter.size === 0 ? defActions.includes(e.action) : defActionFilter.has(e.action)
                       const matchOutcomeSet = (e) => defOutcomeFilter.size === 0 || defOutcomeFilter.has(e.outcome)
-                      const filt = (teamId) => enrichedEvents.filter(e => e.team_id === teamId && matchActionSet(e) && matchOutcomeSet(e))
+                      const filt = (teamId) => defFilteredEvents.filter(e => e.team_id === teamId && matchActionSet(e) && matchOutcomeSet(e))
                       return (
                         <>
                           <HeatmapPitch events={filt(match.home_team_id)} teamName={match.home_team?.team_name} isHome={true} isFutsal={isFutsal} />
@@ -2180,7 +2302,7 @@ export default function MatchReportPage() {
                     ].map(section => (
                       <div key={section.key} className="mb-6 last:mb-0">
                         <h4 className="text-sm font-black uppercase text-gray-400 mb-2 flex items-center gap-2"><Shield size={14} /> {section.title}</h4>
-                        {renderStatRows(section.key, defenseStats?.home, defenseStats?.away, {
+                        {renderStatRows(section.key, defenseStatsFiltered?.home, defenseStatsFiltered?.away, {
                           defense_total_regained: () => setDefenseModal({
                             title: 'Total Regained Possession',
                             filterFn: e =>
@@ -2236,23 +2358,23 @@ export default function MatchReportPage() {
                   </div>
                   <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                     <PlayerDefenseMatrix
-                      events={enrichedEvents}
+                      events={defFilteredEvents}
                       lineups={lineups}
                       defenderTeamId={match.home_team_id}
                       attackerTeamId={match.away_team_id}
                       actionFilter={defMatrixAction}
-                      aerialMatches={(defenseStats?.aerialMatches || []).filter(m => m.teamId === match.home_team_id)}
+                      aerialMatches={(defenseStatsFiltered?.aerialMatches || []).filter(m => m.teamId === match.home_team_id)}
                       defenderColor="#0077B6"
                       defenderTeamName={match.home_team?.team_name}
                       attackerTeamName={match.away_team?.team_name}
                     />
                     <PlayerDefenseMatrix
-                      events={enrichedEvents}
+                      events={defFilteredEvents}
                       lineups={lineups}
                       defenderTeamId={match.away_team_id}
                       attackerTeamId={match.home_team_id}
                       actionFilter={defMatrixAction}
-                      aerialMatches={(defenseStats?.aerialMatches || []).filter(m => m.teamId === match.away_team_id)}
+                      aerialMatches={(defenseStatsFiltered?.aerialMatches || []).filter(m => m.teamId === match.away_team_id)}
                       defenderColor="#D90429"
                       defenderTeamName={match.away_team?.team_name}
                       attackerTeamName={match.home_team?.team_name}
@@ -2263,8 +2385,8 @@ export default function MatchReportPage() {
 
                 {/* Defense Modal — pitch view of ball-winning event locations */}
                 {defenseModal && (() => {
-                  const filteredHome = enrichedEvents.filter(e => e.team_id === match.home_team_id && defenseModal.filterFn(e))
-                  const filteredAway = enrichedEvents.filter(e => e.team_id === match.away_team_id && defenseModal.filterFn(e))
+                  const filteredHome = defFilteredEvents.filter(e => e.team_id === match.home_team_id && defenseModal.filterFn(e))
+                  const filteredAway = defFilteredEvents.filter(e => e.team_id === match.away_team_id && defenseModal.filterFn(e))
                   return (
                     <div
                       className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto"
