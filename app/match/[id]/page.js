@@ -374,13 +374,22 @@ export default function MatchReportPage() {
          s.end_y != null && s.end_y >= cfg.goalYMin && s.end_y <= cfg.goalYMax)
       ).length
       const boxShots = shots.filter(e => e.start_x !== null && e.start_x >= cfg.boxX && e.start_y >= cfg.boxYMin && e.start_y <= cfg.boxYMax).length
-      // xG / xGOT are non-penalty totals — penalties get excluded so the
-      // headline number reflects open-play chance quality.
+
+      // xG totals — both with-penalties and non-penalty (NPxG)
+      const xgTotal = +(shots.reduce((acc, s) => acc + (parseFloat(s.xg) || 0), 0)).toFixed(2)
+      const xgotTotal = +(shots.reduce((acc, s) => acc + (parseFloat(s.xgot) || 0), 0)).toFixed(2)
       const nonPenShots = shots.filter(s => s.type !== 'Penalty')
-      const xg = +(nonPenShots.reduce((acc, s) => acc + (parseFloat(s.xg) || 0), 0)).toFixed(2)
-      const xgot = +(nonPenShots.reduce((acc, s) => acc + (parseFloat(s.xgot) || 0), 0)).toFixed(2)
-      const xgPerShot = nonPenShots.length ? (xg / nonPenShots.length).toFixed(2) : 0
-      const xgDiff = (goals - xg).toFixed(2)
+      const npxg = +(nonPenShots.reduce((acc, s) => acc + (parseFloat(s.xg) || 0), 0)).toFixed(2)
+      const npxgot = +(nonPenShots.reduce((acc, s) => acc + (parseFloat(s.xgot) || 0), 0)).toFixed(2)
+      const xgPerShot = nonPenShots.length ? (npxg / nonPenShots.length).toFixed(2) : 0
+
+      // Performance = Goals scored − xG (positive = overperformed, negative = underperformed)
+      const penGoals = shots.filter(s => s.outcome === 'Goal' && s.type === 'Penalty').length
+      const nonPenGoals = goals - penGoals
+      const goalsMinusXg = +(goals - xgTotal).toFixed(2)
+      const goalsMinusNpxg = +(nonPenGoals - npxg).toFixed(2)
+      // Legacy alias for any old consumers
+      const xg = npxg, xgot = npxgot, xgDiff = goalsMinusNpxg.toFixed(2)
       const conversionRate = totalShots > 0 ? +(goals / totalShots * 100).toFixed(1) : 0
       const shootingAccuracy = totalShots > 0 ? +(sot / totalShots * 100).toFixed(1) : 0
       const passes = evs.filter(e => e.action === 'Pass')
@@ -418,8 +427,10 @@ export default function MatchReportPage() {
       const succPassesUnderPressure = passesUnderPressure.filter(p => ['Successful', 'Assist', 'Key Pass'].includes(p.outcome)).length
       const pressPassAcc = passesUnderPressure.length ? Math.round((succPassesUnderPressure / passesUnderPressure.length) * 100) : 0
       return {
-        shots: totalShots, goals, sot, boxShots, outBoxShots: totalShots - boxShots,
-        xg, xgot, xgPerShot, xgDiff, conversionRate, shootingAccuracy,
+        shots: totalShots, goals, nonPenGoals, sot, boxShots, outBoxShots: totalShots - boxShots,
+        xg, xgot, xgTotal, xgotTotal, npxg, npxgot,
+        goalsMinusXg, goalsMinusNpxg,
+        xgPerShot, xgDiff, conversionRate, shootingAccuracy,
         passes: passes.length, succPasses, passAcc: passes.length ? Math.round((succPasses / passes.length) * 100) : 0,
         progPasses, keyPasses, assists, throughBalls, crosses, corners,
         carries: carries.length, progCarries, final3rdCarries,
