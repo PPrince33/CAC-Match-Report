@@ -408,8 +408,10 @@ export default function MatchReportPage() {
       const dribbles = evs.filter(e => e.action === 'Dribble')
       const succDribbles = dribbles.filter(d => d.outcome === 'Successful').length
 
-      // Ball progressions = Carry + Dribble
-      const progressionEvents = evs.filter(e => e.action === 'Carry' || e.action === 'Dribble')
+      // Ball progressions = Carry + Dribble, only counting successful ones
+      const progressionEvents = evs.filter(e =>
+        (e.action === 'Carry' || e.action === 'Dribble') && e.outcome === 'Successful'
+      )
       const progIntoFinal3rd = progressionEvents.filter(e =>
         e.start_x != null && e.end_x != null &&
         e.start_x < cfg.attackingThirdX && e.end_x >= cfg.attackingThirdX
