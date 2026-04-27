@@ -2120,11 +2120,15 @@ export default function MatchReportPage() {
                   <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Defense Statistics</h3>
                   <BrutalistCard>
                     {[
-                      { key: 'defense_ball_winning', title: 'Ball Winning' },
-                      { key: 'defense_clearances',   title: 'Clearances' },
-                      { key: 'defense_work_rate',    title: 'Pressures & Total Actions' },
-                      { key: 'defense_discipline',   title: 'Discipline' },
-                      { key: 'defense_pressing',     title: 'Pressing Intensity (PPDA)' }
+                      { key: 'defense_overview',         title: 'Ball Winning Overview' },
+                      { key: 'defense_pass_intercepts',  title: 'Pass Intercepts' },
+                      { key: 'defense_tackles',          title: 'Tackles' },
+                      { key: 'defense_blocks',           title: 'Blocks' },
+                      { key: 'defense_saves',            title: 'Saves' },
+                      { key: 'defense_clearances',       title: 'Clearances' },
+                      { key: 'defense_work_rate',        title: 'Total Defensive Actions' },
+                      { key: 'defense_discipline',       title: 'Discipline' },
+                      { key: 'defense_pressing',         title: 'Pressing Intensity (PPDA)' }
                     ].map(section => (
                       <div key={section.key} className="mb-6 last:mb-0">
                         <h4 className="text-sm font-black uppercase text-gray-400 mb-2 flex items-center gap-2"><Shield size={14} /> {section.title}</h4>
