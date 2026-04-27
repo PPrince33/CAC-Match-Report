@@ -18,6 +18,15 @@ export default function ShotMapPitch({ shots, teamName, isHome, lineups, isFutsa
     return 4 + val * 14
   }
 
+  // Color of the end marker / dotted line per shot outcome
+  const OUTCOME_COLORS = {
+    'Goal':       '#16a34a',  // green
+    'Save':       '#f97316',  // orange
+    'Off-Target': '#ef4444',  // red
+    'Block':      '#eab308',  // yellow
+  }
+  const getOutcomeColor = (s) => OUTCOME_COLORS[s.outcome] || '#64748b'
+
   const drawPitch = (ctx, w, h) => {
     const pad = 30
     const drawW = w - pad * 2
@@ -29,6 +38,47 @@ export default function ShotMapPitch({ shots, teamName, isHome, lineups, isFutsa
 
     const primaryColor = isHome ? '#0077B6' : '#D90429'
     const sortedShots = [...shots].sort((a, b) => (parseFloat(b.xg) || 0) - (parseFloat(a.xg) || 0))
+
+    // First pass: dotted trajectory + end-point markers (drawn behind the start bubbles)
+    sortedShots.forEach(s => {
+      if (s.start_x == null || s.start_y == null) return
+      if (s.end_x == null || s.end_y == null) return
+      const sX = scaleX(s.start_x), sY = scaleY(s.start_y)
+      const eX = scaleX(s.end_x),   eY = scaleY(s.end_y)
+      const isHovered = tooltip.shot && tooltip.shot.processed_event_id === s.processed_event_id
+      const color = getOutcomeColor(s)
+
+      // Dotted line from start → end
+      ctx.save()
+      ctx.beginPath()
+      ctx.setLineDash([4, 4])
+      ctx.lineWidth = isHovered ? 2.5 : 1.5
+      ctx.strokeStyle = color
+      ctx.globalAlpha = isHovered ? 0.95 : 0.7
+      ctx.moveTo(sX, sY)
+      ctx.lineTo(eX, eY)
+      ctx.stroke()
+      ctx.restore()
+
+      // End-point marker (filled for Goal/Save, hollow ring for misses/blocks)
+      ctx.beginPath()
+      ctx.arc(eX, eY, isHovered ? 5 : 4, 0, Math.PI * 2)
+      if (s.outcome === 'Goal' || s.outcome === 'Save') {
+        ctx.fillStyle = color
+        ctx.fill()
+        ctx.strokeStyle = '#000'
+        ctx.lineWidth = 1
+        ctx.stroke()
+      } else {
+        ctx.fillStyle = '#fff'
+        ctx.fill()
+        ctx.strokeStyle = color
+        ctx.lineWidth = 2
+        ctx.stroke()
+      }
+    })
+
+    // Second pass: the start bubble (sized by xG) on top
     sortedShots.forEach(s => {
       if (s.start_x === null || s.start_y === null) return
       const pX = scaleX(s.start_x)

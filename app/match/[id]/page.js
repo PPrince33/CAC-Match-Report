@@ -1956,10 +1956,17 @@ export default function MatchReportPage() {
                     <ShotMapPitch shots={enrichedEvents.filter(e => e.action === 'Shoot' && e.team_id === match.home_team_id)} teamName={match.home_team?.team_name} isHome={true} lineups={lineups} isFutsal={isFutsal} />
                     <ShotMapPitch shots={enrichedEvents.filter(e => e.action === 'Shoot' && e.team_id === match.away_team_id)} teamName={match.away_team?.team_name} isHome={false} lineups={lineups} isFutsal={isFutsal} />
                   </div>
-                  <div className="flex gap-4 text-[10px] font-black uppercase text-gray-500">
-                    <div className="flex items-center gap-2"><div className="w-4 h-4 rounded-full bg-[#0077B6]"></div> Goal (Filled)</div>
-                    <div className="flex items-center gap-2"><div className="w-4 h-4 rounded-full border-2 border-[#D90429] opacity-50"></div> No Goal</div>
-                    <div className="ml-auto italic">* Bubble size = xG</div>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-[10px] font-black uppercase text-gray-500 items-center">
+                    <span className="text-gray-400">Bubble (start):</span>
+                    <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-[#0077B6]"></div> Goal</div>
+                    <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full border-2 border-[#D90429] opacity-60"></div> No Goal</div>
+                    <span className="text-gray-300">·</span>
+                    <span className="text-gray-400">End point:</span>
+                    <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#16a34a' }}></div> Goal</div>
+                    <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#f97316' }}></div> Save</div>
+                    <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-white border-2" style={{ borderColor: '#ef4444' }}></div> Off-Target</div>
+                    <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-white border-2" style={{ borderColor: '#eab308' }}></div> Block</div>
+                    <div className="ml-auto italic">* Bubble size = xG · dotted line = shot trajectory</div>
                   </div>
                 </section>
                 <section>
