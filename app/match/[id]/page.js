@@ -2198,10 +2198,7 @@ export default function MatchReportPage() {
                         ['Sliding Tackle', 'Sliding Tackle'],
                         ['Block', 'Block'],
                         ['Save', 'Save'],
-                        ['Clearance', 'Clearance'],
-                        ['Discipline', 'Discipline'],
                         ['Pressure', 'Pressure'],
-                        ['Ball Control', 'Ball Control'],
                         ['Ground Duels', 'Ground Duels'],
                         ['Aerial Duels', 'Aerial Duels'],
                       ].map(([key, label]) => (

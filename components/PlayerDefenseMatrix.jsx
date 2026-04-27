@@ -47,10 +47,17 @@ export default function PlayerDefenseMatrix({
       m[defId][attId] = (m[defId][attId] || 0) + 1
     }
 
-    // Iterate the appropriate event subset based on the filter
-    const STANDARD_ACTIONS = ['Pass Intercept', 'Standing Tackle', 'Sliding Tackle', 'Block', 'Save', 'Clearance', 'Discipline', 'Pressure']
+    // Helper: is this event a "successful" defensive action?
+    const SAVE_OUTCOMES = new Set(['Gripping', 'Pushing-in', 'Pushing-out'])
+    const isSuccessful = (e) => {
+      if (e.action === 'Save') return SAVE_OUTCOMES.has(e.outcome)
+      return e.outcome === 'Successful'
+    }
+
+    const STANDARD_ACTIONS = ['Pass Intercept', 'Standing Tackle', 'Sliding Tackle', 'Block', 'Save', 'Pressure']
 
     if (actionFilter === 'Aerial Duels') {
+      // already won by construction (matched intercepts)
       aerialMatches.forEach(d => add(d.defenderId, d.opponentId))
     } else if (actionFilter === 'Ground Duels') {
       // Tackles that won possession
@@ -59,23 +66,16 @@ export default function PlayerDefenseMatrix({
         if (e.outcome !== 'Successful' || e.type !== 'With Possession') return
         add(e.player_id, e.reaction_player_id)
       })
-    } else if (actionFilter === 'Ball Control') {
-      // Loser = player_id (on attacker team), Gainer = reaction_player_id (on defender team)
-      events.forEach(e => {
-        if (e.action !== 'Ball Control') return
-        add(e.reaction_player_id, e.player_id)
-      })
     } else if (actionFilter === 'ALL') {
       events.forEach(e => {
-        if (STANDARD_ACTIONS.includes(e.action)) {
-          add(e.player_id, e.reaction_player_id)
-        } else if (e.action === 'Ball Control') {
-          add(e.reaction_player_id, e.player_id)
-        }
+        if (!STANDARD_ACTIONS.includes(e.action)) return
+        if (!isSuccessful(e)) return
+        add(e.player_id, e.reaction_player_id)
       })
     } else if (STANDARD_ACTIONS.includes(actionFilter)) {
       events.forEach(e => {
         if (e.action !== actionFilter) return
+        if (!isSuccessful(e)) return
         add(e.player_id, e.reaction_player_id)
       })
     }
