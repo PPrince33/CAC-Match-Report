@@ -17,6 +17,7 @@ import ShotMapPitch from '../../../components/pitch/ShotMapPitch.jsx'
 import ShotPlacementPitch from '../../../components/pitch/ShotPlacementPitch.jsx'
 import HeatmapPitch, { PASS_OUTCOME_LEGEND } from '../../../components/pitch/HeatmapPitch.jsx'
 import IntervalLineChart from '../../../components/charts/IntervalLineChart.jsx'
+import PlayerDefenseMatrix from '../../../components/PlayerDefenseMatrix.jsx'
 import HighlightsPitch from '../../../components/pitch/HighlightsPitch.jsx'
 import RadarChart from '../../../components/RadarChart.jsx'
 import LeaderCard from '../../../components/LeaderCard.jsx'
@@ -70,6 +71,7 @@ export default function MatchReportPage() {
   const [passModal, setPassModal] = useState(null)  // { title, filterFn } or null
   const [selectedShotId, setSelectedShotId] = useState(null)
   const [defenseModal, setDefenseModal] = useState(null)  // { title, filterFn }
+  const [defMatrixAction, setDefMatrixAction] = useState('ALL')
 
   // Distribution filters
   const [netTeam, setNetTeam] = useState('HOME')
@@ -458,6 +460,7 @@ export default function MatchReportPage() {
     const intendedPasses = enrichedEvents.filter(e => e.action === 'Pass' && e.outcome === 'Intercepted')
     const headerIntercepts = enrichedEvents.filter(e => e.action === 'Pass Intercept' && e.outcome === 'Successful' && e.body_part === 'Head')
     const aerialByTeam = {}
+    const aerialMatches = []   // [{ defenderId, opponentId, teamId, dist }]
     headerIntercepts.forEach(intercept => {
       if (intercept.start_x == null || intercept.start_y == null) return
       const defX = cfg.width - intercept.start_x
@@ -469,9 +472,17 @@ export default function MatchReportPage() {
         if (Math.abs((p.match_time_seconds ?? 0) - t) > timeThreshold) return
         const d = Math.hypot(p.end_x - defX, p.end_y - defY)
         if (d > distThreshold) return
-        if (best == null || d < best.d) best = { d }
+        if (best == null || d < best.d) best = { d, pass: p }
       })
-      if (best) aerialByTeam[intercept.team_id] = (aerialByTeam[intercept.team_id] || 0) + 1
+      if (best) {
+        aerialByTeam[intercept.team_id] = (aerialByTeam[intercept.team_id] || 0) + 1
+        aerialMatches.push({
+          defenderId: intercept.player_id,
+          opponentId: best.pass.reaction_player_id,  // intended receiver = the attacker
+          teamId: intercept.team_id,
+          dist: best.d,
+        })
+      }
     })
 
     const calcTeamDefense = (teamId, opponentId) => {
@@ -578,7 +589,11 @@ export default function MatchReportPage() {
         ppda, oppPassesInZone, defActionsInZone,
       }
     }
-    return { home: calcTeamDefense(match.home_team_id, match.away_team_id), away: calcTeamDefense(match.away_team_id, match.home_team_id) }
+    return {
+      home: calcTeamDefense(match.home_team_id, match.away_team_id),
+      away: calcTeamDefense(match.away_team_id, match.home_team_id),
+      aerialMatches,
+    }
   }, [enrichedEvents, match, cfg])
 
   const computedScores = useMemo(() => {
@@ -2168,6 +2183,61 @@ export default function MatchReportPage() {
                       </div>
                     ))}
                   </BrutalistCard>
+                </section>
+
+                {/* Defensive Match-ups — player vs player matrix */}
+                <section>
+                  <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Defensive Match-ups</h3>
+                  <div className="mb-4">
+                    <label className="block mb-1 text-[10px] font-black uppercase text-gray-500">Filter Action</label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        ['ALL', 'All Defensive'],
+                        ['Pass Intercept', 'Pass Intercept'],
+                        ['Standing Tackle', 'Standing Tackle'],
+                        ['Sliding Tackle', 'Sliding Tackle'],
+                        ['Block', 'Block'],
+                        ['Save', 'Save'],
+                        ['Clearance', 'Clearance'],
+                        ['Discipline', 'Discipline'],
+                        ['Pressure', 'Pressure'],
+                        ['Ball Control', 'Ball Control'],
+                        ['Ground Duels', 'Ground Duels'],
+                        ['Aerial Duels', 'Aerial Duels'],
+                      ].map(([key, label]) => (
+                        <button
+                          key={key}
+                          onClick={() => setDefMatrixAction(key)}
+                          className={`text-[10px] font-black uppercase border-2 border-black px-2 py-1 transition-all ${defMatrixAction === key ? 'bg-black text-white' : 'bg-white text-black hover:bg-[#FFD166]'}`}
+                        >{label}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    <PlayerDefenseMatrix
+                      events={enrichedEvents}
+                      lineups={lineups}
+                      defenderTeamId={match.home_team_id}
+                      attackerTeamId={match.away_team_id}
+                      actionFilter={defMatrixAction}
+                      aerialMatches={(defenseStats?.aerialMatches || []).filter(m => m.teamId === match.home_team_id)}
+                      defenderColor="#0077B6"
+                      defenderTeamName={match.home_team?.team_name}
+                      attackerTeamName={match.away_team?.team_name}
+                    />
+                    <PlayerDefenseMatrix
+                      events={enrichedEvents}
+                      lineups={lineups}
+                      defenderTeamId={match.away_team_id}
+                      attackerTeamId={match.home_team_id}
+                      actionFilter={defMatrixAction}
+                      aerialMatches={(defenseStats?.aerialMatches || []).filter(m => m.teamId === match.away_team_id)}
+                      defenderColor="#D90429"
+                      defenderTeamName={match.away_team?.team_name}
+                      attackerTeamName={match.home_team?.team_name}
+                    />
+                  </div>
+                  <p className="text-[9px] font-bold uppercase text-gray-400 mt-3 italic">Cells coloured by frequency · hover for full names · pairs with no events are blank</p>
                 </section>
 
                 {/* Defense Modal — pitch view of ball-winning event locations */}
