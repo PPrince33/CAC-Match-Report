@@ -395,6 +395,21 @@ export default function MatchReportPage() {
       const final3rdCarries = carries.filter(c => c.start_x !== null && c.end_x !== null && c.start_x < cfg.attackingThirdX && c.end_x >= cfg.attackingThirdX).length
       const dribbles = evs.filter(e => e.action === 'Dribble')
       const succDribbles = dribbles.filter(d => d.outcome === 'Successful').length
+
+      // Ball progressions = Carry + Dribble
+      const progressionEvents = evs.filter(e => e.action === 'Carry' || e.action === 'Dribble')
+      const progIntoFinal3rd = progressionEvents.filter(e =>
+        e.start_x != null && e.end_x != null &&
+        e.start_x < cfg.attackingThirdX && e.end_x >= cfg.attackingThirdX
+      ).length
+      const startedOutsideBox = (e) =>
+        e.start_x != null && e.start_y != null && (
+          e.start_x < cfg.boxX || e.start_y < cfg.boxYMin || e.start_y > cfg.boxYMax
+        )
+      const endedInsideBox = (e) =>
+        e.end_x != null && e.end_y != null &&
+        e.end_x >= cfg.boxX && e.end_y >= cfg.boxYMin && e.end_y <= cfg.boxYMax
+      const progIntoBox = progressionEvents.filter(e => startedOutsideBox(e) && endedInsideBox(e)).length
       const shotsUnderPressure = shots.filter(s => s.pressure_on === true).length
       const passesUnderPressure = passes.filter(p => p.pressure_on === true)
       const succPassesUnderPressure = passesUnderPressure.filter(p => ['Successful', 'Assist', 'Key Pass'].includes(p.outcome)).length
@@ -406,6 +421,7 @@ export default function MatchReportPage() {
         progPasses, keyPasses, assists, throughBalls, crosses, corners,
         carries: carries.length, progCarries, final3rdCarries,
         dribbles: dribbles.length, succDribbles, dribbleAcc: dribbles.length ? Math.round((succDribbles / dribbles.length) * 100) : 0,
+        progIntoFinal3rd, progIntoBox,
         shotsUnderPressure, pressPassAcc
       }
     }
@@ -1947,7 +1963,6 @@ export default function MatchReportPage() {
                   <BrutalistCard>
                     {[
                       { key: 'attack_shooting', title: 'Shooting & Efficiency' },
-                      { key: 'attack_distribution', title: 'Distribution & Creativity' },
                       { key: 'attack_ball_progression', title: 'Ball Progression' },
                       { key: 'attack_pressure', title: 'Performance Under Pressure' }
                     ].map(section => (
