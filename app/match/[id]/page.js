@@ -374,9 +374,12 @@ export default function MatchReportPage() {
          s.end_y != null && s.end_y >= cfg.goalYMin && s.end_y <= cfg.goalYMax)
       ).length
       const boxShots = shots.filter(e => e.start_x !== null && e.start_x >= cfg.boxX && e.start_y >= cfg.boxYMin && e.start_y <= cfg.boxYMax).length
-      const xg = +(shots.reduce((acc, s) => acc + (parseFloat(s.xg) || 0), 0)).toFixed(2)
-      const xgot = +(shots.reduce((acc, s) => acc + (parseFloat(s.xgot) || 0), 0)).toFixed(2)
-      const xgPerShot = totalShots ? (xg / totalShots).toFixed(2) : 0
+      // xG / xGOT are non-penalty totals — penalties get excluded so the
+      // headline number reflects open-play chance quality.
+      const nonPenShots = shots.filter(s => s.type !== 'Penalty')
+      const xg = +(nonPenShots.reduce((acc, s) => acc + (parseFloat(s.xg) || 0), 0)).toFixed(2)
+      const xgot = +(nonPenShots.reduce((acc, s) => acc + (parseFloat(s.xgot) || 0), 0)).toFixed(2)
+      const xgPerShot = nonPenShots.length ? (xg / nonPenShots.length).toFixed(2) : 0
       const xgDiff = (goals - xg).toFixed(2)
       const conversionRate = totalShots > 0 ? +(goals / totalShots * 100).toFixed(1) : 0
       const shootingAccuracy = totalShots > 0 ? +(sot / totalShots * 100).toFixed(1) : 0
