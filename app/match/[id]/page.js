@@ -529,6 +529,13 @@ export default function MatchReportPage() {
 
       const aerialDuelsWon = aerialByTeam[teamId] || 0
 
+      // Ground duels won = successful 1v1 contests on the ground
+      //   (Dribble + Successful/Foul Won) + (Tackle + Successful + With Possession)
+      const groundDuelsWon = evs.filter(e =>
+        (e.action === 'Dribble' && (e.outcome === 'Successful' || e.outcome === 'Foul Won')) ||
+        (['Standing Tackle', 'Sliding Tackle'].includes(e.action) && e.outcome === 'Successful' && e.type === 'With Possession')
+      ).length
+
       // ── PPDA per spec ──────────────────────────────────
       // Passes Allowed = OPPONENT's successful "normal" passes that started in their
       //   own defensive 60% (Start X < 60% of pitch length, scaled).
@@ -564,7 +571,7 @@ export default function MatchReportPage() {
         totalPressures, pressureFouls, totalFouls, yellowCards, redCards,
         totalSaves, grippingSaves, pushSaves, savesRegained, oppShotsBlocked,
         possessionWins, ballRecoveries, totalRegainedPossession,
-        aerialDuelsWon,
+        aerialDuelsWon, groundDuelsWon,
         totalDefensiveActions, defActionSuccessRate,
         ppda, oppPassesInZone, defActionsInZone,
       }
