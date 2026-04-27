@@ -13,9 +13,12 @@ export default function ShotPlacementPitch({ shots, teamName, isHome, lineups, i
   const goalYMax = cfg.goalYMax
   const goalH = cfg.goalHeight
 
-  const getRadiusForXg = (xgValue) => {
-    const val = parseFloat(xgValue) || 0.05
-    return 4 + val * 14
+  // Bubble size is driven by xGOT (post-shot expected goals).
+  // On-target shots (Goal/Save) carry an xGOT > 0; off-target/blocked shots
+  // have xGOT = 0 → they still render at the base radius so they're visible.
+  const getRadiusForXgot = (xgotValue) => {
+    const val = parseFloat(xgotValue) || 0
+    return 4 + val * 18
   }
 
   const drawPitch = (ctx, w, h) => {
@@ -73,13 +76,14 @@ export default function ShotPlacementPitch({ shots, teamName, isHome, lineups, i
     ctx.stroke()
 
     const primaryColor = isHome ? '#0077B6' : '#D90429'
-    const sortedShots = [...shots].sort((a, b) => (parseFloat(b.xg) || 0) - (parseFloat(a.xg) || 0))
+    // Largest xGOT first → small bubbles draw on top of big ones (visible)
+    const sortedShots = [...shots].sort((a, b) => (parseFloat(b.xgot) || 0) - (parseFloat(a.xgot) || 0))
     sortedShots.forEach(s => {
       if (s.end_y === null || s.end_z === null) return
       const pY = scaleY(s.end_y)
       const pZ = scaleZ(s.end_z)
       if (pY < pad - 10 || pY > w - pad + 10 || pZ < pad - 10 || pZ > h - pad + 10) return
-      const radius = getRadiusForXg(s.xg)
+      const radius = getRadiusForXgot(s.xgot)
       const isHovered = tooltip.shot && tooltip.shot.processed_event_id === s.processed_event_id
       const isGoal = s.outcome === 'Goal'
       ctx.beginPath()
@@ -128,12 +132,13 @@ export default function ShotPlacementPitch({ shots, teamName, isHome, lineups, i
     const scaleY = (y) => pad + drawW - ((y - viewMinY) / viewRangeY) * drawW
     const scaleZ = (z) => pad + drawH - ((z - viewMinZ) / viewRangeZ) * drawH
     let hoveredShot = null
-    const sortedShots = [...shots].sort((a, b) => (parseFloat(a.xg) || 0) - (parseFloat(b.xg) || 0))
+    // Smallest first so small bubbles win the hit-test if overlapping a bigger one
+    const sortedShots = [...shots].sort((a, b) => (parseFloat(a.xgot) || 0) - (parseFloat(b.xgot) || 0))
     for (const s of sortedShots) {
       if (s.end_y === null || s.end_z === null) continue
       const evY = scaleY(s.end_y)
       const evZ = scaleZ(s.end_z)
-      const radius = getRadiusForXg(s.xg)
+      const radius = getRadiusForXgot(s.xgot)
       const dist = Math.sqrt(Math.pow(mouseX - evY, 2) + Math.pow(mouseY - evZ, 2))
       if (dist <= radius + 2) { hoveredShot = s; break }
     }
@@ -176,7 +181,8 @@ export default function ShotPlacementPitch({ shots, teamName, isHome, lineups, i
             #{lineups.find(l => l.player_id === tooltip.shot.player_id)?.jersey_no || '-'} {getPlayerName(tooltip.shot.player_id)}
           </div>
           <div className="space-y-1 text-xs font-bold leading-tight">
-            <p><span className="text-gray-600">xG Value:</span> {parseFloat(tooltip.shot.xg || 0).toFixed(2)}</p>
+            <p><span className="text-gray-600">xG:</span> {parseFloat(tooltip.shot.xg || 0).toFixed(2)}</p>
+            <p><span className="text-gray-600">xGOT:</span> {parseFloat(tooltip.shot.xgot || 0).toFixed(2)}</p>
             <p><span className="text-gray-600">Outcome:</span> {tooltip.shot.outcome}</p>
             {tooltip.shot.type && tooltip.shot.type !== 'NA' && <p><span className="text-gray-600">Type:</span> {tooltip.shot.type}</p>}
             <p className="mt-2 pt-1 border-t border-dashed border-black">

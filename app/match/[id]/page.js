@@ -1936,6 +1936,11 @@ export default function MatchReportPage() {
                     <ShotPlacementPitch shots={enrichedEvents.filter(e => e.action === 'Shoot' && e.team_id === match.home_team_id)} teamName={match.home_team?.team_name} isHome={true} lineups={lineups} isFutsal={isFutsal} />
                     <ShotPlacementPitch shots={enrichedEvents.filter(e => e.action === 'Shoot' && e.team_id === match.away_team_id)} teamName={match.away_team?.team_name} isHome={false} lineups={lineups} isFutsal={isFutsal} />
                   </div>
+                  <div className="flex gap-4 mt-3 text-[10px] font-black uppercase text-gray-500">
+                    <div className="flex items-center gap-2"><div className="w-4 h-4 rounded-full bg-[#0077B6]"></div> Goal (Filled)</div>
+                    <div className="flex items-center gap-2"><div className="w-4 h-4 rounded-full border-2 border-[#D90429] opacity-50"></div> No Goal</div>
+                    <div className="ml-auto italic">* Bubble size = xGOT (off-target shots have xGOT 0 → smallest)</div>
+                  </div>
                 </section>
                 <section>
                   <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Attack Statistics</h3>
