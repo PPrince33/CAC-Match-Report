@@ -52,14 +52,14 @@ export default function PassingNetworkPitch({ events = [], lineups = [], homeTea
   // When team changes, reset to ALL
   useEffect(() => { setPlayerFilter('ALL'); setSelectedPlayers(new Set()) }, [teamFilter])
 
-  const { connections, positions, passStats, dirPasses } = useMemo(() => {
+  // Match-wide data that does NOT depend on the visibility filter
+  const { connections, passStats, dirPasses } = useMemo(() => {
     const passActions = new Set(['Pass', 'Through Ball'])
     const successOutcomes = new Set(['Successful', 'Assist', 'Key Pass'])
     const incompleteOutcomes = new Set(['Missed', 'Intercepted', 'Off-Side'])
 
     const connMap = {}
-    const pairMap = {}  // key -> { successful, unsuccessful }
-    const posMap = {}
+    const pairMap = {}
     const statsMap = {}
 
     events.forEach(e => {
@@ -70,7 +70,6 @@ export default function PassingNetworkPitch({ events = [], lineups = [], homeTea
       const isSucc = successOutcomes.has(e.outcome)
       const isInc = incompleteOutcomes.has(e.outcome)
 
-      // Only count passes whose outcome falls in the strict success/incomplete buckets
       if (isSucc || isInc) {
         if (!statsMap[pid]) statsMap[pid] = { total: 0, successful: 0 }
         statsMap[pid].total++
@@ -81,32 +80,19 @@ export default function PassingNetworkPitch({ events = [], lineups = [], homeTea
       if (!e.reaction_player_id) return
       if (e.start_x == null || e.start_y == null) return
 
-      if (!posMap[pid]) posMap[pid] = { sumX: 0, sumY: 0, count: 0, teamId: e.team_id }
-      posMap[pid].sumX += e.start_x
-      posMap[pid].sumY += e.start_y
-      posMap[pid].count++
-      if (e.team_id) posMap[pid].teamId = e.team_id
-
       const key = [pid, e.reaction_player_id].sort().join('|')
       if (!connMap[key]) connMap[key] = { a: pid, b: e.reaction_player_id, count: 0 }
       connMap[key].count++
 
-      // Track directed: pid→receiver
       const dirKey = `${pid}|${e.reaction_player_id}`
       if (!pairMap[dirKey]) pairMap[dirKey] = 0
       pairMap[dirKey]++
     })
 
-    const avgPos = {}
-    Object.entries(posMap).forEach(([pid, d]) => {
-      avgPos[pid] = { x: d.sumX / d.count, y: d.sumY / d.count, teamId: d.teamId }
-    })
-
     return {
       connections: Object.values(connMap).filter(c => c.count >= MIN_CONNECTIONS),
-      positions: avgPos,
       passStats: statsMap,
-      dirPasses: pairMap
+      dirPasses: pairMap,
     }
   }, [events])
 
@@ -119,6 +105,41 @@ export default function PassingNetworkPitch({ events = [], lineups = [], homeTea
     if (playerFilter === 'CUSTOM' && !selectedPlayers.has(pid)) return false
     return true
   }
+
+  // Set of currently-visible player IDs — drives dynamic position recompute
+  const visibleSet = useMemo(() => {
+    const s = new Set()
+    Object.keys(playerMap).forEach(pid => { if (isVisible(pid)) s.add(pid) })
+    return s
+  }, [playerMap, teamFilter, homeTeamId, playerFilter, selectedPlayers])
+
+  // Positions: average of pass start coords, but only counting passes whose
+  // RECEIVER is currently visible. So filtering players in/out re-pulls the
+  // remaining nodes toward the centroid of their visible-receiver passes.
+  const positions = useMemo(() => {
+    const passActions = new Set(['Pass', 'Through Ball'])
+    const successOutcomes = new Set(['Successful', 'Assist', 'Key Pass'])
+    const posMap = {}
+    events.forEach(e => {
+      if (!passActions.has(e.action)) return
+      if (!successOutcomes.has(e.outcome)) return
+      if (!e.player_id || !e.reaction_player_id) return
+      if (e.start_x == null || e.start_y == null) return
+      if (!visibleSet.has(e.reaction_player_id)) return
+
+      const pid = e.player_id
+      if (!posMap[pid]) posMap[pid] = { sumX: 0, sumY: 0, count: 0, teamId: e.team_id }
+      posMap[pid].sumX += e.start_x
+      posMap[pid].sumY += e.start_y
+      posMap[pid].count++
+      if (e.team_id) posMap[pid].teamId = e.team_id
+    })
+    const out = {}
+    Object.entries(posMap).forEach(([pid, d]) => {
+      out[pid] = { x: d.sumX / d.count, y: d.sumY / d.count, teamId: d.teamId }
+    })
+    return out
+  }, [events, visibleSet])
 
   // Resize observer → re-render on container width change
   useEffect(() => {
