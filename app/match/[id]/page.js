@@ -89,8 +89,8 @@ export default function MatchReportPage() {
   const [avgStartingXIOnly, setAvgStartingXIOnly] = useState(false)
 
   // Defense heatmap state
-  const [defActionFilter, setDefActionFilter] = useState('ALL')
-  const [defOutcomeFilter, setDefOutcomeFilter] = useState('ALL')
+  const [defActionFilter, setDefActionFilter] = useState(() => new Set())  // empty = ALL
+  const [defOutcomeFilter, setDefOutcomeFilter] = useState(() => new Set()) // empty = ALL
   const defActions = useMemo(() => ['Standing Tackle', 'Sliding Tackle', 'Block', 'Save', 'Pass Intercept'], [])
 
   // Player comparison state
@@ -447,80 +447,126 @@ export default function MatchReportPage() {
 
   const defenseStats = useMemo(() => {
     if (!match || !enrichedEvents || enrichedEvents.length === 0) return null
+
+    // ── Aerial Duels Won (header interceptions matched to intercepted passes) ──
+    // Footballed-specific. We scan once and bucket by team.
+    const distScale = cfg.width / 120   // football units → cfg-equivalent
+    const distThreshold = 3.0 * distScale
+    const timeThreshold = 8.0
+    const intendedPasses = enrichedEvents.filter(e => e.action === 'Pass' && e.outcome === 'Intercepted')
+    const headerIntercepts = enrichedEvents.filter(e => e.action === 'Pass Intercept' && e.outcome === 'Successful' && e.body_part === 'Head')
+    const aerialByTeam = {}
+    headerIntercepts.forEach(intercept => {
+      if (intercept.start_x == null || intercept.start_y == null) return
+      const defX = cfg.width - intercept.start_x
+      const defY = cfg.height - intercept.start_y
+      const t = intercept.match_time_seconds ?? 0
+      let best = null
+      intendedPasses.forEach(p => {
+        if (p.end_x == null || p.end_y == null) return
+        if (Math.abs((p.match_time_seconds ?? 0) - t) > timeThreshold) return
+        const d = Math.hypot(p.end_x - defX, p.end_y - defY)
+        if (d > distThreshold) return
+        if (best == null || d < best.d) best = { d }
+      })
+      if (best) aerialByTeam[intercept.team_id] = (aerialByTeam[intercept.team_id] || 0) + 1
+    })
+
     const calcTeamDefense = (teamId, opponentId) => {
       const evs = enrichedEvents.filter(e => e.team_id === teamId)
       const oppEvs = enrichedEvents.filter(e => e.team_id === opponentId)
+
+      const lostBallControl = evs.filter(e => e.action === 'Ball Control').length
+
       const tackles = evs.filter(e => ['Sliding Tackle', 'Standing Tackle'].includes(e.action))
       const totalTackles = tackles.length
       const succTackles = tackles.filter(e => e.outcome === 'Successful')
       const failedTackles = tackles.filter(e => e.outcome === 'Unsuccessful')
       const tacklesWithPoss = succTackles.filter(e => e.type === 'With Possession').length
       const tackleSuccess = totalTackles > 0 ? Math.round((succTackles.length / totalTackles) * 100) : 0
+
       const interceptions = evs.filter(e => e.action === 'Pass Intercept')
       const totalInterceptions = interceptions.length
       const succInterceptions = interceptions.filter(e => e.outcome === 'Successful')
       const failedInterceptions = interceptions.filter(e => e.outcome === 'Unsuccessful').length
       const intsWithPoss = succInterceptions.filter(e => e.type === 'With Possession').length
+
       const blocks = evs.filter(e => e.action === 'Block')
       const totalBlocks = blocks.length
       const succBlocks = blocks.filter(e => e.outcome === 'Successful')
       const blocksWithPoss = succBlocks.filter(e => e.type === 'With Possession').length
       const blockOwnGoals = blocks.filter(e => e.outcome === 'Unsuccessful' && e.type === 'Own Goal').length
+
       const clearances = evs.filter(e => e.action === 'Clearance')
       const totalClearances = clearances.length
       const succClearances = clearances.filter(e => e.outcome === 'Successful')
-      const clearWithPoss = succClearances.filter(e => e.type === 'With Possession').length
+      const clearWithPoss = clearances.filter(e => e.type === 'With Possession').length
       const clearOwnGoals = clearances.filter(e => e.outcome === 'Unsuccessful' && e.type === 'Own Goal').length
+
       const pressures = evs.filter(e => e.action === 'Pressure')
       const totalPressures = pressures.length
       const pressureFouls = pressures.filter(e => e.outcome === 'Foul').length
+
       const totalFouls = evs.filter(e => e.outcome === 'Foul').length
       const yellowCards = evs.filter(e => e.type === 'Yellow Card').length
       const redCards = evs.filter(e => e.type === 'Red Card').length
+
       const saves = evs.filter(e => e.action === 'Save')
       const totalSaves = saves.length
       const grippingSaves = saves.filter(e => e.outcome === 'Gripping').length
       const pushSaves = saves.filter(e => ['Pushing-in', 'Pushing-out'].includes(e.outcome)).length
+      const savesRegained = grippingSaves   // per spec: outcome='Gripping' = save that retained possession
+
       const oppShotsBlocked = oppEvs.filter(e => e.action === 'Shoot' && e.outcome === 'Block').length
-      const possessionWins = tacklesWithPoss + intsWithPoss + blocksWithPoss + clearWithPoss
-      // Ball Recovery: defensive action (tackle/intercept/block) that directly wins possession
-      const ballRecoveries = tacklesWithPoss + intsWithPoss + blocksWithPoss
+
+      const totalRegainedPossession = intsWithPoss + tacklesWithPoss + blocksWithPoss
+      const possessionWins = totalRegainedPossession + clearWithPoss
+      const ballRecoveries = totalRegainedPossession   // alias
+
       const totalDefensiveActions = totalTackles + totalInterceptions + totalBlocks + totalClearances + totalPressures
       const totalSuccDefActions = succTackles.length + succInterceptions.length + succBlocks.length + succClearances.length
       const defActionSuccessRate = totalDefensiveActions > 0 ? Math.round((totalSuccDefActions / totalDefensiveActions) * 100) : 0
 
-      // ── PPDA (Passes Per Defensive Action) ──────────────────────────────────
-      // Measures pressing intensity in the opponent's defensive zone.
-      // PPDA zone: opponent's defensive 60% (standard StatsBomb definition)
-      // Formula: opponent passes in pressing zone / team defensive actions in that zone
-      // Lower = more intense press. Defensive actions = tackles + interceptions + fouls.
-      const isHome = teamId === match.home_team_id
-      const pressThreshold = cfg.width * 0.4              // attacking 60% of pitch
+      const aerialDuelsWon = aerialByTeam[teamId] || 0
+
+      // ── PPDA per spec ──────────────────────────────────
+      // Passes Allowed = OPPONENT's successful "normal" passes that started in their
+      //   own defensive 60% (Start X < 60% of pitch length, scaled).
+      // Def Actions   = THIS team's defensive actions that started in the high-press zone
+      //   (Start X > 40% of pitch length).
+      const passSuccess = ['Successful', 'Key Pass', 'Assist']
+      const passNormalTypes = ['Normal', 'Normal Pass']
+      const lowZone = cfg.width * 0.6
+      const highZone = cfg.width * 0.4
 
       const oppPassesInZone = oppEvs.filter(e =>
-        e.action === 'Pass' && e.start_x !== null &&
-        e.start_x > pressThreshold
+        ['Pass', 'Through Ball'].includes(e.action) &&
+        e.start_x != null && e.start_x < lowZone &&
+        passSuccess.includes(e.outcome) &&
+        passNormalTypes.includes(e.type)
       ).length
 
       const defActionsInZone = evs.filter(e =>
-        ['Sliding Tackle', 'Standing Tackle', 'Pass Intercept', 'Discipline', 'Pressure'].includes(e.action) &&
-        e.start_x !== null &&
-        e.start_x > pressThreshold
+        ['Block', 'Pass Intercept', 'Standing Tackle', 'Sliding Tackle'].includes(e.action) &&
+        e.start_x != null && e.start_x > highZone
       ).length
 
       const ppda = defActionsInZone > 0
         ? parseFloat((oppPassesInZone / defActionsInZone).toFixed(2))
-        : null   // null = no defensive actions in zone (show as N/A)
+        : null
 
       return {
+        lostBallControl,
         totalTackles, succTackles: succTackles.length, failedTackles: failedTackles.length, tacklesWithPoss, tackleSuccess,
         totalInterceptions, succInterceptions: succInterceptions.length, failedInterceptions, intsWithPoss,
         totalBlocks, succBlocks: succBlocks.length, blocksWithPoss, blockOwnGoals,
         totalClearances, succClearances: succClearances.length, clearWithPoss, clearOwnGoals,
         totalPressures, pressureFouls, totalFouls, yellowCards, redCards,
-        totalSaves, grippingSaves, pushSaves, oppShotsBlocked,
-        possessionWins, ballRecoveries, totalDefensiveActions, defActionSuccessRate,
-        ppda, oppPassesInZone, defActionsInZone
+        totalSaves, grippingSaves, pushSaves, savesRegained, oppShotsBlocked,
+        possessionWins, ballRecoveries, totalRegainedPossession,
+        aerialDuelsWon,
+        totalDefensiveActions, defActionSuccessRate,
+        ppda, oppPassesInZone, defActionsInZone,
       }
     }
     return { home: calcTeamDefense(match.home_team_id, match.away_team_id), away: calcTeamDefense(match.away_team_id, match.home_team_id) }
@@ -1196,11 +1242,10 @@ export default function MatchReportPage() {
 
   const availableDefOutcomes = useMemo(() => {
     const outcomes = new Set()
-    if (defActionFilter === 'ALL') {
-      defActions.forEach(action => { if (CAC_LOGIC[action]) Object.keys(CAC_LOGIC[action]).forEach(o => outcomes.add(o)) })
-    } else {
-      if (CAC_LOGIC[defActionFilter]) Object.keys(CAC_LOGIC[defActionFilter]).forEach(o => outcomes.add(o))
-    }
+    const sourceActions = defActionFilter.size === 0 ? defActions : Array.from(defActionFilter)
+    sourceActions.forEach(action => {
+      if (CAC_LOGIC[action]) Object.keys(CAC_LOGIC[action]).forEach(o => outcomes.add(o))
+    })
     return Array.from(outcomes).sort()
   }, [defActions, defActionFilter])
 
@@ -2013,36 +2058,73 @@ export default function MatchReportPage() {
               <div className="space-y-12">
                 <section>
                   <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Defensive Density Heatmaps</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  <div className="space-y-3 mb-6">
                     <div>
-                      <label className="block mb-1 text-[10px] font-black uppercase text-gray-500">Filter Action</label>
-                      <select className="w-full border-2 border-black p-2 font-black text-xs uppercase" value={defActionFilter} onChange={e => { setDefActionFilter(e.target.value); setDefOutcomeFilter('ALL') }}>
-                        <option value="ALL">All Defensive Actions</option>
-                        {defActions.map(a => <option key={a} value={a}>{a}</option>)}
-                      </select>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-[10px] font-black uppercase text-gray-500">Filter Action {defActionFilter.size > 0 && <span className="text-black">({defActionFilter.size} selected)</span>}</label>
+                        {defActionFilter.size > 0 && (
+                          <button onClick={() => setDefActionFilter(new Set())} className="text-[9px] font-black uppercase border border-black px-1.5 py-0.5 hover:bg-[#FFD166]">Clear</button>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {defActions.map(a => {
+                          const active = defActionFilter.has(a)
+                          return (
+                            <button
+                              key={a}
+                              onClick={() => setDefActionFilter(prev => { const n = new Set(prev); n.has(a) ? n.delete(a) : n.add(a); return n })}
+                              className={`text-[10px] font-black uppercase border-2 border-black px-2 py-1 transition-all ${active ? 'bg-black text-white' : 'bg-white text-black hover:bg-[#FFD166]'}`}
+                            >{a}</button>
+                          )
+                        })}
+                      </div>
+                      {defActionFilter.size === 0 && <p className="text-[9px] font-bold uppercase text-gray-400 mt-1 italic">None selected → all defensive actions shown</p>}
                     </div>
                     <div>
-                      <label className="block mb-1 text-[10px] font-black uppercase text-gray-500">Filter Outcome</label>
-                      <select className="w-full border-2 border-black p-2 font-black text-xs uppercase" value={defOutcomeFilter} onChange={e => setDefOutcomeFilter(e.target.value)}>
-                        <option value="ALL">All Outcomes</option>
-                        {availableDefOutcomes.map(o => <option key={o} value={o}>{o}</option>)}
-                      </select>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-[10px] font-black uppercase text-gray-500">Filter Outcome {defOutcomeFilter.size > 0 && <span className="text-black">({defOutcomeFilter.size} selected)</span>}</label>
+                        {defOutcomeFilter.size > 0 && (
+                          <button onClick={() => setDefOutcomeFilter(new Set())} className="text-[9px] font-black uppercase border border-black px-1.5 py-0.5 hover:bg-[#FFD166]">Clear</button>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {availableDefOutcomes.map(o => {
+                          const active = defOutcomeFilter.has(o)
+                          return (
+                            <button
+                              key={o}
+                              onClick={() => setDefOutcomeFilter(prev => { const n = new Set(prev); n.has(o) ? n.delete(o) : n.add(o); return n })}
+                              className={`text-[10px] font-black uppercase border-2 border-black px-2 py-1 transition-all ${active ? 'bg-black text-white' : 'bg-white text-black hover:bg-[#FFD166]'}`}
+                            >{o}</button>
+                          )
+                        })}
+                      </div>
+                      {defOutcomeFilter.size === 0 && <p className="text-[9px] font-bold uppercase text-gray-400 mt-1 italic">None selected → all outcomes shown</p>}
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-8">
-                    <HeatmapPitch events={enrichedEvents.filter(e => e.team_id === match.home_team_id && (defActionFilter === 'ALL' ? defActions.includes(e.action) : e.action === defActionFilter) && (defOutcomeFilter === 'ALL' || e.outcome === defOutcomeFilter))} teamName={match.home_team?.team_name} isHome={true} isFutsal={isFutsal} />
-                    <HeatmapPitch events={enrichedEvents.filter(e => e.team_id === match.away_team_id && (defActionFilter === 'ALL' ? defActions.includes(e.action) : e.action === defActionFilter) && (defOutcomeFilter === 'ALL' || e.outcome === defOutcomeFilter))} teamName={match.away_team?.team_name} isHome={false} isFutsal={isFutsal} />
+                    {(() => {
+                      const matchActionSet = (e) => defActionFilter.size === 0 ? defActions.includes(e.action) : defActionFilter.has(e.action)
+                      const matchOutcomeSet = (e) => defOutcomeFilter.size === 0 || defOutcomeFilter.has(e.outcome)
+                      const filt = (teamId) => enrichedEvents.filter(e => e.team_id === teamId && matchActionSet(e) && matchOutcomeSet(e))
+                      return (
+                        <>
+                          <HeatmapPitch events={filt(match.home_team_id)} teamName={match.home_team?.team_name} isHome={true} isFutsal={isFutsal} />
+                          <HeatmapPitch events={filt(match.away_team_id)} teamName={match.away_team?.team_name} isHome={false} isFutsal={isFutsal} />
+                        </>
+                      )
+                    })()}
                   </div>
                 </section>
                 <section>
                   <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Defense Statistics</h3>
                   <BrutalistCard>
                     {[
-                      { key: 'defense_tackling', title: 'Tackling & Interceptions' },
-                      { key: 'defense_blocks', title: 'Blocks & Clearances' },
-                      { key: 'defense_work_rate', title: 'Work Rate & Recoveries' },
-                      { key: 'defense_goalkeeping', title: 'Goalkeeping & Discipline' },
-                      { key: 'defense_pressing', title: 'Pressing Intensity (PPDA)' }
+                      { key: 'defense_ball_winning', title: 'Ball Winning' },
+                      { key: 'defense_clearances',   title: 'Clearances' },
+                      { key: 'defense_work_rate',    title: 'Pressures & Total Actions' },
+                      { key: 'defense_discipline',   title: 'Discipline' },
+                      { key: 'defense_pressing',     title: 'Pressing Intensity (PPDA)' }
                     ].map(section => (
                       <div key={section.key} className="mb-6 last:mb-0">
                         <h4 className="text-sm font-black uppercase text-gray-400 mb-2 flex items-center gap-2"><Shield size={14} /> {section.title}</h4>
