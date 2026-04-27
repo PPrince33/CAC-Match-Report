@@ -18,6 +18,7 @@ import ShotPlacementPitch from '../../../components/pitch/ShotPlacementPitch.jsx
 import HeatmapPitch, { PASS_OUTCOME_LEGEND } from '../../../components/pitch/HeatmapPitch.jsx'
 import IntervalLineChart from '../../../components/charts/IntervalLineChart.jsx'
 import PlayerDefenseMatrix from '../../../components/PlayerDefenseMatrix.jsx'
+import PlayerPassMatrix from '../../../components/PlayerPassMatrix.jsx'
 import HighlightsPitch from '../../../components/pitch/HighlightsPitch.jsx'
 import RadarChart from '../../../components/RadarChart.jsx'
 import LeaderCard from '../../../components/LeaderCard.jsx'
@@ -1953,6 +1954,28 @@ export default function MatchReportPage() {
                       )}
                     </BrutalistCard>
                   </div>
+                </section>
+
+                {/* Pass Link Matrices */}
+                <section>
+                  <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Pass Link Matrices</h3>
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    <PlayerPassMatrix
+                      events={passFilteredEvents}
+                      lineups={lineups}
+                      teamId={match.home_team_id}
+                      teamColor="#0077B6"
+                      teamName={match.home_team?.team_name}
+                    />
+                    <PlayerPassMatrix
+                      events={passFilteredEvents}
+                      lineups={lineups}
+                      teamId={match.away_team_id}
+                      teamColor="#D90429"
+                      teamName={match.away_team?.team_name}
+                    />
+                  </div>
+                  <p className="text-[9px] font-bold uppercase text-gray-400 mt-3 italic">Cells = completed pass count between the pair · respects the active half / zone / time-range filters · hover for the per-pass timeline</p>
                 </section>
 
                 {/* Pass Map Modal */}
