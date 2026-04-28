@@ -74,7 +74,7 @@ export default function MatchReportPage() {
   const [selectedShotId, setSelectedShotId] = useState(null)
   const [defenseModal, setDefenseModal] = useState(null)  // { title, filterFn }
   const [defMatrixAction, setDefMatrixAction] = useState('ALL')
-  const [buildupCount, setBuildupCount] = useState(20)
+  const [buildupCount, setBuildupCount] = useState(10)
 
   // Distribution filters
   const [netTeam, setNetTeam] = useState('HOME')
