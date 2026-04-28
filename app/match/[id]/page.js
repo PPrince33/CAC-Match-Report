@@ -19,6 +19,7 @@ import HeatmapPitch, { PASS_OUTCOME_LEGEND } from '../../../components/pitch/Hea
 import IntervalLineChart from '../../../components/charts/IntervalLineChart.jsx'
 import PlayerDefenseMatrix from '../../../components/PlayerDefenseMatrix.jsx'
 import PlayerPassMatrix from '../../../components/PlayerPassMatrix.jsx'
+import GoalBuildupPitch from '../../../components/GoalBuildupPitch.jsx'
 import HighlightsPitch from '../../../components/pitch/HighlightsPitch.jsx'
 import RadarChart from '../../../components/RadarChart.jsx'
 import LeaderCard from '../../../components/LeaderCard.jsx'
@@ -73,6 +74,7 @@ export default function MatchReportPage() {
   const [selectedShotId, setSelectedShotId] = useState(null)
   const [defenseModal, setDefenseModal] = useState(null)  // { title, filterFn }
   const [defMatrixAction, setDefMatrixAction] = useState('ALL')
+  const [buildupCount, setBuildupCount] = useState(20)
 
   // Distribution filters
   const [netTeam, setNetTeam] = useState('HOME')
@@ -950,6 +952,39 @@ export default function MatchReportPage() {
       }
     })
   }, [enrichedEvents, lineups, match])
+
+  // Build-up sequence (last N events for the scoring team leading into each goal)
+  const goalBuildups = useMemo(() => {
+    if (!enrichedEvents || !lineups || !match) return []
+    const sortedEvents = [...enrichedEvents].sort((a, b) => (a.match_time_seconds ?? 0) - (b.match_time_seconds ?? 0))
+    const goals = sortedEvents
+      .filter(e => (e.action === 'Shoot' && e.outcome === 'Goal') || e.type === 'Own Goal')
+    return goals.map(g => {
+      const teamId = g.team_id  // attacking team that scored (or own-goal acted by team)
+      const scorerLU = lineups.find(l => l.player_id === g.player_id)
+      const minute = g.match_time_seconds != null ? Math.floor(g.match_time_seconds / 60) : null
+      const goalIdx = sortedEvents.indexOf(g)
+      // Pull preceding events from the SCORING team (skip goal itself), then append goal at the end
+      const precedingTeamEvents = []
+      for (let i = goalIdx - 1; i >= 0 && precedingTeamEvents.length < buildupCount; i--) {
+        const ev = sortedEvents[i]
+        if (ev.team_id !== teamId) continue
+        if (ev.action === 'Match Time') continue
+        precedingTeamEvents.push(ev)
+      }
+      precedingTeamEvents.reverse()
+      return {
+        goalEvent: g,
+        scorer: scorerLU?.players?.player_name || `#${scorerLU?.jersey_no || '?'}`,
+        scorerJersey: scorerLU?.jersey_no || '?',
+        teamId,
+        isHome: teamId === match.home_team_id,
+        teamName: teamId === match.home_team_id ? match.home_team?.team_name : match.away_team?.team_name,
+        minute,
+        sequence: [...precedingTeamEvents, g],
+      }
+    })
+  }, [enrichedEvents, lineups, match, buildupCount])
 
   // ───────────────────────────────────────────────────────────────────────
   // Passes tab — outcome buckets per spec
@@ -2183,6 +2218,82 @@ export default function MatchReportPage() {
                       </div>
                     ))}
                   </BrutalistCard>
+                </section>
+
+                {/* Goal Build-ups */}
+                <section>
+                  <div className="flex items-end justify-between gap-4 border-b-4 border-black mb-6 pb-1 flex-wrap">
+                    <h3 className="text-xl font-black uppercase">Goal Build-up</h3>
+                    <div className="flex items-center gap-2 text-[10px] font-black uppercase">
+                      <span className="text-gray-500">Actions before goal:</span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={50}
+                        value={buildupCount}
+                        onChange={e => setBuildupCount(Math.max(1, Math.min(50, parseInt(e.target.value) || 1)))}
+                        className="w-16 border-2 border-black p-1 text-xs font-black text-center"
+                      />
+                      <div className="flex gap-1">
+                        {[5, 10, 20, 30].map(n => (
+                          <button
+                            key={n}
+                            onClick={() => setBuildupCount(n)}
+                            className={`border border-black px-1.5 py-0.5 text-[10px] ${buildupCount === n ? 'bg-black text-white' : 'bg-white hover:bg-[#FFD166]'}`}
+                          >{n}</button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  {goalBuildups.length === 0 ? (
+                    <div className="border-4 border-dashed border-gray-200 p-8 text-center text-[11px] font-black uppercase text-gray-400">
+                      No goals in this match
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {goalBuildups.map((g, i) => {
+                        const isOwnGoal = g.goalEvent.type === 'Own Goal'
+                        return (
+                          <BrutalistCard key={i}>
+                            <div className={`-m-4 mb-4 px-4 py-2 border-b-2 border-black flex items-center justify-between text-white ${g.isHome ? 'bg-[#0077B6]' : 'bg-[#D90429]'}`}>
+                              <div className="flex items-center gap-3">
+                                <span className="text-2xl">⚽</span>
+                                <div>
+                                  <div className="text-xs font-black uppercase opacity-80">{g.minute != null ? `${g.minute}'` : '?'} · {g.teamName}</div>
+                                  <div className="text-base font-black uppercase leading-tight">#{g.scorerJersey} {g.scorer}{isOwnGoal ? ' (Own Goal)' : ''}</div>
+                                </div>
+                              </div>
+                              <div className="text-right text-[10px] font-bold uppercase opacity-90">
+                                {g.sequence.length - 1} preceding action{g.sequence.length - 1 !== 1 ? 's' : ''}
+                              </div>
+                            </div>
+                            <GoalBuildupPitch
+                              events={g.sequence}
+                              isFutsal={isFutsal}
+                              isHome={g.isHome}
+                            />
+                            <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[9px] font-black uppercase text-gray-500 border-t border-gray-200 pt-2">
+                              <span className="text-gray-400">Legend:</span>
+                              {['Pass', 'Carry', 'Dribble', 'Shoot', 'Cross', 'Pass Intercept'].map(act => (
+                                <span key={act} className="flex items-center gap-1">
+                                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor:
+                                    act === 'Pass' ? '#3b82f6' :
+                                    act === 'Carry' ? '#06b6d4' :
+                                    act === 'Dribble' ? '#0ea5e9' :
+                                    act === 'Shoot' ? '#ef4444' :
+                                    act === 'Cross' ? '#f59e0b' : '#84cc16'
+                                  }} />
+                                  {act}
+                                </span>
+                              ))}
+                              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-[#FFD166] border border-black" /> Goal</span>
+                              <span className="ml-auto italic text-gray-400">Numbers = chronological order · hover for action details</span>
+                            </div>
+                          </BrutalistCard>
+                        )
+                      })}
+                    </div>
+                  )}
                 </section>
               </div>
             )}
