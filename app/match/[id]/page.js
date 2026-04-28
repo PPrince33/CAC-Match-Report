@@ -953,38 +953,52 @@ export default function MatchReportPage() {
     })
   }, [enrichedEvents, lineups, match])
 
-  // Build-up sequence (last N events for the scoring team leading into each goal)
+  // Build-up sequence (last N events leading into each goal — both teams)
+  // Coordinates are de-normalized: when original_team_direction != team_direction
+  // (i.e. we flipped the event for stats), we mirror x/y back so the build-up
+  // displays in the actual on-pitch attack direction.
   const goalBuildups = useMemo(() => {
     if (!enrichedEvents || !lineups || !match) return []
+    const denormalize = (e) => {
+      if (!e || e.original_team_direction == null || e.team_direction == null) return e
+      if (e.original_team_direction === e.team_direction) return e
+      const flip = (v, max) => v == null ? v : (max - v)
+      return {
+        ...e,
+        start_x: flip(e.start_x, cfg.width),
+        start_y: flip(e.start_y, cfg.height),
+        end_x: flip(e.end_x, cfg.width),
+        end_y: flip(e.end_y, cfg.height),
+      }
+    }
     const sortedEvents = [...enrichedEvents].sort((a, b) => (a.match_time_seconds ?? 0) - (b.match_time_seconds ?? 0))
     const goals = sortedEvents
       .filter(e => (e.action === 'Shoot' && e.outcome === 'Goal') || e.type === 'Own Goal')
     return goals.map(g => {
-      const teamId = g.team_id  // attacking team that scored (or own-goal acted by team)
+      const teamId = g.team_id
       const scorerLU = lineups.find(l => l.player_id === g.player_id)
       const minute = g.match_time_seconds != null ? Math.floor(g.match_time_seconds / 60) : null
       const goalIdx = sortedEvents.indexOf(g)
-      // Pull preceding events from the SCORING team (skip goal itself), then append goal at the end
       const precedingTeamEvents = []
       for (let i = goalIdx - 1; i >= 0 && precedingTeamEvents.length < buildupCount; i--) {
         const ev = sortedEvents[i]
-        if (ev.team_id !== teamId) continue
         if (ev.action === 'Match Time') continue
         precedingTeamEvents.push(ev)
       }
       precedingTeamEvents.reverse()
+      const sequence = [...precedingTeamEvents, g].map(denormalize)
       return {
-        goalEvent: g,
+        goalEvent: denormalize(g),
         scorer: scorerLU?.players?.player_name || `#${scorerLU?.jersey_no || '?'}`,
         scorerJersey: scorerLU?.jersey_no || '?',
         teamId,
         isHome: teamId === match.home_team_id,
         teamName: teamId === match.home_team_id ? match.home_team?.team_name : match.away_team?.team_name,
         minute,
-        sequence: [...precedingTeamEvents, g],
+        sequence,
       }
     })
-  }, [enrichedEvents, lineups, match, buildupCount])
+  }, [enrichedEvents, lineups, match, buildupCount, cfg])
 
   // ───────────────────────────────────────────────────────────────────────
   // Passes tab — outcome buckets per spec
@@ -2272,6 +2286,7 @@ export default function MatchReportPage() {
                               lineups={lineups}
                               isFutsal={isFutsal}
                               isHome={g.isHome}
+                              homeTeamId={match.home_team_id}
                             />
                             <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[9px] font-black uppercase text-gray-500 border-t border-gray-200 pt-2">
                               <span className="text-gray-400">Legend:</span>
@@ -2288,7 +2303,11 @@ export default function MatchReportPage() {
                                 </span>
                               ))}
                               <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-[#FFD166] border border-black" /> Goal</span>
-                              <span className="ml-auto italic text-gray-400">Numbers = chronological order · hover for action details</span>
+                              <span className="text-gray-300">·</span>
+                              <span className="text-gray-400">Outer ring:</span>
+                              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full border-2" style={{ borderColor: '#0077B6' }} /> {match.home_team?.team_name}</span>
+                              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full border-2" style={{ borderColor: '#D90429' }} /> {match.away_team?.team_name}</span>
+                              <span className="ml-auto italic text-gray-400">Numbers = chronological · hover for details</span>
                             </div>
                           </BrutalistCard>
                         )

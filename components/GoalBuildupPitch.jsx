@@ -51,7 +51,7 @@ function drawArrow(ctx, x1, y1, x2, y2, color, lineWidth = 1.5, alpha = 0.9) {
  * The events array is the chronologically-ordered buildup; the LAST event
  * is the goal itself.
  */
-export default function GoalBuildupPitch({ events = [], lineups = [], isFutsal = false, isHome = true }) {
+export default function GoalBuildupPitch({ events = [], lineups = [], isFutsal = false, isHome = true, homeTeamId = null }) {
   const playerById = (() => {
     const m = {}
     lineups.forEach(l => { m[l.player_id] = l })
@@ -122,6 +122,8 @@ export default function GoalBuildupPitch({ events = [], lineups = [], isFutsal =
       const isGoal = i === events.length - 1
       const isHovered = hover === i
       const color = colorOf(e)
+      // Team ring color: home → blue, away → red
+      const teamColor = homeTeamId == null ? null : (e.team_id === homeTeamId ? '#0077B6' : '#D90429')
 
       // Arrow from start → end where applicable
       const hasEnd = e.end_x != null && e.end_y != null && (
@@ -132,8 +134,17 @@ export default function GoalBuildupPitch({ events = [], lineups = [], isFutsal =
         drawArrow(ctx, sX, sY, scaleX(e.end_x), scaleY(e.end_y), color, isHovered ? 2.5 : 1.4, isHovered ? 0.95 : 0.65)
       }
 
-      // Numbered start marker
+      // Outer team ring
       const r = isGoal ? 14 : (isHovered ? 12 : 10)
+      if (teamColor && !isGoal) {
+        ctx.beginPath()
+        ctx.arc(sX, sY, r + 3, 0, Math.PI * 2)
+        ctx.strokeStyle = teamColor
+        ctx.lineWidth = 2
+        ctx.stroke()
+      }
+
+      // Numbered start marker
       ctx.beginPath()
       ctx.arc(sX, sY, r, 0, Math.PI * 2)
       ctx.fillStyle = isGoal ? '#FFD166' : '#fff'
@@ -188,13 +199,20 @@ export default function GoalBuildupPitch({ events = [], lineups = [], isFutsal =
         const lu = playerById[hovered.player_id]
         const playerLabel = lu ? `#${lu.jersey_no} ${lu.players?.player_name || ''}`.trim() : (hovered.player_id ? '?' : '')
         const minuteVal = hovered.match_minute ?? Math.floor((hovered.match_time_seconds || 0) / 60)
+        const teamColor = homeTeamId == null ? null : (hovered.team_id === homeTeamId ? '#0077B6' : '#D90429')
         return (
           <div className="absolute top-2 right-2 bg-black text-white border-2 border-[#FFD166] px-3 py-2 text-[10px] font-black uppercase shadow-[3px_3px_0px_0px_#FFD166] pointer-events-none min-w-[200px]">
             <div className="text-[#FFD166] mb-1 border-b border-white/20 pb-1">
               {hover === events.length - 1 ? '⚽ GOAL' : `Action ${hover + 1}`} · {minuteVal}'
             </div>
             <div className="space-y-0.5">
-              {playerLabel && <div><span className="text-gray-400">Player:</span> {playerLabel}</div>}
+              {playerLabel && (
+                <div>
+                  <span className="text-gray-400">Player:</span>{' '}
+                  {teamColor && <span className="inline-block w-2 h-2 mr-1" style={{ backgroundColor: teamColor }} />}
+                  {playerLabel}
+                </div>
+              )}
               <div><span className="text-gray-400">Action:</span> {hovered.action || '?'}</div>
               {hovered.outcome && <div><span className="text-gray-400">Outcome:</span> {hovered.outcome}</div>}
               {hovered.type && hovered.type !== 'NA' && <div><span className="text-gray-400">Type:</span> {hovered.type}</div>}
