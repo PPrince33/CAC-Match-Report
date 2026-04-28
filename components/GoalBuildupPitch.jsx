@@ -51,7 +51,12 @@ function drawArrow(ctx, x1, y1, x2, y2, color, lineWidth = 1.5, alpha = 0.9) {
  * The events array is the chronologically-ordered buildup; the LAST event
  * is the goal itself.
  */
-export default function GoalBuildupPitch({ events = [], isFutsal = false, isHome = true }) {
+export default function GoalBuildupPitch({ events = [], lineups = [], isFutsal = false, isHome = true }) {
+  const playerById = (() => {
+    const m = {}
+    lineups.forEach(l => { m[l.player_id] = l })
+    return m
+  })()
   const canvasRef = useRef(null)
   const containerRef = useRef(null)
   const sizeRef = useRef({ w: 700, h: 469 })
@@ -179,15 +184,24 @@ export default function GoalBuildupPitch({ events = [], isFutsal = false, isHome
         onMouseMove={handleMouseMove}
         onMouseLeave={() => setHover(null)}
       />
-      {hovered && (
-        <div className="absolute top-2 right-2 bg-black text-white border-2 border-[#FFD166] px-3 py-2 text-[10px] font-black uppercase shadow-[3px_3px_0px_0px_#FFD166] pointer-events-none">
-          <div className="text-[#FFD166] mb-0.5">
-            {hover === events.length - 1 ? '⚽ GOAL' : `Action ${hover + 1}`} ·{' '}
-            {(hovered.match_minute ?? Math.floor((hovered.match_time_seconds || 0) / 60))}'
+      {hovered && (() => {
+        const lu = playerById[hovered.player_id]
+        const playerLabel = lu ? `#${lu.jersey_no} ${lu.players?.player_name || ''}`.trim() : (hovered.player_id ? '?' : '')
+        const minuteVal = hovered.match_minute ?? Math.floor((hovered.match_time_seconds || 0) / 60)
+        return (
+          <div className="absolute top-2 right-2 bg-black text-white border-2 border-[#FFD166] px-3 py-2 text-[10px] font-black uppercase shadow-[3px_3px_0px_0px_#FFD166] pointer-events-none min-w-[200px]">
+            <div className="text-[#FFD166] mb-1 border-b border-white/20 pb-1">
+              {hover === events.length - 1 ? '⚽ GOAL' : `Action ${hover + 1}`} · {minuteVal}'
+            </div>
+            <div className="space-y-0.5">
+              {playerLabel && <div><span className="text-gray-400">Player:</span> {playerLabel}</div>}
+              <div><span className="text-gray-400">Action:</span> {hovered.action || '?'}</div>
+              {hovered.outcome && <div><span className="text-gray-400">Outcome:</span> {hovered.outcome}</div>}
+              {hovered.type && hovered.type !== 'NA' && <div><span className="text-gray-400">Type:</span> {hovered.type}</div>}
+            </div>
           </div>
-          <div>{hovered.action}{hovered.outcome ? ` · ${hovered.outcome}` : ''}</div>
-        </div>
-      )}
+        )
+      })()}
     </div>
   )
 }

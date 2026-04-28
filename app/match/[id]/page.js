@@ -2269,6 +2269,7 @@ export default function MatchReportPage() {
                             </div>
                             <GoalBuildupPitch
                               events={g.sequence}
+                              lineups={lineups}
                               isFutsal={isFutsal}
                               isHome={g.isHome}
                             />
