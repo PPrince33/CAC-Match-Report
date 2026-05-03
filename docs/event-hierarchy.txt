@@ -1,0 +1,250 @@
+CAC Match Report — Event Hierarchy
+====================================
+Structure of every row in `processed_match_events`:
+
+    Action  ──►  Outcome  ──►  Type
+
+Action     = WHAT the player did
+Outcome    = HOW it ended
+Type       = additional qualifier / context
+
+Below: every valid (Action, Outcome, Type) combination currently in CAC_LOGIC.
+"NA" means the row has no further qualifier in that slot.
+
+
+────────────────────────────────────────────────────────────────────
+PASS
+────────────────────────────────────────────────────────────────────
+└─ Pass
+   ├─ Successful
+   │  ├─ Normal Pass
+   │  ├─ Goalkick
+   │  ├─ Goalkeeper Throw
+   │  ├─ Corner Kick
+   │  ├─ Free Kick
+   │  ├─ Throw-in
+   │  └─ Penalty
+   ├─ Assist                     ← directly led to a goal
+   │  ├─ Normal Pass
+   │  ├─ Goalkick
+   │  ├─ Goalkeeper Throw
+   │  ├─ Corner Kick
+   │  ├─ Free Kick
+   │  ├─ Throw-in
+   │  └─ Penalty
+   ├─ Key Pass                   ← created a clear goal-scoring chance (not a goal)
+   │  ├─ Normal Pass
+   │  ├─ Goalkick
+   │  ├─ Goalkeeper Throw
+   │  ├─ Corner Kick
+   │  ├─ Free Kick
+   │  ├─ Throw-in
+   │  └─ Penalty
+   ├─ Unsuccessful
+   │  ├─ Normal Pass
+   │  ├─ Goalkick
+   │  ├─ Goalkeeper Throw
+   │  ├─ Corner Kick
+   │  ├─ Free Kick
+   │  ├─ Throw-in
+   │  └─ Penalty
+   └─ Off-Side
+      ├─ Normal Pass
+      ├─ Goalkick
+      ├─ Goalkeeper Throw
+      ├─ Corner Kick
+      ├─ Free Kick
+      └─ Penalty
+
+
+────────────────────────────────────────────────────────────────────
+THROUGH BALL
+────────────────────────────────────────────────────────────────────
+└─ Through Ball
+   ├─ Successful
+   │  ├─ Normal
+   │  ├─ Assist
+   │  └─ Key Pass
+   └─ Unsuccessful
+      ├─ Normal
+      └─ Off-Side
+
+
+────────────────────────────────────────────────────────────────────
+SHOOT
+────────────────────────────────────────────────────────────────────
+└─ Shoot
+   ├─ Goal           (each → Normal | Penalty | Free Kick)
+   ├─ Save           (each → Normal | Penalty | Free Kick)
+   ├─ Block          (each → Normal | Penalty | Free Kick)
+   ├─ Woodwork       (each → Normal | Penalty | Free Kick)
+   └─ Off-Target     (each → Normal | Penalty | Free Kick)
+
+
+────────────────────────────────────────────────────────────────────
+BALL CONTROL
+────────────────────────────────────────────────────────────────────
+└─ Ball Control
+   └─ Unsuccessful   (Type = NA)            ← player lost the ball
+
+
+────────────────────────────────────────────────────────────────────
+CARRY
+────────────────────────────────────────────────────────────────────
+└─ Carry
+   └─ Successful     (Type = NA)
+
+
+────────────────────────────────────────────────────────────────────
+DRIBBLE
+────────────────────────────────────────────────────────────────────
+└─ Dribble
+   ├─ Successful     (Type = NA)
+   ├─ Unsuccessful   (Type = NA)
+   └─ Foul Won       (Type = NA)            ← drew a foul off the dribble
+
+
+────────────────────────────────────────────────────────────────────
+TACKLE  (Standing & Sliding share the same shape)
+────────────────────────────────────────────────────────────────────
+└─ Standing Tackle / Sliding Tackle
+   ├─ Successful
+   │  ├─ With Possession                    ← regained the ball
+   │  └─ Without Possession                 ← won duel but ball went elsewhere
+   ├─ Unsuccessful   (Type = NA)
+   └─ Foul
+      ├─ No Card
+      ├─ Yellow Card
+      └─ Red Card
+
+
+────────────────────────────────────────────────────────────────────
+PASS INTERCEPT
+────────────────────────────────────────────────────────────────────
+└─ Pass Intercept
+   ├─ Successful
+   │  ├─ With Possession                    ← ball stays with team
+   │  └─ Without Possession
+   └─ Unsuccessful
+      ├─ Hand Ball
+      ├─ Without Possession
+      └─ Own Goal
+
+
+────────────────────────────────────────────────────────────────────
+BLOCK
+────────────────────────────────────────────────────────────────────
+└─ Block
+   ├─ Successful
+   │  ├─ With Possession
+   │  └─ Without Possession
+   └─ Unsuccessful
+      ├─ Hand Ball
+      └─ Own Goal
+
+
+────────────────────────────────────────────────────────────────────
+CLEARANCE
+────────────────────────────────────────────────────────────────────
+└─ Clearance
+   ├─ Successful
+   │  ├─ With Possession
+   │  └─ Without Possession
+   └─ Unsuccessful
+      ├─ Own Goal
+      └─ Without Possession
+
+
+────────────────────────────────────────────────────────────────────
+SAVE  (goalkeeper)
+────────────────────────────────────────────────────────────────────
+└─ Save
+   ├─ Gripping       (Type = NA)            ← held the ball
+   ├─ Pushing-in     (Type = NA)            ← parried inside box
+   └─ Pushing-out    (Type = NA)            ← parried outside box
+
+
+────────────────────────────────────────────────────────────────────
+PRESSURE
+────────────────────────────────────────────────────────────────────
+└─ Pressure
+   └─ Foul
+      └─ No Card                            ← pressing committed a foul
+
+
+────────────────────────────────────────────────────────────────────
+DISCIPLINE
+────────────────────────────────────────────────────────────────────
+└─ Discipline
+   └─ Foul
+      ├─ No Card
+      ├─ Yellow Card
+      └─ Red Card
+
+
+────────────────────────────────────────────────────────────────────
+SUBSTITUTION
+────────────────────────────────────────────────────────────────────
+└─ Substitution
+   └─ Off                                   ← player_id = went OFF
+      │                                        reaction_player_id = came ON
+      ├─ Tactical
+      └─ Injury
+
+
+────────────────────────────────────────────────────────────────────
+MATCH TIME (bookkeeping events — not stats)
+────────────────────────────────────────────────────────────────────
+└─ Match Time
+   ├─ 1st Half
+   │  ├─ Kick-Off
+   │  ├─ Half Break
+   │  └─ Match End
+   └─ 2nd Half
+      ├─ Kick-Off
+      ├─ Half Break
+      └─ Match End
+
+
+====================================================================
+NOTES ON CONVENTIONS
+====================================================================
+
+Player roles per row
+  • player_id            = the actor (defender, passer, shooter, etc.)
+  • reaction_player_id   = the opposite end of the action
+                            – Pass / Through Ball  → the receiver
+                            – Tackle               → the player dispossessed
+                            – Pass Intercept       → the passer whose ball was cut out
+                            – Block                → the player whose shot/pass was blocked
+                            – Save                 → the shooter
+                            – Substitution         → the player coming ON
+                            – Ball Control loss    → opponent that picked it up
+
+Successful pass family
+  ['Successful', 'Key Pass', 'Assist']
+   → counted as completed passes everywhere (Pass Acc %, Passing Network, etc.)
+
+Incomplete pass family
+  ['Missed', 'Intercepted', 'Off-Side']
+   → used for accuracy denominators in the Passes tab so the rate ignores
+     non-classifiable outcomes
+
+Successful defensive family
+  Pass Intercept / Tackle / Block / Pressure  outcome === 'Successful'
+  Save                                        outcome ∈ {Gripping, Pushing-in, Pushing-out}
+
+Possession-regaining marker
+  Successful + Type === 'With Possession'
+   → counts toward "Regained Possession" / "Total Regained Possession"
+
+Direction normalisation
+  • team_direction          = direction stored in the processed row
+                              (events are normalised so attacks always run L→R
+                               when reading stats)
+  • original_team_direction = the raw recording direction
+  When team_direction !== original_team_direction the (start_x, start_y,
+  end_x, end_y) tuple was flipped during processing. To draw events on the
+  pitch in their actual real-world direction, mirror back with:
+        x  →  pitch_width  − x         (120 football, 40 futsal)
+        y  →  pitch_height − y         (80 football, 20 futsal)
