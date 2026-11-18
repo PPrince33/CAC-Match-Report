@@ -1846,7 +1846,7 @@ export default function MatchReportPage() {
                       <h4 className="text-[10px] font-black uppercase text-[#9AA397]"><Filter size={12} className="inline" /> Filters</h4>
                       <button onClick={() => { setPassHalf('ALL'); setPassZone('ALL'); setPassMinMin(0); setPassMaxMin(absoluteMaxMinute); setPassSelectedPlayer(null) }} className="text-[10px] font-black uppercase border-2 border-line px-2 py-0.5 hover:bg-[#6BDB58]">Reset</button>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-bold uppercase">
+                    <div className="grid grid-cols-1 md:grid-cols-3 text-xs font-bold uppercase divide-y-2 md:divide-y-0 md:divide-x-2 divide-dotted divide-[#B9C0B6] [&>*]:py-3 md:[&>*]:py-0 md:[&>*]:px-5 md:[&>*:first-child]:pl-0 md:[&>*:last-child]:pr-0">
                       <div>
                         <label className="block mb-1 text-[#5B6359]">Half</label>
                         <div className="flex gap-1">
@@ -2150,7 +2150,7 @@ export default function MatchReportPage() {
                       <h4 className="text-[10px] font-black uppercase text-[#9AA397]"><Filter size={12} className="inline" /> Filters</h4>
                       <button onClick={() => { setAtkHalf('ALL'); setAtkZone('ALL'); setAtkMinMin(0); setAtkMaxMin(absoluteMaxMinute); setSelectedShotId(null) }} className="text-[10px] font-black uppercase border-2 border-line px-2 py-0.5 hover:bg-[#6BDB58]">Reset</button>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-bold uppercase">
+                    <div className="grid grid-cols-1 md:grid-cols-3 text-xs font-bold uppercase divide-y-2 md:divide-y-0 md:divide-x-2 divide-dotted divide-[#B9C0B6] [&>*]:py-3 md:[&>*]:py-0 md:[&>*]:px-5 md:[&>*:first-child]:pl-0 md:[&>*:last-child]:pr-0">
                       <div>
                         <label className="block mb-1 text-[#5B6359]">Half</label>
                         <div className="flex gap-1">
@@ -2328,7 +2328,7 @@ export default function MatchReportPage() {
                       <h4 className="text-[10px] font-black uppercase text-[#9AA397]"><Filter size={12} className="inline" /> Filters</h4>
                       <button onClick={() => { setDefHalf('ALL'); setDefZone('ALL'); setDefMinMin(0); setDefMaxMin(absoluteMaxMinute) }} className="text-[10px] font-black uppercase border-2 border-line px-2 py-0.5 hover:bg-[#6BDB58]">Reset</button>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-bold uppercase">
+                    <div className="grid grid-cols-1 md:grid-cols-3 text-xs font-bold uppercase divide-y-2 md:divide-y-0 md:divide-x-2 divide-dotted divide-[#B9C0B6] [&>*]:py-3 md:[&>*]:py-0 md:[&>*]:px-5 md:[&>*:first-child]:pl-0 md:[&>*:last-child]:pr-0">
                       <div>
                         <label className="block mb-1 text-[#5B6359]">Half</label>
                         <div className="flex gap-1">
