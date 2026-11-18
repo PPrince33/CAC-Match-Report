@@ -2588,7 +2588,7 @@ export default function MatchReportPage() {
                       </thead>
                       <tbody>
                         {[
-                          { section: 'ATTACKING', bg: 'bg-[#0077B6] text-white' },
+                          { section: 'ATTACKING', bg: 'bg-[#0B0D0B] text-white' },
                           { action: 'Goal',                    pts: '+10', note: 'Shoot → Goal' },
                           { action: 'Penalty Won',             pts: '+3',  note: 'Foul Won → Penalty' },
                           { action: 'Shot on Target (In Box)', pts: '+2',  note: 'Shoot → Save inside penalty box' },
