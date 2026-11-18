@@ -1405,7 +1405,7 @@ export default function MatchReportPage() {
     setAnalysisLoading(true)
     setAnalysisSaved(false)
     try {
-      const res = await fetch('/api/analyze', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -76,7 +76,7 @@ export default function AdminDashboardPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/"
-              className="border-2 border-white px-4 py-2 font-bold uppercase text-xs hover:bg-white hover:text-black transition-all"
+              className="rounded-full border-2 border-[#0B0D0B] px-4 py-2 font-mono font-bold uppercase text-xs hover:bg-[#0B0D0B] hover:text-white transition-all"
             >
               Public Site
             </Link>

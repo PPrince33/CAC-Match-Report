@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { supabase } from '../../lib/supabase.js'
 
 export default function AdminLoginPage() {
@@ -95,12 +96,12 @@ export default function AdminLoginPage() {
             </form>
 
             <div className="mt-6 pt-6 border-t-2 border-dashed border-[#D6DBD3]">
-              <a
+              <Link
                 href="/"
                 className="text-xs font-black uppercase text-[#9AA397] hover:text-black transition-all"
               >
                 ← Back to Match Reports
-              </a>
+              </Link>
             </div>
           </div>
         </div>
