@@ -21,30 +21,43 @@ export default function ShotPlacementPitch({ shots, teamName, isHome, lineups, i
     return 4 + val * 18
   }
 
+  // One metre is the same number of pixels across and up, so the goal keeps its real shape
+  // (football 7.32 × 2.44 m, futsal 3 × 2 m). View: one goal-width either side of the posts,
+  // half a metre below the ground line and 60% of the crossbar height above it.
+  const PAD = 30
+  const goalW = goalYMax - goalYMin
+  const viewMinY = goalYMin - goalW
+  const viewMaxY = goalYMax + goalW
+  const viewRangeY = viewMaxY - viewMinY
+  const viewMinZ = -0.5
+  const viewMaxZ = goalH * 1.6
+  const viewRangeZ = viewMaxZ - viewMinZ
+  const TOP = 16 // room for the team name chip above the frame
+  const heightFor = (w) => Math.round(PAD * 2 + TOP + (w - PAD * 2) * viewRangeZ / viewRangeY)
+  const getView = (w, h) => {
+    const k = Math.min((w - PAD * 2) / viewRangeY, (h - PAD * 2 - TOP) / viewRangeZ)
+    const ox = (w - viewRangeY * k) / 2
+    const oy = TOP + (h - TOP - viewRangeZ * k) / 2
+    return {
+      k, ox, oy, frameW: viewRangeY * k, frameH: viewRangeZ * k,
+      scaleY: (y) => ox + (viewMaxY - y) * k,
+      scaleZ: (z) => oy + (viewMaxZ - z) * k,
+    }
+  }
+
   const drawPitch = (ctx, w, h) => {
-    const pad = 30
-    const drawW = w - pad * 2
-    const drawH = h - pad * 2
-    const viewPadY = (goalYMax - goalYMin) * 1.5
-    const viewMinY = goalYMin - viewPadY
-    const viewMaxY = goalYMax + viewPadY
-    const viewRangeY = viewMaxY - viewMinY
-    const viewMinZ = -0.5
-    const viewMaxZ = goalH + 1.5
-    const viewRangeZ = viewMaxZ - viewMinZ
-    const scaleY = (y) => pad + drawW - ((y - viewMinY) / viewRangeY) * drawW
-    const scaleZ = (z) => pad + drawH - ((z - viewMinZ) / viewRangeZ) * drawH
+    const { ox, oy, frameW, frameH, scaleY, scaleZ } = getView(w, h)
 
     ctx.clearRect(0, 0, w, h)
     ctx.fillStyle = '#ffffff'
-    ctx.fillRect(pad, pad, drawW, drawH)
-    ctx.strokeStyle = '#000000'
-    ctx.lineWidth = 3
-    ctx.strokeRect(pad, pad, drawW, drawH)
+    ctx.fillRect(ox, oy, frameW, frameH)
+    ctx.strokeStyle = '#B9C0B6'
+    ctx.lineWidth = 2
+    ctx.strokeRect(ox, oy, frameW, frameH)
 
     ctx.beginPath()
-    ctx.moveTo(pad, scaleZ(0))
-    ctx.lineTo(w - pad, scaleZ(0))
+    ctx.moveTo(ox, scaleZ(0))
+    ctx.lineTo(ox + frameW, scaleZ(0))
     ctx.strokeStyle = '#CBD1C8'
     ctx.lineWidth = 2
     ctx.setLineDash([5, 5])
@@ -56,8 +69,9 @@ export default function ShotPlacementPitch({ shots, teamName, isHome, lineups, i
     ctx.lineTo(scaleY(goalYMin), scaleZ(goalH))
     ctx.lineTo(scaleY(goalYMax), scaleZ(goalH))
     ctx.lineTo(scaleY(goalYMax), scaleZ(0))
-    ctx.strokeStyle = '#000000'
+    ctx.strokeStyle = '#0B0D0B'
     ctx.lineWidth = 6
+    ctx.lineJoin = 'miter'
     ctx.stroke()
 
     ctx.strokeStyle = '#D6DBD3'
@@ -82,7 +96,7 @@ export default function ShotPlacementPitch({ shots, teamName, isHome, lineups, i
       if (s.end_y === null || s.end_z === null) return
       const pY = scaleY(s.end_y)
       const pZ = scaleZ(s.end_z)
-      if (pY < pad - 10 || pY > w - pad + 10 || pZ < pad - 10 || pZ > h - pad + 10) return
+      if (pY < ox - 10 || pY > ox + frameW + 10 || pZ < oy - 10 || pZ > oy + frameH + 10) return
       const radius = getRadiusForXgot(s.xgot)
       const isHovered = tooltip.shot && tooltip.shot.processed_event_id === s.processed_event_id
       const isGoal = s.outcome === 'Goal'
@@ -104,7 +118,7 @@ export default function ShotPlacementPitch({ shots, teamName, isHome, lineups, i
       const canvas = canvasRef.current
       const container = containerRef.current
       canvas.width = container.clientWidth
-      canvas.height = container.clientWidth * 0.4
+      canvas.height = heightFor(container.clientWidth)
       const ctx = canvas.getContext('2d')
       drawPitch(ctx, canvas.width, canvas.height)
     }
@@ -119,18 +133,7 @@ export default function ShotPlacementPitch({ shots, teamName, isHome, lineups, i
     const rect = canvas.getBoundingClientRect()
     const mouseX = (e.clientX - rect.left) * (canvas.width / rect.width)
     const mouseY = (e.clientY - rect.top) * (canvas.height / rect.height)
-    const pad = 30
-    const drawW = canvas.width - pad * 2
-    const drawH = canvas.height - pad * 2
-    const viewPadY = (goalYMax - goalYMin) * 1.5
-    const viewMinY = goalYMin - viewPadY
-    const viewMaxY = goalYMax + viewPadY
-    const viewRangeY = viewMaxY - viewMinY
-    const viewMinZ = -0.5
-    const viewMaxZ = goalH + 1.5
-    const viewRangeZ = viewMaxZ - viewMinZ
-    const scaleY = (y) => pad + drawW - ((y - viewMinY) / viewRangeY) * drawW
-    const scaleZ = (z) => pad + drawH - ((z - viewMinZ) / viewRangeZ) * drawH
+    const { scaleY, scaleZ } = getView(canvas.width, canvas.height)
     let hoveredShot = null
     // Smallest first so small bubbles win the hit-test if overlapping a bigger one
     const sortedShots = [...shots].sort((a, b) => (parseFloat(a.xgot) || 0) - (parseFloat(b.xgot) || 0))
@@ -174,7 +177,7 @@ export default function ShotPlacementPitch({ shots, teamName, isHome, lineups, i
       />
       {tooltip.visible && tooltip.shot && (
         <div
-          className={`absolute z-50 bg-[#6BDB58] border-2 border-line p-3 pointer-events-none min-w-[180px] transition-all duration-75 ${tooltip.transform}`}
+          className={`absolute z-50 bg-[#6BDB58] rounded-xl p-3 shadow-[0_10px_30px_rgba(11,13,11,0.18)] pointer-events-none min-w-[180px] transition-all duration-75 ${tooltip.transform}`}
           style={{ left: tooltip.x, top: tooltip.y }}
         >
           <div className="text-sm font-black uppercase border-b-2 border-line pb-1 mb-2">
