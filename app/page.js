@@ -121,9 +121,9 @@ export default function HomePage() {
                   <h2 className="text-xl md:text-2xl uppercase leading-none md:whitespace-nowrap md:truncate">
                     <span className="text-[#0077B6]">{m.home_team?.team_name}</span>
                     {' '}
-                    <span className="text-[#0077B6] tabular-nums">{m.home_team_score ?? 0}</span>
+                    <span className="tabular-nums"><span className="text-[#9AA397]">[</span><span className="text-[#0077B6]">{m.home_team_score ?? 0}</span><span className="text-[#9AA397]">]</span></span>
                     <span className="text-[#9AA397] mx-2">–</span>
-                    <span className="text-[#D90429] tabular-nums">{m.away_team_score ?? 0}</span>
+                    <span className="tabular-nums"><span className="text-[#9AA397]">[</span><span className="text-[#D90429]">{m.away_team_score ?? 0}</span><span className="text-[#9AA397]">]</span></span>
                     {' '}
                     <span className="text-[#D90429]">{m.away_team?.team_name}</span>
                   </h2>
