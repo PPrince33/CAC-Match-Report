@@ -2,8 +2,49 @@
 @tailwind components;
 @tailwind utilities;
 
+/* CAC deck theme: white editorial page, black type, logo-green accents.
+   Home blue (#0077B6) and away red (#D90429) are the only team colours. */
+:root {
+  --ink: #0B0D0B;
+  --paper: #FFFFFF;
+  --accent: #6BDB58;
+  --accent-ink: #23801A;
+  --panel: #F0F2EE;
+  --line: #D6DBD3;
+  --muted: #5B6359;
+  --home: #0077B6;
+  --away: #D90429;
+}
+
 * { box-sizing: border-box; }
-body { font-family: 'Courier New', monospace; }
+body {
+  font-family: Inter, "Helvetica Neue", Arial, sans-serif;
+  color: var(--ink);
+  background: var(--paper);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Headlines: heavy italic uppercase, as in the deck */
+h1, h2, h3 {
+  font-family: Archivo, "Arial Black", "Helvetica Neue", Arial, sans-serif;
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+h4, h5, h6 { font-family: Archivo, "Arial Black", Arial, sans-serif; font-weight: 800; }
+
+/* Numbers line up in tables */
+table, .tabular-nums { font-variant-numeric: tabular-nums; }
+th { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; letter-spacing: .06em; }
+
+/* Neon-green highlight block for key words */
+.hl { background: var(--accent); padding: 0 .12em; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+
+/* Visible keyboard focus */
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+::selection { background: var(--accent); color: var(--ink); }
 
 .perspective-1000 { perspective: 1000px; }
 .preserve-3d { transform-style: preserve-3d; }

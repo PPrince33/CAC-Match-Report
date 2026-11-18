@@ -97,8 +97,8 @@ export default function AveragePositionsPitch({ data, teamName, isHome, lineups,
   }
 
   return (
-    <div ref={containerRef} className="flex-1 min-w-[300px] border-4 border-black bg-white relative cursor-crosshair">
-      <div className={`absolute top-2 left-2 ${isHome ? 'bg-[#0077B6]' : 'bg-[#D90429]'} text-white border-2 border-black px-2 py-1 text-[10px] font-black uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] z-10`}>
+    <div ref={containerRef} className="flex-1 min-w-[300px] border-4 border-line bg-white relative cursor-crosshair">
+      <div className={`absolute top-2 left-2 ${isHome ? 'bg-[#0077B6]' : 'bg-[#D90429]'} text-white border-2 border-line px-2 py-1 text-[10px] font-black uppercase z-10`}>
         {teamName}
       </div>
       <canvas
@@ -109,20 +109,20 @@ export default function AveragePositionsPitch({ data, teamName, isHome, lineups,
       />
       {tooltip.visible && tooltip.playerInfo && (
         <div
-          className={`absolute z-50 bg-[#FFD166] border-2 border-black p-3 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] pointer-events-none min-w-[180px] transition-all duration-75 ${tooltip.transform}`}
+          className={`absolute z-50 bg-[#6BDB58] border-2 border-line p-3 pointer-events-none min-w-[180px] transition-all duration-75 ${tooltip.transform}`}
           style={{ left: tooltip.x, top: tooltip.y }}
         >
-          <div className="text-sm font-black uppercase border-b-2 border-black pb-1 mb-2">
+          <div className="text-sm font-black uppercase border-b-2 border-line pb-1 mb-2">
             #{lineups.find(l => l.player_id === tooltip.playerInfo.playerId)?.jersey_no} {getPlayerName(tooltip.playerInfo.playerId)}
           </div>
           <div className="space-y-1 text-xs font-bold leading-tight">
-            <p><span className="text-gray-600">Events Recorded:</span> {tooltip.playerInfo.count}</p>
-            <p><span className="text-gray-600">Avg X:</span> {tooltip.playerInfo.avgX.toFixed(1)}m</p>
-            <p><span className="text-gray-600">Avg Y:</span> {tooltip.playerInfo.avgY.toFixed(1)}m</p>
+            <p><span className="text-[#5B6359]">Events Recorded:</span> {tooltip.playerInfo.count}</p>
+            <p><span className="text-[#5B6359]">Avg X:</span> {tooltip.playerInfo.avgX.toFixed(1)}m</p>
+            <p><span className="text-[#5B6359]">Avg Y:</span> {tooltip.playerInfo.avgY.toFixed(1)}m</p>
           </div>
         </div>
       )}
-      <div className="border-t-2 border-black px-3 py-1.5 bg-[#f1f5f9] text-[9px] font-black uppercase tracking-widest text-gray-500 flex items-center justify-center gap-2">
+      <div className="border-t-2 border-line px-3 py-1.5 bg-[#F0F2EE] text-[9px] font-black uppercase tracking-widest text-[#5B6359] flex items-center justify-center gap-2">
         <span>Attack Direction →</span>
       </div>
     </div>

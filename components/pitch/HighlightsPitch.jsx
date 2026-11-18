@@ -129,9 +129,9 @@ export default function HighlightsPitch({
       const y1 = Math.min(brush.sy, brush.ey)
       const bw = Math.abs(brush.ex - brush.sx)
       const bh = Math.abs(brush.ey - brush.sy)
-      ctx.fillStyle = 'rgba(255,209,102,0.18)'
+      ctx.fillStyle = 'rgba(107,219,88,0.18)'
       ctx.fillRect(x1, y1, bw, bh)
-      ctx.strokeStyle = '#FFD166'
+      ctx.strokeStyle = '#6BDB58'
       ctx.lineWidth = 2
       ctx.setLineDash([5, 4])
       ctx.strokeRect(x1, y1, bw, bh)
@@ -273,26 +273,26 @@ export default function HighlightsPitch({
     : null
 
   return (
-    <div className="border-4 border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+    <div className="border-4 border-line bg-white">
       {/* header bar */}
-      <div className="flex items-center justify-between border-b-4 border-black px-3 py-2 bg-[#f1f5f9]">
+      <div className="flex items-center justify-between border-b-4 border-line px-3 py-2 bg-[#F0F2EE]">
         <span className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
           <span className="w-2 h-2 bg-black rounded-full inline-block" />
           Pitch Map — {events.filter(e => e.start_x != null).length} events
           {eventsInBrush !== null && (
-            <span className="ml-2 bg-[#FFD166] border border-black px-1 text-[9px]">
+            <span className="ml-2 bg-[#6BDB58] border border-line px-1 text-[9px]">
               {eventsInBrush} in selection
             </span>
           )}
         </span>
         <div className="flex items-center gap-2">
-          <span className="text-[9px] text-gray-500 font-bold uppercase">
+          <span className="text-[9px] text-[#5B6359] font-bold uppercase">
             {brush ? 'Drag to resize · Click to clear' : 'Drag to select region'}
           </span>
           {brush && (
             <button
               onClick={clearBrush}
-              className="text-[9px] font-black uppercase border-2 border-black px-2 py-0.5 bg-white hover:bg-[#D90429] hover:text-white transition-all shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]"
+              className="text-[9px] font-black uppercase border-2 border-line px-2 py-0.5 bg-white hover:bg-[#6BDB58] hover:text-[#0B0D0B] transition-all"
             >
               Clear
             </button>
@@ -301,14 +301,14 @@ export default function HighlightsPitch({
       </div>
 
       {/* legend */}
-      <div className="flex items-center gap-4 px-3 py-1.5 border-b-2 border-black bg-white text-[9px] font-bold uppercase">
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-[#0077B6] inline-block border border-black" /> Home</span>
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-[#D90429] inline-block border border-black" /> Away</span>
-        <span className="ml-auto flex items-center gap-3 text-gray-500">
+      <div className="flex items-center gap-4 px-3 py-1.5 border-b-2 border-line bg-white text-[9px] font-bold uppercase">
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-[#0077B6] inline-block border border-line" /> Home</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-[#D90429] inline-block border border-line" /> Away</span>
+        <span className="ml-auto flex items-center gap-3 text-[#5B6359]">
           <span>● Shoot / Pass / Carry</span>
           <span>◆ Tackle / Intercept</span>
           <span>■ Block / Clear / Save</span>
-          <span className="text-gray-700">Filled = success · Outline = fail</span>
+          <span className="text-[#5B6359]">Filled = success · Outline = fail</span>
         </span>
       </div>
 
@@ -329,10 +329,10 @@ export default function HighlightsPitch({
         {/* tooltip */}
         {tooltip.visible && tooltip.event && (
           <div
-            className={`absolute z-50 bg-[#FFD166] border-2 border-black p-2 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] pointer-events-none min-w-[160px] transform ${tooltip.transform}`}
+            className={`absolute z-50 bg-[#6BDB58] border-2 border-line p-2 pointer-events-none min-w-[160px] transform ${tooltip.transform}`}
             style={{ left: tooltip.x, top: tooltip.y }}
           >
-            <div className="text-[10px] font-black uppercase border-b-2 border-black pb-1 mb-1.5 flex items-center gap-1">
+            <div className="text-[10px] font-black uppercase border-b-2 border-line pb-1 mb-1.5 flex items-center gap-1">
               <span
                 className="w-2 h-2 rounded-full inline-block"
                 style={{ background: tooltip.event.team_id === homeTeamId ? '#0077B6' : '#D90429' }}
@@ -342,21 +342,21 @@ export default function HighlightsPitch({
             </div>
             <div className="space-y-0.5 text-[9px] font-bold leading-tight">
               <p>{Math.floor((tooltip.event.match_time_seconds || 0) / 60)}'{' '}
-                <span className="text-gray-600">{tooltip.event.action}</span>
+                <span className="text-[#5B6359]">{tooltip.event.action}</span>
               </p>
-              <p><span className="text-gray-600">Outcome: </span>{tooltip.event.outcome}</p>
+              <p><span className="text-[#5B6359]">Outcome: </span>{tooltip.event.outcome}</p>
               {tooltip.event.type && tooltip.event.type !== 'NA' && (
-                <p><span className="text-gray-600">Type: </span>{tooltip.event.type}</p>
+                <p><span className="text-[#5B6359]">Type: </span>{tooltip.event.type}</p>
               )}
               {tooltip.event.action === 'Shoot' && (
-                <p><span className="text-gray-600">xG: </span>{parseFloat(tooltip.event.xg || 0).toFixed(2)}</p>
+                <p><span className="text-[#5B6359]">xG: </span>{parseFloat(tooltip.event.xg || 0).toFixed(2)}</p>
               )}
-              <p className="text-gray-400 mt-1">Click to jump video</p>
+              <p className="text-[#9AA397] mt-1">Click to jump video</p>
             </div>
           </div>
         )}
       </div>
-      <div className="border-t-2 border-black px-3 py-1.5 bg-[#f1f5f9] text-[9px] font-black uppercase tracking-widest text-gray-500 flex items-center justify-center gap-2">
+      <div className="border-t-2 border-line px-3 py-1.5 bg-[#F0F2EE] text-[9px] font-black uppercase tracking-widest text-[#5B6359] flex items-center justify-center gap-2">
         <span>Attack Direction →</span>
       </div>
     </div>

@@ -122,8 +122,8 @@ export default function DistributionPitch({ filteredEvents, homeTeamId, lineups,
   }
 
   return (
-    <div ref={containerRef} className="w-full border-4 border-black bg-white relative cursor-crosshair mb-4">
-      <div className="absolute top-2 left-2 bg-white border-2 border-black px-2 py-1 text-[10px] font-black uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] z-10 flex items-center gap-1">
+    <div ref={containerRef} className="w-full border-4 border-line bg-white relative cursor-crosshair mb-4">
+      <div className="absolute top-2 left-2 bg-white border-2 border-line px-2 py-1 text-[10px] font-black uppercase z-10 flex items-center gap-1">
         <MapIcon size={12} /> Scatter Telemetry
       </div>
       <canvas
@@ -134,26 +134,26 @@ export default function DistributionPitch({ filteredEvents, homeTeamId, lineups,
       />
       {tooltip.visible && tooltip.event && (
         <div
-          className={`absolute z-20 bg-[#FFD166] border-2 border-black p-3 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] pointer-events-none min-w-[200px] transition-all duration-75 ${tooltip.transform}`}
+          className={`absolute z-20 bg-[#6BDB58] border-2 border-line p-3 pointer-events-none min-w-[200px] transition-all duration-75 ${tooltip.transform}`}
           style={{ left: tooltip.x, top: tooltip.y }}
         >
-          <div className="text-sm font-black uppercase border-b-2 border-black pb-1 mb-2 flex justify-between items-center">
+          <div className="text-sm font-black uppercase border-b-2 border-line pb-1 mb-2 flex justify-between items-center">
             <span>{tooltip.event.action}</span>
             <span className="bg-black text-white px-1 text-xs">{formatTime(tooltip.event.match_time_seconds)}</span>
           </div>
           <div className="space-y-1 text-xs font-bold leading-tight">
-            <p><span className="text-gray-600">PLAYER:</span> {getPlayerDisplay(tooltip.event.player_id)}</p>
-            <p><span className="text-gray-600">OUTCOME:</span> {tooltip.event.outcome}</p>
-            {tooltip.event.type && tooltip.event.type !== 'NA' && <p><span className="text-gray-600">TYPE:</span> {tooltip.event.type}</p>}
+            <p><span className="text-[#5B6359]">PLAYER:</span> {getPlayerDisplay(tooltip.event.player_id)}</p>
+            <p><span className="text-[#5B6359]">OUTCOME:</span> {tooltip.event.outcome}</p>
+            {tooltip.event.type && tooltip.event.type !== 'NA' && <p><span className="text-[#5B6359]">TYPE:</span> {tooltip.event.type}</p>}
             {tooltip.event.reaction_player_id && (
-              <p className="mt-2 pt-1 border-t border-dashed border-black">
-                <span className="text-gray-600">REACTION:</span> {getPlayerDisplay(tooltip.event.reaction_player_id)}
+              <p className="mt-2 pt-1 border-t border-dashed border-line">
+                <span className="text-[#5B6359]">REACTION:</span> {getPlayerDisplay(tooltip.event.reaction_player_id)}
               </p>
             )}
           </div>
         </div>
       )}
-      <div className="border-t-2 border-black px-3 py-1.5 bg-[#f1f5f9] text-[9px] font-black uppercase tracking-widest text-gray-500 flex items-center justify-center gap-2">
+      <div className="border-t-2 border-line px-3 py-1.5 bg-[#F0F2EE] text-[9px] font-black uppercase tracking-widest text-[#5B6359] flex items-center justify-center gap-2">
         <span>Attack Direction →</span>
       </div>
     </div>

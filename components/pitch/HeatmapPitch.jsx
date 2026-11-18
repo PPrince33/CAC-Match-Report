@@ -6,29 +6,29 @@ import { PITCH_CONFIG } from '../../lib/pitchConfig.js'
 
 const OUTCOME_COLORS = {
   // Pass outcomes
-  'Successful':  '#22c55e',  // green
-  'Key Pass':    '#8b5cf6',  // purple
-  'Assist':      '#0ea5e9',  // sky blue
-  'Missed':      '#ef4444',  // red
-  'Intercepted': '#f97316',  // orange
-  'Off-Side':    '#eab308',  // yellow
+  'Successful':  '#6BDB58',
+  'Key Pass':    '#23801A',
+  'Assist':      '#0B0D0B',
+  'Missed':      '#9AA397',
+  'Intercepted': '#5B6359',
+  'Off-Side':    '#CBD1C8',
   // Other / non-pass outcomes
-  'Goal':        '#16a34a',
-  'Save':        '#f97316',
-  'Off-Target':  '#ef4444',
-  'Block':       '#f59e0b',
-  'Foul':        '#dc2626',
-  'Foul Won':    '#84cc16',
-  'Unsuccessful':'#94a3b8',
+  'Goal':        '#6BDB58',
+  'Save':        '#0B0D0B',
+  'Off-Target':  '#9AA397',
+  'Block':       '#5B6359',
+  'Foul':        '#0B0D0B',
+  'Foul Won':    '#23801A',
+  'Unsuccessful':'#9AA397',
 }
 
 export const PASS_OUTCOME_LEGEND = [
-  ['Successful',  '#22c55e'],
-  ['Key Pass',    '#8b5cf6'],
-  ['Assist',      '#0ea5e9'],
-  ['Missed',      '#ef4444'],
-  ['Intercepted', '#f97316'],
-  ['Off-Side',    '#eab308'],
+  ['Successful',  '#6BDB58'],
+  ['Key Pass',    '#23801A'],
+  ['Assist',      '#0B0D0B'],
+  ['Missed',      '#9AA397'],
+  ['Intercepted', '#5B6359'],
+  ['Off-Side',    '#CBD1C8'],
 ]
 
 function drawArrow(ctx, x1, y1, x2, y2, color, lineWidth = 1.5) {
@@ -50,7 +50,7 @@ function drawArrow(ctx, x1, y1, x2, y2, color, lineWidth = 1.5) {
 }
 
 function drawSymbol(ctx, x, y, action, outcome, size) {
-  const color = OUTCOME_COLORS[outcome] || '#64748b'
+  const color = OUTCOME_COLORS[outcome] || '#5B6359'
   ctx.strokeStyle = color
   ctx.fillStyle = color
   ctx.lineWidth = 1.5
@@ -162,7 +162,7 @@ export default function HeatmapPitch({ events, teamName, isHome, isFutsal = true
         if (hasEnd && (e.action === 'Pass' || e.action === 'Through Ball' || e.action === 'Dribble' || e.action === 'Carry')) {
           const ex = scaleX(e.end_x)
           const ey = scaleY(e.end_y)
-          const color = OUTCOME_COLORS[e.outcome] || '#64748b'
+          const color = OUTCOME_COLORS[e.outcome] || '#5B6359'
           drawArrow(ctx, sx, sy, ex, ey, color, 1.2)
         } else {
           drawSymbol(ctx, sx, sy, e.action, e.outcome, symSize)
@@ -187,12 +187,12 @@ export default function HeatmapPitch({ events, teamName, isHome, isFutsal = true
   }, [events, isFutsal])
 
   return (
-    <div ref={containerRef} className="flex-1 min-w-[300px] border-4 border-black bg-white relative">
-      <div className={`absolute top-2 left-2 ${isHome ? 'bg-[#0077B6]' : 'bg-[#D90429]'} text-white border-2 border-black px-2 py-1 text-[10px] font-black uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] z-10`}>
+    <div ref={containerRef} className="flex-1 min-w-[300px] border-4 border-line bg-white relative">
+      <div className={`absolute top-2 left-2 ${isHome ? 'bg-[#0077B6]' : 'bg-[#D90429]'} text-white border-2 border-line px-2 py-1 text-[10px] font-black uppercase z-10`}>
         {teamName}
       </div>
       <canvas ref={canvasRef} className="w-full block" />
-      <div className="border-t-2 border-black px-3 py-1.5 bg-[#f1f5f9] text-[9px] font-black uppercase tracking-widest text-gray-500 flex items-center justify-center gap-2">
+      <div className="border-t-2 border-line px-3 py-1.5 bg-[#F0F2EE] text-[9px] font-black uppercase tracking-widest text-[#5B6359] flex items-center justify-center gap-2">
         <span>Attack Direction →</span>
       </div>
     </div>

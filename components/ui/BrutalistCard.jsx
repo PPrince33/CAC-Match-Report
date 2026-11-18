@@ -1,8 +1,10 @@
 'use client'
 
-export default function BrutalistCard({ children, className = '', color = 'bg-white' }) {
+// Deck-style panel: rounded, light grey, no hard shadow. `color` still lets callers pick a surface.
+export default function BrutalistCard({ children, className = '', color = 'bg-[#F0F2EE]' }) {
+  const surface = color === 'bg-white' || color === 'bg-[#FFFFFF]' ? 'bg-[#F0F2EE]' : color
   return (
-    <div className={`border-2 border-black p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] rounded-none ${color} ${className}`}>
+    <div className={`rounded-[20px] p-5 ${surface} ${className}`}>
       {children}
     </div>
   )

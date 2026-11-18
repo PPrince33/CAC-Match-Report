@@ -36,7 +36,7 @@ export default function RadarChart({ p1Data, p2Data, maxes }) {
             key={`level-${levelIdx}`}
             points={metrics.map((_, i) => getPoint(level, 1, i)).join(' ')}
             fill="none"
-            stroke="#e5e7eb"
+            stroke="#D6DBD3"
             strokeWidth="1"
             strokeDasharray={level < 1 ? '2,2' : ''}
           />
@@ -49,7 +49,7 @@ export default function RadarChart({ p1Data, p2Data, maxes }) {
               x1={center} y1={center}
               x2={center + radius * Math.cos(angle)}
               y2={center + radius * Math.sin(angle)}
-              stroke="#e5e7eb" strokeWidth="1"
+              stroke="#D6DBD3" strokeWidth="1"
             />
           )
         })}
@@ -68,7 +68,7 @@ export default function RadarChart({ p1Data, p2Data, maxes }) {
               dominantBaseline="middle"
               fontSize="11"
               fontWeight="bold"
-              fill="#374151"
+              fill="#2A302A"
               className="uppercase"
             >
               {m.label}
@@ -105,13 +105,13 @@ export default function RadarChart({ p1Data, p2Data, maxes }) {
         })}
       </svg>
       {tooltip && (
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 -mt-4 bg-white border-2 border-black p-3 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] z-20 whitespace-nowrap pointer-events-none">
-          <div className="text-[10px] font-black uppercase text-gray-500 border-b-2 border-black pb-1 mb-2">{tooltip.metric} Overview</div>
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 -mt-4 bg-white border-2 border-line p-3 z-20 whitespace-nowrap pointer-events-none">
+          <div className="text-[10px] font-black uppercase text-[#5B6359] border-b-2 border-line pb-1 mb-2">{tooltip.metric} Overview</div>
           <div className="text-sm font-bold flex flex-col gap-1">
             <span className="uppercase" style={{ color: tooltip.color }}>{tooltip.player}</span>
             <div className="text-black">
               Player Value: <span className="font-black text-lg">{tooltip.val}</span>
-              <span className="text-[10px] text-gray-500 ml-2">(Match Max: {tooltip.max})</span>
+              <span className="text-[10px] text-[#5B6359] ml-2">(Match Max: {tooltip.max})</span>
             </div>
           </div>
         </div>

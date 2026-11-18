@@ -5,25 +5,25 @@ import { drawPitchMarkings } from './pitch/PitchDrawing.js'
 import { PITCH_CONFIG } from '../lib/pitchConfig.js'
 
 const ACTION_COLORS = {
-  'Pass':            '#3b82f6',
-  'Through Ball':    '#8b5cf6',
-  'Carry':           '#06b6d4',
-  'Dribble':         '#0ea5e9',
-  'Shoot':           '#ef4444',
-  'Cross':           '#f59e0b',
-  'Pass Intercept':  '#84cc16',
-  'Standing Tackle': '#84cc16',
-  'Sliding Tackle':  '#84cc16',
-  'Block':           '#eab308',
-  'Save':            '#f97316',
-  'Clearance':       '#10b981',
-  'Pressure':        '#fb923c',
-  'Ball Control':    '#94a3b8',
-  'Aerial Duel':     '#a855f7',
-  'Discipline':      '#dc2626',
+  'Pass':            '#0B0D0B',
+  'Through Ball':    '#23801A',
+  'Carry':           '#9AA397',
+  'Dribble':         '#5B6359',
+  'Shoot':           '#6BDB58',
+  'Cross':           '#9BE58C',
+  'Pass Intercept':  '#CBD1C8',
+  'Standing Tackle': '#CBD1C8',
+  'Sliding Tackle':  '#CBD1C8',
+  'Block':           '#CBD1C8',
+  'Save':            '#CBD1C8',
+  'Clearance':       '#CBD1C8',
+  'Pressure':        '#CBD1C8',
+  'Ball Control':    '#CBD1C8',
+  'Aerial Duel':     '#CBD1C8',
+  'Discipline':      '#5B6359',
 }
 
-const colorOf = (e) => ACTION_COLORS[e.action] || '#64748b'
+const colorOf = (e) => ACTION_COLORS[e.action] || '#5B6359'
 
 function drawArrow(ctx, x1, y1, x2, y2, color, lineWidth = 1.5, alpha = 0.9) {
   const headLen = Math.max(6, lineWidth * 3)
@@ -105,7 +105,7 @@ export default function GoalBuildupPitch({ events = [], lineups = [], isFutsal =
       const a = events[i], b = events[i + 1]
       if (a.start_x == null || a.start_y == null || b.start_x == null || b.start_y == null) continue
       ctx.save()
-      ctx.strokeStyle = '#94a3b8'
+      ctx.strokeStyle = '#9AA397'
       ctx.lineWidth = 1
       ctx.setLineDash([3, 3])
       ctx.globalAlpha = 0.5
@@ -147,7 +147,7 @@ export default function GoalBuildupPitch({ events = [], lineups = [], isFutsal =
       // Numbered start marker
       ctx.beginPath()
       ctx.arc(sX, sY, r, 0, Math.PI * 2)
-      ctx.fillStyle = isGoal ? '#FFD166' : '#fff'
+      ctx.fillStyle = isGoal ? '#6BDB58' : '#fff'
       ctx.fill()
       ctx.strokeStyle = isGoal ? '#000' : color
       ctx.lineWidth = isGoal ? 3 : (isHovered ? 3 : 2)
@@ -190,7 +190,7 @@ export default function GoalBuildupPitch({ events = [], lineups = [], isFutsal =
     <div className="relative" ref={containerRef}>
       <canvas
         ref={canvasRef}
-        className="block border-4 border-black"
+        className="block border-4 border-line"
         style={{ cursor: hovered ? 'pointer' : 'default' }}
         onMouseMove={handleMouseMove}
         onMouseLeave={() => setHover(null)}
@@ -201,21 +201,21 @@ export default function GoalBuildupPitch({ events = [], lineups = [], isFutsal =
         const minuteVal = hovered.match_minute ?? Math.floor((hovered.match_time_seconds || 0) / 60)
         const teamColor = homeTeamId == null ? null : (hovered.team_id === homeTeamId ? '#0077B6' : '#D90429')
         return (
-          <div className="absolute top-2 right-2 bg-black text-white border-2 border-[#FFD166] px-3 py-2 text-[10px] font-black uppercase shadow-[3px_3px_0px_0px_#FFD166] pointer-events-none min-w-[200px]">
-            <div className="text-[#FFD166] mb-1 border-b border-white/20 pb-1">
+          <div className="absolute top-2 right-2 bg-black text-white border-2 border-[#6BDB58] px-3 py-2 text-[10px] font-black uppercase pointer-events-none min-w-[200px]">
+            <div className="text-[#6BDB58] mb-1 border-b border-white/20 pb-1">
               {hover === events.length - 1 ? '⚽ GOAL' : `Action ${hover + 1}`} · {minuteVal}'
             </div>
             <div className="space-y-0.5">
               {playerLabel && (
                 <div>
-                  <span className="text-gray-400">Player:</span>{' '}
+                  <span className="text-[#9AA397]">Player:</span>{' '}
                   {teamColor && <span className="inline-block w-2 h-2 mr-1" style={{ backgroundColor: teamColor }} />}
                   {playerLabel}
                 </div>
               )}
-              <div><span className="text-gray-400">Action:</span> {hovered.action || '?'}</div>
-              {hovered.outcome && <div><span className="text-gray-400">Outcome:</span> {hovered.outcome}</div>}
-              {hovered.type && hovered.type !== 'NA' && <div><span className="text-gray-400">Type:</span> {hovered.type}</div>}
+              <div><span className="text-[#9AA397]">Action:</span> {hovered.action || '?'}</div>
+              {hovered.outcome && <div><span className="text-[#9AA397]">Outcome:</span> {hovered.outcome}</div>}
+              {hovered.type && hovered.type !== 'NA' && <div><span className="text-[#9AA397]">Type:</span> {hovered.type}</div>}
             </div>
           </div>
         )

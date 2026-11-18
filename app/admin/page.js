@@ -30,13 +30,13 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] font-mono flex flex-col">
-      <header className="bg-black text-white p-6 border-b-4 border-black">
+    <div className="min-h-screen bg-[#FFFFFF] font-sans flex flex-col">
+      <header className="bg-white text-[#0B0D0B] px-6 md:px-8 py-6 border-b-2 border-[#D6DBD3]">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tighter leading-none">
             CAC Admin
           </h1>
-          <p className="text-[#06D6A0] font-black uppercase tracking-[0.3em] text-xs mt-2">
+          <p className="text-[#23801A] font-mono font-bold uppercase tracking-[0.2em] text-xs mt-2">
             Match Report Control Panel
           </p>
         </div>
@@ -44,21 +44,21 @@ export default function AdminLoginPage() {
 
       <main className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-md">
-          <div className="border-4 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] bg-white">
+          <div className="rounded-[22px] p-8 bg-[#F0F2EE]">
             <h2 className="text-2xl font-black uppercase mb-2">Admin Login</h2>
-            <p className="text-xs font-bold text-gray-400 uppercase mb-8">
+            <p className="text-xs font-bold text-[#9AA397] uppercase mb-8">
               Authenticated access only
             </p>
 
             {error && (
-              <div className="border-2 border-[#D90429] bg-[#D90429]/10 p-3 mb-6">
-                <p className="text-xs font-black text-[#D90429] uppercase">{error}</p>
+              <div className="border-2 border-[#0B0D0B] bg-[#F0F2EE] rounded-xl p-3 mb-6">
+                <p className="text-xs font-black text-[#0B0D0B] uppercase">{error}</p>
               </div>
             )}
 
             <form onSubmit={handleLogin} className="space-y-5">
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-[#5B6359] mb-2">
                   Email Address
                 </label>
                 <input
@@ -66,13 +66,13 @@ export default function AdminLoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full border-2 border-black p-3 font-bold text-sm focus:outline-none focus:border-[#0077B6] bg-white"
+                  className="w-full rounded-xl border-2 border-line p-3 font-bold text-sm focus:outline-none focus:border-[#6BDB58] bg-white"
                   placeholder="admin@example.com"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-[#5B6359] mb-2">
                   Password
                 </label>
                 <input
@@ -80,7 +80,7 @@ export default function AdminLoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full border-2 border-black p-3 font-bold text-sm focus:outline-none focus:border-[#0077B6] bg-white"
+                  className="w-full rounded-xl border-2 border-line p-3 font-bold text-sm focus:outline-none focus:border-[#6BDB58] bg-white"
                   placeholder="••••••••"
                 />
               </div>
@@ -88,16 +88,16 @@ export default function AdminLoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full border-2 border-black py-3 font-black uppercase text-sm bg-black text-white hover:bg-[#0077B6] hover:border-[#0077B6] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full rounded-full border-2 border-[#0B0D0B] py-3 font-mono font-bold uppercase tracking-wider text-sm bg-[#0B0D0B] text-white hover:bg-[#6BDB58] hover:text-[#0B0D0B] hover:border-[#6BDB58] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Signing In...' : 'Sign In'}
               </button>
             </form>
 
-            <div className="mt-6 pt-6 border-t-2 border-dashed border-gray-200">
+            <div className="mt-6 pt-6 border-t-2 border-dashed border-[#D6DBD3]">
               <a
                 href="/"
-                className="text-xs font-black uppercase text-gray-400 hover:text-black transition-all"
+                className="text-xs font-black uppercase text-[#9AA397] hover:text-black transition-all"
               >
                 ← Back to Match Reports
               </a>

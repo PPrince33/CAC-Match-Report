@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { fetchSupabase } from '../lib/supabase.js'
 import { RefreshCw, ChevronDown } from 'lucide-react'
+import CacLogo from '../components/ui/CacLogo.jsx'
 
 export default function HomePage() {
   const [matches, setMatches] = useState([])
@@ -50,111 +51,112 @@ export default function HomePage() {
   }, [matches, tournamentFilter, sportFilter])
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] font-mono">
+    <div className="min-h-screen bg-white font-sans text-[#0B0D0B]">
       {/* Header */}
-      <header className="bg-black text-white p-6 border-b-4 border-black">
-        <div className="max-w-7xl mx-auto flex justify-between items-start">
-          <div>
-            <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tighter leading-none">
-              Welcome to <a href="https://calcioac.com" target="_blank" rel="noreferrer" className="hover:text-[#FFD166] transition-colors">CAC</a> Match Report
-            </h1>
-            <p className="text-[#06D6A0] font-black uppercase tracking-[0.3em] text-xs mt-2">
-              <a href="https://calcioac.com" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">CAC Analytics</a>
-            </p>
+      <header className="border-b-2 border-[#D6DBD3]">
+        <div className="max-w-7xl mx-auto px-6 md:px-8 py-8 flex flex-col gap-5">
+          <a href="https://calcioac.com" target="_blank" rel="noreferrer" className="w-fit"><CacLogo className="w-24 h-auto" /></a>
+          <div className="flex items-center gap-4 font-mono text-xs uppercase tracking-[0.16em] text-[#5B6359]">
+            <span className="w-10 h-1 bg-[#6BDB58]" />
+            <span><b className="text-[#0B0D0B] font-semibold">CAC</b> Calcio Analysis Company</span>
           </div>
+          <h1 className="text-5xl md:text-7xl uppercase leading-[0.9]">
+            Match <span className="hl">reports.</span>
+          </h1>
         </div>
       </header>
 
       {/* Filter Bar */}
-      <div className="border-b-4 border-black bg-[#FFD166] p-4">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center gap-4 flex-wrap">
-          <div className="flex items-center gap-2 text-black font-bold">
-            <ChevronDown size={20} />
-            <span className="uppercase text-sm">Filter:</span>
+      <div className="max-w-7xl mx-auto px-6 md:px-8 pt-8">
+        <div className="bg-[#F0F2EE] rounded-[20px] p-4 flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 font-mono text-xs font-semibold uppercase tracking-widest text-[#5B6359]">
+            <ChevronDown size={16} />
+            <span>Filter</span>
           </div>
           <select
-            className="bg-white border-2 border-black p-2 font-black uppercase text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:outline-none cursor-pointer min-w-[240px]"
+            className="bg-white rounded-full border-2 border-[#D6DBD3] px-4 py-2 font-semibold text-sm focus:outline-none focus:border-[#6BDB58] cursor-pointer min-w-[240px]"
             value={tournamentFilter}
             onChange={(e) => setTournamentFilter(e.target.value)}
           >
-            <option value="ALL">All Tournaments</option>
+            <option value="ALL">All tournaments</option>
             {tournaments.map(t => (
               <option key={t.tournament_id} value={t.tournament_id}>{t.tournament_name}</option>
             ))}
           </select>
           <select
-            className="bg-white border-2 border-black p-2 font-black uppercase text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] focus:outline-none cursor-pointer min-w-[160px]"
+            className="bg-white rounded-full border-2 border-[#D6DBD3] px-4 py-2 font-semibold text-sm focus:outline-none focus:border-[#6BDB58] cursor-pointer min-w-[160px]"
             value={sportFilter}
             onChange={(e) => setSportFilter(e.target.value)}
           >
-            <option value="ALL">All Sports</option>
+            <option value="ALL">All sports</option>
             <option value="FUTSAL">Futsal</option>
             <option value="FOOTBALL">Football</option>
           </select>
-          <span className="text-xs font-black uppercase text-black/60 ml-auto">
+          <span className="font-mono text-xs font-semibold uppercase tracking-widest text-[#5B6359] sm:ml-auto">
             {filteredMatches.length} match{filteredMatches.length !== 1 ? 'es' : ''}
           </span>
         </div>
       </div>
 
       {/* Main Content */}
-      <main className="p-6 md:p-8 max-w-7xl mx-auto">
+      <main className="px-6 md:px-8 py-8 max-w-7xl mx-auto">
         {loading ? (
-          <div className="flex items-center gap-3 text-xl font-bold uppercase py-20 justify-center">
-            <RefreshCw className="animate-spin" /> Fetching match data...
+          <div className="flex items-center gap-3 font-mono text-sm font-semibold uppercase tracking-widest text-[#5B6359] py-20 justify-center">
+            <RefreshCw className="animate-spin" size={18} /> Fetching match data
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {filteredMatches.length > 0 ? filteredMatches.map((m) => (
               <div
                 key={m.match_id}
-                className="border-2 border-black p-5 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] bg-white hover:-translate-y-1 transition-all duration-150 flex flex-col"
+                className="rounded-[22px] p-6 bg-[#F0F2EE] flex flex-col"
               >
                 {/* Badges */}
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="bg-[#FFD166] border-2 border-black px-2 py-1 text-[10px] font-black uppercase">
+                <div className="flex items-center gap-2 mb-5">
+                  <span className="bg-white rounded-full px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-wider">
                     {m.tournament_name || 'CAC'}
                   </span>
-                  <span className={`border-2 border-black px-2 py-1 text-[10px] font-black uppercase ${m.is_futsal ? 'bg-[#06D6A0] text-black' : 'bg-[#0077B6] text-white'}`}>
+                  <span className={`rounded-full px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-wider ${m.is_futsal ? 'bg-[#6BDB58] text-[#0B0D0B]' : 'bg-[#0B0D0B] text-white'}`}>
                     {m.is_futsal ? 'Futsal' : 'Football'}
                   </span>
                 </div>
 
                 {/* Score */}
-                <h2 className="text-xl font-black uppercase mb-1 leading-tight">
+                <h2 className="text-2xl md:text-3xl uppercase leading-[0.95] mb-3">
                   <span className="text-[#0077B6]">{m.home_team?.team_name}</span>
                   {' '}
-                  <span className="text-[#0077B6] text-2xl">{m.home_team_score ?? 0}</span>
-                  <span className="text-gray-400 mx-2">-</span>
-                  <span className="text-[#D90429] text-2xl">{m.away_team_score ?? 0}</span>
+                  <span className="text-[#0077B6] tabular-nums">{m.home_team_score ?? 0}</span>
+                  <span className="text-[#9AA397] mx-2">–</span>
+                  <span className="text-[#D90429] tabular-nums">{m.away_team_score ?? 0}</span>
                   {' '}
                   <span className="text-[#D90429]">{m.away_team?.team_name}</span>
                 </h2>
 
-                <p className="text-xs font-bold text-gray-400 mb-6">
-                  {m.match_date} &bull; {m.match_name}
+                <p className="font-mono text-xs uppercase tracking-wider text-[#5B6359] mb-6">
+                  {m.match_date} · {m.match_name}
                 </p>
 
                 <div className="mt-auto">
                   <Link
                     href={`/match/${m.match_id}`}
-                    className="border-2 border-black px-6 py-2 font-bold uppercase text-sm bg-white hover:bg-[#FFD166] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-none transition-all inline-block"
+                    className="rounded-full bg-[#0B0D0B] text-white px-6 py-2.5 font-mono font-bold uppercase text-xs tracking-wider hover:bg-[#6BDB58] hover:text-[#0B0D0B] transition-colors inline-block"
                   >
-                    View Report
+                    View report →
                   </Link>
                 </div>
               </div>
             )) : (
-              <div className="col-span-full py-16 border-4 border-dashed border-gray-200 text-center">
-                <p className="text-gray-400 font-black uppercase">No matches found for this selection.</p>
+              <div className="col-span-full py-16 rounded-[22px] border-2 border-dashed border-[#D6DBD3] text-center">
+                <p className="text-[#5B6359] font-semibold">No matches found for this selection.</p>
               </div>
             )}
           </div>
         )}
       </main>
 
-      <footer className="mt-20 p-8 border-t-4 border-black text-center text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
-        <a href="https://calcioac.com" target="_blank" rel="noreferrer" className="hover:text-black transition-colors">CAC Analytics Engine</a>
+      <footer className="mt-16 max-w-7xl mx-auto px-6 md:px-8 py-8 border-t-2 border-[#D6DBD3] flex items-center gap-4 font-mono text-[11px] uppercase tracking-[0.14em] text-[#5B6359]">
+        <CacLogo className="w-12 h-auto" />
+        <a href="https://calcioac.com" target="_blank" rel="noreferrer" className="hover:text-[#0B0D0B] transition-colors">calcioac.com</a>
       </footer>
     </div>
   )

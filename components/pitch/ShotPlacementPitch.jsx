@@ -45,7 +45,7 @@ export default function ShotPlacementPitch({ shots, teamName, isHome, lineups, i
     ctx.beginPath()
     ctx.moveTo(pad, scaleZ(0))
     ctx.lineTo(w - pad, scaleZ(0))
-    ctx.strokeStyle = '#d1d5db'
+    ctx.strokeStyle = '#CBD1C8'
     ctx.lineWidth = 2
     ctx.setLineDash([5, 5])
     ctx.stroke()
@@ -60,7 +60,7 @@ export default function ShotPlacementPitch({ shots, teamName, isHome, lineups, i
     ctx.lineWidth = 6
     ctx.stroke()
 
-    ctx.strokeStyle = '#e5e7eb'
+    ctx.strokeStyle = '#D6DBD3'
     ctx.lineWidth = 1
     ctx.beginPath()
     const gridStep = (goalYMax - goalYMin) / 12
@@ -162,8 +162,8 @@ export default function ShotPlacementPitch({ shots, teamName, isHome, lineups, i
   }
 
   return (
-    <div ref={containerRef} className="flex-1 min-w-[300px] border-4 border-black bg-white relative cursor-crosshair">
-      <div className={`absolute top-2 left-2 ${isHome ? 'bg-[#0077B6]' : 'bg-[#D90429]'} text-white border-2 border-black px-2 py-1 text-[10px] font-black uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] z-10`}>
+    <div ref={containerRef} className="flex-1 min-w-[300px] border-4 border-line bg-white relative cursor-crosshair">
+      <div className={`absolute top-2 left-2 ${isHome ? 'bg-[#0077B6]' : 'bg-[#D90429]'} text-white border-2 border-line px-2 py-1 text-[10px] font-black uppercase z-10`}>
         {teamName}
       </div>
       <canvas
@@ -174,24 +174,24 @@ export default function ShotPlacementPitch({ shots, teamName, isHome, lineups, i
       />
       {tooltip.visible && tooltip.shot && (
         <div
-          className={`absolute z-50 bg-[#FFD166] border-2 border-black p-3 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] pointer-events-none min-w-[180px] transition-all duration-75 ${tooltip.transform}`}
+          className={`absolute z-50 bg-[#6BDB58] border-2 border-line p-3 pointer-events-none min-w-[180px] transition-all duration-75 ${tooltip.transform}`}
           style={{ left: tooltip.x, top: tooltip.y }}
         >
-          <div className="text-sm font-black uppercase border-b-2 border-black pb-1 mb-2">
+          <div className="text-sm font-black uppercase border-b-2 border-line pb-1 mb-2">
             #{lineups.find(l => l.player_id === tooltip.shot.player_id)?.jersey_no || '-'} {getPlayerName(tooltip.shot.player_id)}
           </div>
           <div className="space-y-1 text-xs font-bold leading-tight">
-            <p><span className="text-gray-600">xG:</span> {parseFloat(tooltip.shot.xg || 0).toFixed(2)}</p>
-            <p><span className="text-gray-600">xGOT:</span> {parseFloat(tooltip.shot.xgot || 0).toFixed(2)}</p>
-            <p><span className="text-gray-600">Outcome:</span> {tooltip.shot.outcome}</p>
-            {tooltip.shot.type && tooltip.shot.type !== 'NA' && <p><span className="text-gray-600">Type:</span> {tooltip.shot.type}</p>}
-            <p className="mt-2 pt-1 border-t border-dashed border-black">
-              <span className="text-gray-600">Placement Height:</span> {parseFloat(tooltip.shot.end_z || 0).toFixed(2)}m
+            <p><span className="text-[#5B6359]">xG:</span> {parseFloat(tooltip.shot.xg || 0).toFixed(2)}</p>
+            <p><span className="text-[#5B6359]">xGOT:</span> {parseFloat(tooltip.shot.xgot || 0).toFixed(2)}</p>
+            <p><span className="text-[#5B6359]">Outcome:</span> {tooltip.shot.outcome}</p>
+            {tooltip.shot.type && tooltip.shot.type !== 'NA' && <p><span className="text-[#5B6359]">Type:</span> {tooltip.shot.type}</p>}
+            <p className="mt-2 pt-1 border-t border-dashed border-line">
+              <span className="text-[#5B6359]">Placement Height:</span> {parseFloat(tooltip.shot.end_z || 0).toFixed(2)}m
             </p>
           </div>
         </div>
       )}
-      <div className="border-t-2 border-black px-3 py-1.5 bg-[#f1f5f9] text-[9px] font-black uppercase tracking-widest text-gray-500 flex items-center justify-center gap-2">
+      <div className="border-t-2 border-line px-3 py-1.5 bg-[#F0F2EE] text-[9px] font-black uppercase tracking-widest text-[#5B6359] flex items-center justify-center gap-2">
         <span>Attack Direction →</span>
       </div>
     </div>

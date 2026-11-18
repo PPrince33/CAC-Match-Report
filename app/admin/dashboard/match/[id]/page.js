@@ -249,7 +249,7 @@ export default function EditMatchPage() {
 
   if (!authChecked || loading) {
     return (
-      <div className="min-h-screen bg-[#f8fafc] font-mono flex items-center justify-center">
+      <div className="min-h-screen bg-[#FFFFFF] font-sans flex items-center justify-center">
         <div className="flex items-center gap-3 text-xl font-bold uppercase">
           <RefreshCw className="animate-spin" /> Loading match...
         </div>
@@ -258,15 +258,15 @@ export default function EditMatchPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] font-mono flex flex-col">
+    <div className="min-h-screen bg-[#FFFFFF] font-sans flex flex-col">
       {/* Header */}
-      <header className="bg-black text-white p-6 border-b-4 border-black">
+      <header className="bg-white text-[#0B0D0B] px-6 md:px-8 py-6 border-b-2 border-[#D6DBD3]">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div>
             <h1 className="text-2xl md:text-3xl font-black uppercase tracking-tighter leading-none">
               Edit Match
             </h1>
-            <p className="text-[#FFD166] font-black uppercase tracking-[0.2em] text-xs mt-2">
+            <p className="text-[#6BDB58] font-black uppercase tracking-[0.2em] text-xs mt-2">
               {homeTeamName} vs {awayTeamName}
             </p>
           </div>
@@ -283,69 +283,69 @@ export default function EditMatchPage() {
       <main className="p-6 md:p-8 max-w-7xl mx-auto w-full flex-1">
         {/* Status Messages */}
         {saveMsg && (
-          <div className="border-2 border-[#06D6A0] bg-[#06D6A0]/10 p-3 mb-6">
-            <p className="text-xs font-black text-[#06D6A0] uppercase">{saveMsg}</p>
+          <div className="border-2 border-[#6BDB58] bg-[#6BDB58]/10 p-3 mb-6">
+            <p className="text-xs font-black text-[#6BDB58] uppercase">{saveMsg}</p>
           </div>
         )}
         {error && (
-          <div className="border-2 border-[#D90429] bg-[#D90429]/10 p-3 mb-6">
-            <p className="text-xs font-black text-[#D90429] uppercase">{error}</p>
-            <button onClick={() => setError(null)} className="text-[9px] font-black underline text-[#D90429] mt-1">Dismiss</button>
+          <div className="border-2 border-[#0B0D0B] bg-[#F0F2EE] rounded-xl p-3 mb-6">
+            <p className="text-xs font-black text-[#0B0D0B] uppercase">{error}</p>
+            <button onClick={() => setError(null)} className="text-[9px] font-black underline text-[#0B0D0B] mt-1">Dismiss</button>
           </div>
         )}
 
         {/* Match Details Form */}
         <section className="mb-10">
-          <h2 className="text-xl font-black uppercase border-b-4 border-black pb-1 mb-6">Match Details</h2>
+          <h2 className="text-xl font-black uppercase border-b-4 border-line pb-1 mb-6">Match Details</h2>
 
-          <div className="border-2 border-black p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] bg-white">
+          <div className="rounded-[22px] p-6 bg-[#F0F2EE]">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Match Name</label>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-[#5B6359] mb-2">Match Name</label>
                 <input
                   type="text"
                   value={matchName}
                   onChange={e => setMatchName(e.target.value)}
-                  className="w-full border-2 border-black p-3 font-bold text-sm focus:outline-none focus:border-[#0077B6] bg-white"
+                  className="w-full rounded-xl border-2 border-line p-3 font-bold text-sm focus:outline-none focus:border-[#6BDB58] bg-white"
                   placeholder="e.g. Group Stage Match 3"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Match Date</label>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-[#5B6359] mb-2">Match Date</label>
                 <input
                   type="date"
                   value={matchDate}
                   onChange={e => setMatchDate(e.target.value)}
-                  className="w-full border-2 border-black p-3 font-bold text-sm focus:outline-none focus:border-[#0077B6] bg-white"
+                  className="w-full rounded-xl border-2 border-line p-3 font-bold text-sm focus:outline-none focus:border-[#6BDB58] bg-white"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Tournament Name</label>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-[#5B6359] mb-2">Tournament Name</label>
                 <input
                   type="text"
                   value={tournamentName}
                   onChange={e => setTournamentName(e.target.value)}
-                  className="w-full border-2 border-black p-3 font-bold text-sm focus:outline-none focus:border-[#0077B6] bg-white"
+                  className="w-full rounded-xl border-2 border-line p-3 font-bold text-sm focus:outline-none focus:border-[#6BDB58] bg-white"
                   placeholder="e.g. CAC Summer Cup"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Video URL</label>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-[#5B6359] mb-2">Video URL</label>
                 <input
                   type="url"
                   value={videoUrl}
                   onChange={e => setVideoUrl(e.target.value)}
-                  className="w-full border-2 border-black p-3 font-bold text-sm focus:outline-none focus:border-[#0077B6] bg-white"
+                  className="w-full rounded-xl border-2 border-line p-3 font-bold text-sm focus:outline-none focus:border-[#6BDB58] bg-white"
                   placeholder="https://youtube.com/..."
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-[#5B6359] mb-2">
                   Home Score ({homeTeamName})
                 </label>
                 <input
@@ -353,13 +353,13 @@ export default function EditMatchPage() {
                   min="0"
                   value={homeScore}
                   onChange={e => setHomeScore(e.target.value)}
-                  className="w-full border-2 border-black p-3 font-bold text-sm focus:outline-none focus:border-[#0077B6] bg-white"
+                  className="w-full rounded-xl border-2 border-line p-3 font-bold text-sm focus:outline-none focus:border-[#6BDB58] bg-white"
                   placeholder="0"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-[#5B6359] mb-2">
                   Away Score ({awayTeamName})
                 </label>
                 <input
@@ -367,17 +367,17 @@ export default function EditMatchPage() {
                   min="0"
                   value={awayScore}
                   onChange={e => setAwayScore(e.target.value)}
-                  className="w-full border-2 border-black p-3 font-bold text-sm focus:outline-none focus:border-[#0077B6] bg-white"
+                  className="w-full rounded-xl border-2 border-line p-3 font-bold text-sm focus:outline-none focus:border-[#6BDB58] bg-white"
                   placeholder="0"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Status</label>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-[#5B6359] mb-2">Status</label>
                 <select
                   value={status}
                   onChange={e => setStatus(e.target.value)}
-                  className="w-full border-2 border-black p-3 font-black uppercase text-sm focus:outline-none focus:border-[#0077B6] bg-white cursor-pointer"
+                  className="w-full rounded-xl border-2 border-line p-3 font-black uppercase text-sm focus:outline-none focus:border-[#6BDB58] bg-white cursor-pointer"
                 >
                   <option value="Pending">Pending</option>
                   <option value="Live">Live</option>
@@ -386,19 +386,19 @@ export default function EditMatchPage() {
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Sport Type</label>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-[#5B6359] mb-2">Sport Type</label>
                 <div className="flex gap-3 mt-3">
                   <button
                     type="button"
                     onClick={() => setIsFutsal(false)}
-                    className={`flex-1 border-2 border-black py-3 font-black uppercase text-xs transition-all ${!isFutsal ? 'bg-[#0077B6] text-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]' : 'bg-white text-black hover:bg-gray-50'}`}
+                    className={`flex-1 border-2 border-line py-3 font-black uppercase text-xs transition-all ${!isFutsal ? 'bg-[#0B0D0B] text-white' : 'bg-white text-black hover:bg-[#F0F2EE]'}`}
                   >
                     Football
                   </button>
                   <button
                     type="button"
                     onClick={() => setIsFutsal(true)}
-                    className={`flex-1 border-2 border-black py-3 font-black uppercase text-xs transition-all ${isFutsal ? 'bg-[#06D6A0] text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]' : 'bg-white text-black hover:bg-gray-50'}`}
+                    className={`flex-1 border-2 border-line py-3 font-black uppercase text-xs transition-all ${isFutsal ? 'bg-[#6BDB58] text-black' : 'bg-white text-black hover:bg-[#F0F2EE]'}`}
                   >
                     Futsal
                   </button>
@@ -406,11 +406,11 @@ export default function EditMatchPage() {
               </div>
             </div>
 
-            <div className="mt-6 pt-6 border-t-2 border-dashed border-gray-200">
+            <div className="mt-6 pt-6 border-t-2 border-dashed border-[#D6DBD3]">
               <button
                 onClick={handleSaveMatch}
                 disabled={saving}
-                className="flex items-center gap-2 border-2 border-black px-8 py-3 font-black uppercase text-sm bg-black text-white hover:bg-[#0077B6] hover:border-[#0077B6] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 border-2 border-line px-8 py-3 font-black uppercase text-sm bg-black text-white hover:bg-[#6BDB58] hover:text-[#0B0D0B] hover:border-[#6BDB58] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Save size={16} />
                 {saving ? 'Saving...' : 'Save Match Details'}
@@ -421,23 +421,23 @@ export default function EditMatchPage() {
 
         {/* Lineup Management */}
         <section className="mb-10">
-          <h2 className="text-xl font-black uppercase border-b-4 border-black pb-1 mb-6">Lineup Management</h2>
+          <h2 className="text-xl font-black uppercase border-b-4 border-line pb-1 mb-6">Lineup Management</h2>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {[
               { teamId: homeTeamId, teamName: homeTeamName, lineup: homeLineup, colorClass: 'border-t-[#0077B6]' },
               { teamId: awayTeamId, teamName: awayTeamName, lineup: awayLineup, colorClass: 'border-t-[#D90429]' }
             ].map(({ teamId, teamName, lineup, colorClass }) => (
-              <div key={teamId} className={`border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] bg-white overflow-hidden border-t-8 ${colorClass}`}>
+              <div key={teamId} className={`rounded-[20px] border-2 border-line bg-white overflow-hidden border-t-8 ${colorClass}`}>
                 <div className="bg-black text-white px-4 py-3 flex items-center justify-between">
                   <h3 className="font-black uppercase text-sm">{teamName}</h3>
-                  <span className="text-[10px] font-bold text-gray-400">{lineup.length} players</span>
+                  <span className="text-[10px] font-bold text-[#9AA397]">{lineup.length} players</span>
                 </div>
 
                 {/* Existing Lineup */}
                 <div className="divide-y divide-gray-100">
                   {lineup.length === 0 ? (
-                    <div className="p-6 text-center text-xs font-black uppercase text-gray-300">No players registered</div>
+                    <div className="p-6 text-center text-xs font-black uppercase text-[#9AA397]">No players registered</div>
                   ) : (
                     lineup.map(player => (
                       <div key={player.lineup_id} className="p-3 flex items-center gap-3">
@@ -450,14 +450,14 @@ export default function EditMatchPage() {
                           type="number"
                           defaultValue={player.jersey_no || ''}
                           placeholder="#"
-                          className="w-14 border border-black p-1 text-xs font-bold text-center focus:outline-none"
+                          className="w-14 border border-line p-1 text-xs font-bold text-center focus:outline-none"
                           onBlur={e => handleUpdateLineup(player.lineup_id, 'jersey_no', e.target.value ? Number(e.target.value) : null)}
                         />
                         <input
                           type="text"
                           defaultValue={player.position || ''}
                           placeholder="Pos"
-                          className="w-14 border border-black p-1 text-xs font-bold text-center uppercase focus:outline-none"
+                          className="w-14 border border-line p-1 text-xs font-bold text-center uppercase focus:outline-none"
                           onBlur={e => handleUpdateLineup(player.lineup_id, 'position', e.target.value || null)}
                         />
                         <label className="flex items-center gap-1 text-[10px] font-black uppercase cursor-pointer">
@@ -471,7 +471,7 @@ export default function EditMatchPage() {
                         </label>
                         <button
                           onClick={() => handleDeleteLineup(player.lineup_id)}
-                          className="text-[#D90429] hover:text-[#D90429]/60 transition-all"
+                          className="text-[#0B0D0B] hover:text-[#5B6359] transition-all"
                           title="Remove player"
                         >
                           <Trash2 size={14} />
@@ -482,14 +482,14 @@ export default function EditMatchPage() {
                 </div>
 
                 {/* Add Player Form */}
-                <div className="border-t-2 border-dashed border-gray-200 p-4 bg-gray-50">
-                  <p className="text-[10px] font-black uppercase text-gray-400 mb-3 flex items-center gap-1">
+                <div className="border-t-2 border-dashed border-[#D6DBD3] p-4 bg-[#F0F2EE]">
+                  <p className="text-[10px] font-black uppercase text-[#9AA397] mb-3 flex items-center gap-1">
                     <Plus size={10} /> Add Player
                   </p>
                   <div className="flex flex-col gap-2">
                     <select
                       id={`new-player-${teamId}`}
-                      className="border-2 border-black p-2 font-bold text-xs focus:outline-none bg-white cursor-pointer"
+                      className="border-2 border-line p-2 font-bold text-xs focus:outline-none bg-white cursor-pointer"
                       defaultValue=""
                     >
                       <option value="">Select player...</option>
@@ -502,13 +502,13 @@ export default function EditMatchPage() {
                         id={`new-jersey-${teamId}`}
                         type="number"
                         placeholder="Jersey #"
-                        className="flex-1 border-2 border-black p-2 font-bold text-xs focus:outline-none bg-white"
+                        className="flex-1 border-2 border-line p-2 font-bold text-xs focus:outline-none bg-white"
                       />
                       <input
                         id={`new-position-${teamId}`}
                         type="text"
                         placeholder="Position"
-                        className="flex-1 border-2 border-black p-2 font-bold text-xs uppercase focus:outline-none bg-white"
+                        className="flex-1 border-2 border-line p-2 font-bold text-xs uppercase focus:outline-none bg-white"
                       />
                       <label className="flex items-center gap-1 text-[10px] font-black uppercase cursor-pointer whitespace-nowrap">
                         <input
@@ -522,7 +522,7 @@ export default function EditMatchPage() {
                     </div>
                     <button
                       onClick={() => handleAddPlayer(teamId)}
-                      className="border-2 border-black px-4 py-2 font-black uppercase text-xs bg-white hover:bg-[#FFD166] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-y-0.5 hover:shadow-none transition-all flex items-center justify-center gap-1"
+                      className="border-2 border-line px-4 py-2 font-black uppercase text-xs bg-white hover:bg-[#6BDB58] transition-all flex items-center justify-center gap-1"
                     >
                       <Plus size={12} /> Add to Lineup
                     </button>
@@ -534,10 +534,10 @@ export default function EditMatchPage() {
         </section>
 
         {/* Quick Nav */}
-        <div className="flex gap-4 items-center pt-4 border-t-2 border-dashed border-gray-200">
+        <div className="flex gap-4 items-center pt-4 border-t-2 border-dashed border-[#D6DBD3]">
           <Link
             href={`/match/${id}`}
-            className="border-2 border-black px-6 py-2 font-bold uppercase text-sm bg-white hover:bg-[#FFD166] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-1 hover:shadow-none transition-all"
+            className="border-2 border-line px-6 py-2 font-bold uppercase text-sm bg-white hover:bg-[#6BDB58] transition-all"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -545,14 +545,14 @@ export default function EditMatchPage() {
           </Link>
           <Link
             href="/admin/dashboard"
-            className="text-xs font-black uppercase text-gray-400 hover:text-black transition-all flex items-center gap-1"
+            className="text-xs font-black uppercase text-[#9AA397] hover:text-black transition-all flex items-center gap-1"
           >
             <ArrowLeft size={12} /> Back to Dashboard
           </Link>
         </div>
       </main>
 
-      <footer className="mt-auto p-6 border-t-4 border-black text-center text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
+      <footer className="mt-auto p-6 border-t-4 border-line text-center text-[10px] font-black uppercase tracking-[0.2em] text-[#9AA397]">
         CAC Admin Panel
       </footer>
     </div>

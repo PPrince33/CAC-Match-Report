@@ -8,6 +8,7 @@ import { PITCH_CONFIG } from '../../../lib/pitchConfig.js'
 import { calculateXG, calculateXGOT } from '../../../lib/xg.js'
 import { CAC_LOGIC } from '../../../lib/cacLogic.js'
 import { STATS_REGISTRY, STATS_CONFIG } from '../../../lib/statsRegistry.js'
+import CacLogo from '../../../components/ui/CacLogo.jsx'
 import BrutalistCard from '../../../components/ui/BrutalistCard.jsx'
 import BrutalistButton from '../../../components/ui/BrutalistButton.jsx'
 import CompareRow from '../../../components/ui/CompareRow.jsx'
@@ -1463,7 +1464,7 @@ export default function MatchReportPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white font-mono flex items-center justify-center">
+      <div className="min-h-screen bg-white font-sans flex items-center justify-center">
         <div className="flex items-center gap-3 text-xl font-bold uppercase">
           <RefreshCw className="animate-spin" /> Processing match data...
         </div>
@@ -1473,10 +1474,10 @@ export default function MatchReportPage() {
 
   if (!match) {
     return (
-      <div className="min-h-screen bg-white font-mono flex items-center justify-center">
+      <div className="min-h-screen bg-white font-sans flex items-center justify-center">
         <div className="text-center">
           <p className="text-xl font-black uppercase mb-4">Match not found</p>
-          <Link href="/" className="border-2 border-black px-4 py-2 font-bold uppercase hover:bg-[#FFD166]">Back to Home</Link>
+          <Link href="/" className="border-2 border-line px-4 py-2 font-bold uppercase hover:bg-[#6BDB58]">Back to Home</Link>
         </div>
       </div>
     )
@@ -1487,40 +1488,39 @@ export default function MatchReportPage() {
   const tournamentName = match.tournament_name || 'CAC'
 
   return (
-    <div className="min-h-screen bg-white font-mono overflow-x-hidden">
+    <div className="min-h-screen bg-white font-sans overflow-x-hidden">
       {/* Header */}
-      <header className="bg-black text-white p-4 flex justify-between items-center sticky top-0 z-50">
-        <div className="flex items-center gap-4">
-          <Link href="/" className="hover:text-[#FFD166] flex items-center gap-1">
-            <ChevronLeft size={28} />
+      <header className="bg-white/95 backdrop-blur border-b-2 border-[#D6DBD3] px-4 md:px-8 py-3 flex justify-between items-center gap-4 sticky top-0 z-50">
+        <div className="flex items-center gap-4 min-w-0">
+          <Link href="/" className="flex items-center gap-2 shrink-0 hover:opacity-70 transition-opacity" aria-label="Back to all matches">
+            <ChevronLeft size={22} />
+            <CacLogo className="w-12 h-auto" />
           </Link>
-          <div>
-            <h1 className="text-lg font-black uppercase tracking-widest truncate max-w-[200px] md:max-w-none">
-              {match.home_team?.team_name} vs {match.away_team?.team_name}
+          <div className="min-w-0">
+            <h1 className="text-lg md:text-2xl uppercase leading-none truncate max-w-[200px] md:max-w-none">
+              <span className="text-[#0077B6]">{match.home_team?.team_name}</span> <span className="text-[#9AA397]">v</span> <span className="text-[#D90429]">{match.away_team?.team_name}</span>
             </h1>
-            <p className="text-[10px] text-gray-400 uppercase">{tournamentName} &bull; {match.match_date}</p>
+            <p className="font-mono text-[10px] text-[#5B6359] uppercase tracking-widest mt-1">{tournamentName} · {match.match_date}</p>
           </div>
-          <div className={`text-[10px] font-black border px-2 py-0.5 uppercase ${isFutsal ? 'border-[#06D6A0] text-[#06D6A0]' : 'border-[#FFD166] text-[#FFD166]'}`}>
+          <span className={`hidden sm:inline-block rounded-full font-mono text-[10px] font-bold px-2.5 py-1 uppercase tracking-wider ${isFutsal ? 'bg-[#6BDB58] text-[#0B0D0B]' : 'bg-[#0B0D0B] text-white'}`}>
             {isFutsal ? 'Futsal' : 'Football'}
-          </div>
+          </span>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="text-sm font-black">
-            <span className="text-[#0077B6]">{dbHomeScore}</span>
-            <span className="text-gray-400 mx-1">-</span>
-            <span className="text-[#D90429]">{dbAwayScore}</span>
-          </div>
+        <div className="font-display italic font-black text-2xl md:text-3xl tabular-nums shrink-0">
+          <span className="text-[#0077B6]">{dbHomeScore}</span>
+          <span className="text-[#9AA397] mx-1.5">–</span>
+          <span className="text-[#D90429]">{dbAwayScore}</span>
         </div>
       </header>
 
       {/* Tabs */}
-      <nav className="border-b-4 border-black bg-[#f1f5f9] flex overflow-x-auto no-scrollbar">
+      <nav className="border-b-2 border-[#D6DBD3] bg-white px-4 md:px-8 py-3 flex gap-2 overflow-x-auto no-scrollbar">
         {tabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-5 py-4 font-black uppercase text-xs whitespace-nowrap border-r-2 border-black transition-all
-              ${activeTab === tab.id ? 'bg-[#FFD166] translate-y-[2px]' : 'hover:bg-white'}`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full font-mono font-semibold uppercase text-xs tracking-wider whitespace-nowrap transition-colors
+              ${activeTab === tab.id ? 'bg-[#0B0D0B] text-white' : 'bg-[#F0F2EE] text-[#0B0D0B] hover:bg-[#EFFAEC]'}`}
           >
             <tab.icon size={14} /> {tab.label}
           </button>
@@ -1536,10 +1536,10 @@ export default function MatchReportPage() {
             {activeTab === 'SUMMARY' && (
               <div className="space-y-12">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
-                  <BrutalistCard color="bg-[#f8fafc]" className="text-center py-10">
+                  <BrutalistCard color="bg-[#FFFFFF]" className="text-center py-10">
                     <h2 className="text-3xl font-black uppercase text-[#0077B6] mb-4 tracking-tighter">{match.home_team?.team_name}</h2>
-                    <div className="text-9xl font-black tracking-tighter">{dbHomeScore}</div>
-                    <div className="mt-6 text-sm font-bold text-gray-600 space-y-2">
+                    <div className="text-9xl font-display italic font-black tracking-tighter tabular-nums">{dbHomeScore}</div>
+                    <div className="mt-6 text-sm font-bold text-[#5B6359] space-y-2">
                       {stats.home.roster.scorers.map((s, i) => (
                         <div key={i} className="flex items-center justify-center gap-2">
                           <span className="text-[#0077B6] font-black text-xs border border-[#0077B6] px-1.5 py-0.5">#{s.jersey}</span>
@@ -1550,13 +1550,13 @@ export default function MatchReportPage() {
                     </div>
                   </BrutalistCard>
                   <div className="flex flex-col items-center justify-center gap-4">
-                    <span className="text-5xl font-black bg-black text-white px-8 py-4">FINAL</span>
-                    <span className="font-black text-gray-400 uppercase tracking-[0.2em] text-xs">{match.match_date}</span>
+                    <span className="text-5xl font-display italic font-black bg-[#6BDB58] text-[#0B0D0B] px-6 py-2">FINAL</span>
+                    <span className="font-black text-[#9AA397] uppercase tracking-[0.2em] text-xs">{match.match_date}</span>
                   </div>
-                  <BrutalistCard color="bg-[#f8fafc]" className="text-center py-10">
+                  <BrutalistCard color="bg-[#FFFFFF]" className="text-center py-10">
                     <h2 className="text-3xl font-black uppercase text-[#D90429] mb-4 tracking-tighter">{match.away_team?.team_name}</h2>
-                    <div className="text-9xl font-black tracking-tighter">{dbAwayScore}</div>
-                    <div className="mt-6 text-sm font-bold text-gray-600 space-y-2">
+                    <div className="text-9xl font-display italic font-black tracking-tighter tabular-nums">{dbAwayScore}</div>
+                    <div className="mt-6 text-sm font-bold text-[#5B6359] space-y-2">
                       {stats.away.roster.scorers.map((s, i) => (
                         <div key={i} className="flex items-center justify-center gap-2">
                           <span className="text-[#D90429] font-black text-xs border border-[#D90429] px-1.5 py-0.5">#{s.jersey}</span>
@@ -1569,16 +1569,16 @@ export default function MatchReportPage() {
                 </div>
 
 <section>
-                  <h3 className="text-2xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Match Analytics</h3>
+                  <h3 className="text-2xl font-black uppercase border-b-4 border-[#6BDB58] inline-block pb-1 mb-6">Match Analytics</h3>
                   <div className="grid grid-cols-1 gap-3">
                     {(STATS_CONFIG.summary || []).filter(e => e.enabled).sort((a, b) => a.order - b.order).map(e => {
                       const def = STATS_REGISTRY[e.id]
                       if (!def) return null
                       return (
-                        <div key={e.id} className="flex items-center border-2 border-black bg-white overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                          <div className="w-1/4 p-4 text-center font-black text-2xl bg-[#0077B6] text-white">{def.getH(stats.home)}</div>
-                          <div className="w-2/4 p-4 text-center font-black uppercase tracking-widest text-xs bg-white border-x-2 border-black">{def.label}</div>
-                          <div className="w-1/4 p-4 text-center font-black text-2xl bg-[#D90429] text-white">{def.getA(stats.away)}</div>
+                        <div key={e.id} className="flex items-center rounded-2xl bg-[#F0F2EE] overflow-hidden">
+                          <div className="w-1/4 p-4 text-center font-display italic font-black text-3xl text-[#0077B6] tabular-nums">{def.getH(stats.home)}</div>
+                          <div className="w-2/4 p-4 text-center font-mono font-semibold uppercase tracking-widest text-xs text-[#5B6359]">{def.label}</div>
+                          <div className="w-1/4 p-4 text-center font-display italic font-black text-3xl text-[#D90429] tabular-nums">{def.getA(stats.away)}</div>
                         </div>
                       )
                     })}
@@ -1586,7 +1586,7 @@ export default function MatchReportPage() {
                 </section>
 
                 <section>
-                  <h3 className="text-2xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-8">Team Sheets</h3>
+                  <h3 className="text-2xl font-black uppercase border-b-4 border-[#6BDB58] inline-block pb-1 mb-8">Team Sheets</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                     <TeamSheetSide teamName={match.home_team?.team_name || 'HOME'} roster={stats.home.roster} colorClass="bg-[#0077B6]" />
                     <TeamSheetSide teamName={match.away_team?.team_name || 'AWAY'} roster={stats.away.roster} colorClass="bg-[#D90429]" />
@@ -1599,27 +1599,27 @@ export default function MatchReportPage() {
             {activeTab === 'DISTRIBUTION' && (
               <div className="space-y-12">
                 <section>
-                  <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Raw Telemetry</h3>
+                  <h3 className="text-xl font-black uppercase border-b-4 border-[#6BDB58] inline-block pb-1 mb-6">Raw Telemetry</h3>
                   <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                     <div className="lg:col-span-3">
                       <DistributionPitch filteredEvents={filteredEvents} homeTeamId={match.home_team_id} lineups={lineups} isFutsal={isFutsal} />
                       <div className="flex gap-4 text-[10px] font-black uppercase mb-4">
                         <div className="flex items-center gap-1"><div className="w-3 h-3 bg-[#0077B6]"></div> Home</div>
                         <div className="flex items-center gap-1"><div className="w-3 h-3 bg-[#D90429]"></div> Away</div>
-                        <div className="flex items-center gap-1 italic text-gray-400 ml-auto">* Hover over points</div>
+                        <div className="flex items-center gap-1 italic text-[#9AA397] ml-auto">* Hover over points</div>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="border-2 border-black bg-white p-3 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                          <h4 className="text-[10px] font-black uppercase text-gray-400 mb-2 border-b-2 border-black pb-1">Zone Activity</h4>
-                          <div className="flex h-8 border-2 border-black w-full mb-1">
-                            {zoneStats.def > 0 && <div className="bg-[#f8fafc] flex items-center justify-center text-[10px] font-black border-r-2 border-black" style={{ width: `${zoneStats.def}%` }}>{zoneStats.def}%</div>}
-                            {zoneStats.mid > 0 && <div className="bg-[#FFD166] flex items-center justify-center text-[10px] font-black border-r-2 border-black" style={{ width: `${zoneStats.mid}%` }}>{zoneStats.mid}%</div>}
+                        <div className="border-2 border-line bg-white p-3">
+                          <h4 className="text-[10px] font-black uppercase text-[#9AA397] mb-2 border-b-2 border-line pb-1">Zone Activity</h4>
+                          <div className="flex h-8 border-2 border-line w-full mb-1">
+                            {zoneStats.def > 0 && <div className="bg-[#FFFFFF] flex items-center justify-center text-[10px] font-black border-r-2 border-line" style={{ width: `${zoneStats.def}%` }}>{zoneStats.def}%</div>}
+                            {zoneStats.mid > 0 && <div className="bg-[#6BDB58] flex items-center justify-center text-[10px] font-black border-r-2 border-line" style={{ width: `${zoneStats.mid}%` }}>{zoneStats.mid}%</div>}
                             {zoneStats.att > 0 && <div className="bg-black text-white flex items-center justify-center text-[10px] font-black" style={{ width: `${zoneStats.att}%` }}>{zoneStats.att}%</div>}
                           </div>
-                          <div className="flex justify-between text-[9px] font-black uppercase text-gray-500"><span>Def 3rd</span><span>Mid 3rd</span><span>Att 3rd</span></div>
+                          <div className="flex justify-between text-[9px] font-black uppercase text-[#5B6359]"><span>Def 3rd</span><span>Mid 3rd</span><span>Att 3rd</span></div>
                         </div>
-                        <div className="border-2 border-black bg-white p-3 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                          <h4 className="text-[10px] font-black uppercase text-gray-400 mb-2 border-b-2 border-black pb-1">Top Actors</h4>
+                        <div className="border-2 border-line bg-white p-3">
+                          <h4 className="text-[10px] font-black uppercase text-[#9AA397] mb-2 border-b-2 border-line pb-1">Top Actors</h4>
                           {topActors.map((p, i) => (
                             <div key={i} className="flex justify-between items-center text-xs font-bold uppercase mb-1">
                               <span>#{p.jersey} {p.name}</span>
@@ -1633,21 +1633,21 @@ export default function MatchReportPage() {
                     <div className="space-y-4">
                       <BrutalistCard>
                         <div className="flex items-center justify-between mb-4">
-                          <h4 className="text-[10px] font-black uppercase text-gray-400"><Filter size={12} className="inline" /> Filters</h4>
-                          <button onClick={() => { setDistTeam('ALL'); setDistPlayer('ALL'); setDistAction('ALL'); setDistOutcome('ALL'); setDistType('ALL'); setDistZone('ALL'); setMinMinute(0); setMaxMinute(absoluteMaxMinute) }} className="text-[10px] font-black uppercase border-2 border-black px-2 py-0.5 hover:bg-[#06D6A0]">Reset</button>
+                          <h4 className="text-[10px] font-black uppercase text-[#9AA397]"><Filter size={12} className="inline" /> Filters</h4>
+                          <button onClick={() => { setDistTeam('ALL'); setDistPlayer('ALL'); setDistAction('ALL'); setDistOutcome('ALL'); setDistType('ALL'); setDistZone('ALL'); setMinMinute(0); setMaxMinute(absoluteMaxMinute) }} className="text-[10px] font-black uppercase border-2 border-line px-2 py-0.5 hover:bg-[#6BDB58]">Reset</button>
                         </div>
                         <div className="space-y-3 text-xs font-bold uppercase">
                           <div>
-                            <label className="block mb-1 text-gray-500">Team</label>
-                            <select className="w-full border-2 border-black p-1.5 font-black text-xs" value={distTeam} onChange={e => { setDistTeam(e.target.value); setDistPlayer('ALL') }}>
+                            <label className="block mb-1 text-[#5B6359]">Team</label>
+                            <select className="w-full border-2 border-line p-1.5 font-black text-xs" value={distTeam} onChange={e => { setDistTeam(e.target.value); setDistPlayer('ALL') }}>
                               <option value="ALL">All</option>
                               <option value={match.home_team_id}>{match.home_team?.team_name}</option>
                               <option value={match.away_team_id}>{match.away_team?.team_name}</option>
                             </select>
                           </div>
                           <div>
-                            <label className="block mb-1 text-gray-500">Player</label>
-                            <select className="w-full border-2 border-black p-1.5 font-black text-xs" value={distPlayer} onChange={e => setDistPlayer(e.target.value)}>
+                            <label className="block mb-1 text-[#5B6359]">Player</label>
+                            <select className="w-full border-2 border-line p-1.5 font-black text-xs" value={distPlayer} onChange={e => setDistPlayer(e.target.value)}>
                               <option value="ALL">All Players</option>
                               {(distTeam === 'ALL' ? lineups : lineups.filter(l => l.team_id === distTeam)).map(p => (
                                 <option key={p.player_id} value={p.player_id}>#{p.jersey_no} {p.players?.player_name}</option>
@@ -1655,61 +1655,61 @@ export default function MatchReportPage() {
                             </select>
                           </div>
                           <div>
-                            <label className="block mb-1 text-gray-500">Action</label>
-                            <select className="w-full border-2 border-black p-1.5 font-black text-xs" value={distAction} onChange={e => { setDistAction(e.target.value); setDistOutcome('ALL'); setDistType('ALL') }}>
+                            <label className="block mb-1 text-[#5B6359]">Action</label>
+                            <select className="w-full border-2 border-line p-1.5 font-black text-xs" value={distAction} onChange={e => { setDistAction(e.target.value); setDistOutcome('ALL'); setDistType('ALL') }}>
                               <option value="ALL">All Actions</option>
                               {filterOptions.actions.map(a => <option key={a} value={a}>{a}</option>)}
                             </select>
                           </div>
                           <div>
-                            <label className="block mb-1 text-gray-500">Outcome</label>
-                            <select className="w-full border-2 border-black p-1.5 font-black text-xs" value={distOutcome} onChange={e => { setDistOutcome(e.target.value); setDistType('ALL') }}>
+                            <label className="block mb-1 text-[#5B6359]">Outcome</label>
+                            <select className="w-full border-2 border-line p-1.5 font-black text-xs" value={distOutcome} onChange={e => { setDistOutcome(e.target.value); setDistType('ALL') }}>
                               <option value="ALL">All Outcomes</option>
                               {filterOptions.outcomes.map(o => <option key={o} value={o}>{o}</option>)}
                             </select>
                           </div>
                           {filterOptions.types.length > 0 && (
                             <div>
-                              <label className="block mb-1 text-gray-500">Type</label>
-                              <select className="w-full border-2 border-black p-1.5 font-black text-xs" value={distType} onChange={e => setDistType(e.target.value)}>
+                              <label className="block mb-1 text-[#5B6359]">Type</label>
+                              <select className="w-full border-2 border-line p-1.5 font-black text-xs" value={distType} onChange={e => setDistType(e.target.value)}>
                                 <option value="ALL">All Types</option>
                                 {filterOptions.types.map(t => <option key={t} value={t}>{t}</option>)}
                               </select>
                             </div>
                           )}
                           <div>
-                            <label className="block mb-1 text-gray-500">Zone</label>
+                            <label className="block mb-1 text-[#5B6359]">Zone</label>
                             <div className="flex gap-1">
                               {[['ALL', 'All'], ['DEF', 'Def 3rd'], ['MID', 'Mid 3rd'], ['ATT', 'Att 3rd']].map(([val, lbl]) => (
-                                <button key={val} onClick={() => setDistZone(val)} className={`flex-1 border-2 border-black px-1 py-1 text-[9px] font-black uppercase transition-all ${distZone === val ? 'bg-black text-white' : 'bg-white hover:bg-[#FFD166]'}`}>{lbl}</button>
+                                <button key={val} onClick={() => setDistZone(val)} className={`flex-1 border-2 border-line px-1 py-1 text-[9px] font-black uppercase transition-all ${distZone === val ? 'bg-black text-white' : 'bg-white hover:bg-[#6BDB58]'}`}>{lbl}</button>
                               ))}
                             </div>
                           </div>
                           <div>
-                            <label className="block mb-1 text-gray-500">Time (min)</label>
+                            <label className="block mb-1 text-[#5B6359]">Time (min)</label>
                             <div className="flex items-center gap-1">
-                              <input type="number" className="w-1/2 border-2 border-black p-1" value={minMinute} min={0} max={absoluteMaxMinute} onChange={e => setMinMinute(parseInt(e.target.value) || 0)} />
+                              <input type="number" className="w-1/2 border-2 border-line p-1" value={minMinute} min={0} max={absoluteMaxMinute} onChange={e => setMinMinute(parseInt(e.target.value) || 0)} />
                               <span>-</span>
-                              <input type="number" className="w-1/2 border-2 border-black p-1" value={maxMinute} min={0} max={absoluteMaxMinute} onChange={e => setMaxMinute(parseInt(e.target.value) || absoluteMaxMinute)} />
+                              <input type="number" className="w-1/2 border-2 border-line p-1" value={maxMinute} min={0} max={absoluteMaxMinute} onChange={e => setMaxMinute(parseInt(e.target.value) || absoluteMaxMinute)} />
                             </div>
                           </div>
                         </div>
                       </BrutalistCard>
-                      <div className="text-center p-3 border-2 border-dashed border-gray-200">
+                      <div className="text-center p-3 border-2 border-dashed border-[#D6DBD3]">
                         <div className="text-sm font-black">{filteredEvents.length}</div>
-                        <div className="text-[9px] font-bold text-gray-500 uppercase">Filtered Events</div>
+                        <div className="text-[9px] font-bold text-[#5B6359] uppercase">Filtered Events</div>
                       </div>
                     </div>
                   </div>
                 </section>
 
                 <section>
-                  <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Field Tilt</h3>
-                  <div className="flex h-10 border-4 border-black mb-2 w-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                  <h3 className="text-xl font-black uppercase border-b-4 border-[#6BDB58] inline-block pb-1 mb-6">Field Tilt</h3>
+                  <div className="flex h-10 border-4 border-line mb-2 w-full">
                     <div className="bg-[#0077B6] text-white flex items-center justify-center font-black text-sm" style={{ width: `${fieldTiltStats.homeTilt}%` }}>{fieldTiltStats.homeTilt}%</div>
                     <div className="bg-[#D90429] text-white flex items-center justify-center font-black text-sm" style={{ width: `${fieldTiltStats.awayTilt}%` }}>{fieldTiltStats.awayTilt}%</div>
                   </div>
-                  <div className="flex justify-between text-[10px] font-black uppercase text-gray-500">
+                  <div className="flex justify-between text-[10px] font-black uppercase text-[#5B6359]">
                     <span>{match.home_team?.team_name} ({fieldTiltStats.homeActions} actions)</span>
                     <span>{match.away_team?.team_name} ({fieldTiltStats.awayActions} actions)</span>
                   </div>
@@ -1717,28 +1717,28 @@ export default function MatchReportPage() {
 
                 {verticalityStats && (
                   <section>
-                    <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Verticality</h3>
+                    <h3 className="text-xl font-black uppercase border-b-4 border-[#6BDB58] inline-block pb-1 mb-6">Verticality</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {[
                         { team: match.home_team?.team_name, data: verticalityStats.home, color: '#0077B6' },
                         { team: match.away_team?.team_name, data: verticalityStats.away, color: '#D90429' },
                       ].map(({ team, data, color }) => (
-                        <div key={team} className="border-2 border-black bg-white p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                        <div key={team} className="border-2 border-line bg-white p-4">
                           <h4 className="text-[10px] font-black uppercase mb-3" style={{ color }}>{team}</h4>
                           <div className="flex items-end gap-3 mb-2">
                             <span className="text-4xl font-black">{data.ratio}%</span>
-                            <span className="text-xs font-black uppercase pb-1 text-gray-500">forward passes</span>
+                            <span className="text-xs font-black uppercase pb-1 text-[#5B6359]">forward passes</span>
                           </div>
-                          <div className="w-full h-3 border-2 border-black mb-3">
+                          <div className="w-full h-3 border-2 border-line mb-3">
                             <div className="h-full" style={{ width: `${data.ratio}%`, backgroundColor: color }} />
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="text-xs font-black uppercase border-2 border-black px-2 py-0.5" style={{ backgroundColor: data.label === 'High' ? '#06D6A0' : data.label === 'Medium' ? '#FFD166' : '#f8fafc' }}>
+                            <span className="text-xs font-black uppercase border-2 border-line px-2 py-0.5" style={{ backgroundColor: data.label === 'High' ? '#6BDB58' : data.label === 'Medium' ? '#6BDB58' : '#FFFFFF' }}>
                               {data.label} Verticality
                             </span>
-                            <span className="text-[10px] font-bold text-gray-400 uppercase">{data.forward} / {data.total} passes fwd</span>
+                            <span className="text-[10px] font-bold text-[#9AA397] uppercase">{data.forward} / {data.total} passes fwd</span>
                           </div>
-                          <p className="text-[10px] text-gray-400 font-bold uppercase mt-2">
+                          <p className="text-[10px] text-[#9AA397] font-bold uppercase mt-2">
                             {data.label === 'Low' ? 'Moves ball sideways/backwards to create gaps' : data.label === 'Medium' ? 'Balanced mix of forward and lateral play' : 'Direct, vertical approach — plays forward quickly'}
                           </p>
                         </div>
@@ -1748,11 +1748,11 @@ export default function MatchReportPage() {
                 )}
 
                 <section>
-                  <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Average Positions</h3>
+                  <h3 className="text-xl font-black uppercase border-b-4 border-[#6BDB58] inline-block pb-1 mb-6">Average Positions</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                     <div>
-                      <label className="block mb-1 text-[10px] font-black uppercase text-gray-500">Metric</label>
-                      <select className="w-full border-2 border-black p-2 font-black text-xs uppercase" value={avgStatType} onChange={e => setAvgStatType(e.target.value)}>
+                      <label className="block mb-1 text-[10px] font-black uppercase text-[#5B6359]">Metric</label>
+                      <select className="w-full border-2 border-line p-2 font-black text-xs uppercase" value={avgStatType} onChange={e => setAvgStatType(e.target.value)}>
                         <option value="ALL_ACTIONS">All Actions</option>
                         <option value="PASS">Pass Origin</option>
                         <option value="RECEIVE">Pass Receive</option>
@@ -1761,24 +1761,24 @@ export default function MatchReportPage() {
                       </select>
                     </div>
                     <div>
-                      <label className="block mb-1 text-[10px] font-black uppercase text-gray-500">Players</label>
+                      <label className="block mb-1 text-[10px] font-black uppercase text-[#5B6359]">Players</label>
                       <button
                         onClick={() => setAvgStartingXIOnly(prev => !prev)}
-                        className={`w-full border-2 border-black p-2 font-black text-xs uppercase transition-all ${
+                        className={`w-full border-2 border-line p-2 font-black text-xs uppercase transition-all ${
                           avgStartingXIOnly
-                            ? 'bg-black text-[#06D6A0] shadow-none'
-                            : 'bg-white text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-[#FFD166]'
+                            ? 'bg-black text-[#6BDB58] shadow-none'
+                            : 'bg-white text-black hover:bg-[#6BDB58]'
                         }`}
                       >
                         {avgStartingXIOnly ? '✓ Starting XI Only' : 'Starting XI Only'}
                       </button>
                     </div>
                     <div className="lg:col-span-2">
-                      <label className="block mb-1 text-[10px] font-black uppercase text-gray-500">Time Range (min)</label>
+                      <label className="block mb-1 text-[10px] font-black uppercase text-[#5B6359]">Time Range (min)</label>
                       <div className="flex items-center gap-2">
-                        <input type="number" className="w-1/2 border-2 border-black p-2 text-xs font-black" value={avgMinMinute} min={0} max={absoluteMaxMinute} onChange={e => setAvgMinMinute(parseInt(e.target.value) || 0)} />
+                        <input type="number" className="w-1/2 border-2 border-line p-2 text-xs font-black" value={avgMinMinute} min={0} max={absoluteMaxMinute} onChange={e => setAvgMinMinute(parseInt(e.target.value) || 0)} />
                         <span className="text-xs font-black">TO</span>
-                        <input type="number" className="w-1/2 border-2 border-black p-2 text-xs font-black" value={avgMaxMinute} min={0} max={absoluteMaxMinute} onChange={e => setAvgMaxMinute(parseInt(e.target.value) || absoluteMaxMinute)} />
+                        <input type="number" className="w-1/2 border-2 border-line p-2 text-xs font-black" value={avgMaxMinute} min={0} max={absoluteMaxMinute} onChange={e => setAvgMaxMinute(parseInt(e.target.value) || absoluteMaxMinute)} />
                       </div>
                     </div>
                   </div>
@@ -1791,19 +1791,19 @@ export default function MatchReportPage() {
                       { flag: 'HOME', team: match.home_team?.team_name, players: filterOptions.homePlayers, selected: avgHomePlayers, effective: effectiveHomePlayers, color: '#0077B6' },
                       { flag: 'AWAY', team: match.away_team?.team_name, players: filterOptions.awayPlayers, selected: avgAwayPlayers, effective: effectiveAwayPlayers, color: '#D90429' }
                     ].map(t => (
-                      <div key={t.flag} className={`border-2 border-black p-3 bg-white transition-opacity ${avgStartingXIOnly ? 'opacity-60' : ''}`}>
+                      <div key={t.flag} className={`border-2 border-line p-3 bg-white transition-opacity ${avgStartingXIOnly ? 'opacity-60' : ''}`}>
                         <div className="flex justify-between items-center mb-2">
                           <h5 className="text-[10px] font-black uppercase flex items-center gap-2" style={{ color: t.color }}>
                             {t.team}
                             {avgStartingXIOnly && (
-                              <span className="bg-black text-[#06D6A0] text-[8px] font-black px-1.5 py-0.5 uppercase">XI Active</span>
+                              <span className="bg-black text-[#6BDB58] text-[8px] font-black px-1.5 py-0.5 uppercase">XI Active</span>
                             )}
                           </h5>
                           {!avgStartingXIOnly && (
                             <div className="flex gap-1">
-                              <button onClick={() => { if (t.flag === 'HOME') setAvgHomePlayers(t.players.map(p => p.player_id)); else setAvgAwayPlayers(t.players.map(p => p.player_id)) }} className="text-[9px] font-bold uppercase border px-1 hover:bg-gray-100">All</button>
-                              <button onClick={() => { if (t.flag === 'HOME') setAvgHomePlayers(t.players.filter(p => p.starting_xi).map(p => p.player_id)); else setAvgAwayPlayers(t.players.filter(p => p.starting_xi).map(p => p.player_id)) }} className="text-[9px] font-bold uppercase border px-1 hover:bg-[#FFD166]">XI</button>
-                              <button onClick={() => { if (t.flag === 'HOME') setAvgHomePlayers([]); else setAvgAwayPlayers([]) }} className="text-[9px] font-bold uppercase border px-1 hover:bg-gray-100">None</button>
+                              <button onClick={() => { if (t.flag === 'HOME') setAvgHomePlayers(t.players.map(p => p.player_id)); else setAvgAwayPlayers(t.players.map(p => p.player_id)) }} className="text-[9px] font-bold uppercase border px-1 hover:bg-[#F0F2EE]">All</button>
+                              <button onClick={() => { if (t.flag === 'HOME') setAvgHomePlayers(t.players.filter(p => p.starting_xi).map(p => p.player_id)); else setAvgAwayPlayers(t.players.filter(p => p.starting_xi).map(p => p.player_id)) }} className="text-[9px] font-bold uppercase border px-1 hover:bg-[#6BDB58]">XI</button>
+                              <button onClick={() => { if (t.flag === 'HOME') setAvgHomePlayers([]); else setAvgAwayPlayers([]) }} className="text-[9px] font-bold uppercase border px-1 hover:bg-[#F0F2EE]">None</button>
                             </div>
                           )}
                         </div>
@@ -1820,7 +1820,7 @@ export default function MatchReportPage() {
                                 className={`text-[10px] font-bold uppercase border-2 px-2 py-0.5 transition-all ${
                                   isActive
                                     ? (t.flag === 'HOME' ? 'bg-[#0077B6] text-white border-[#0077B6]' : 'bg-[#D90429] text-white border-[#D90429]')
-                                    : 'bg-white text-black border-black hover:bg-gray-100'
+                                    : 'bg-white text-black border-line hover:bg-[#F0F2EE]'
                                 } ${isStarter ? 'border-solid' : 'border-dashed opacity-70'}`}
                               >
                                 #{p.jersey_no}{isStarter ? '' : '°'}
@@ -1828,7 +1828,7 @@ export default function MatchReportPage() {
                             )
                           })}
                         </div>
-                        <p className="text-[9px] text-gray-400 font-bold mt-2 uppercase">Solid border = Starter · Dashed + ° = Sub</p>
+                        <p className="text-[9px] text-[#9AA397] font-bold mt-2 uppercase">Solid border = Starter · Dashed + ° = Sub</p>
                       </div>
                     ))}
                   </div>
@@ -1843,32 +1843,32 @@ export default function MatchReportPage() {
                 <section>
                   <BrutalistCard>
                     <div className="flex items-center justify-between mb-4">
-                      <h4 className="text-[10px] font-black uppercase text-gray-400"><Filter size={12} className="inline" /> Filters</h4>
-                      <button onClick={() => { setPassHalf('ALL'); setPassZone('ALL'); setPassMinMin(0); setPassMaxMin(absoluteMaxMinute); setPassSelectedPlayer(null) }} className="text-[10px] font-black uppercase border-2 border-black px-2 py-0.5 hover:bg-[#06D6A0]">Reset</button>
+                      <h4 className="text-[10px] font-black uppercase text-[#9AA397]"><Filter size={12} className="inline" /> Filters</h4>
+                      <button onClick={() => { setPassHalf('ALL'); setPassZone('ALL'); setPassMinMin(0); setPassMaxMin(absoluteMaxMinute); setPassSelectedPlayer(null) }} className="text-[10px] font-black uppercase border-2 border-line px-2 py-0.5 hover:bg-[#6BDB58]">Reset</button>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-bold uppercase">
                       <div>
-                        <label className="block mb-1 text-gray-500">Half</label>
+                        <label className="block mb-1 text-[#5B6359]">Half</label>
                         <div className="flex gap-1">
                           {['ALL', '1ST', '2ND'].map(h => (
-                            <button key={h} onClick={() => setPassHalf(h)} className={`flex-1 border-2 border-black p-1.5 font-black text-[11px] ${passHalf === h ? 'bg-black text-white' : 'bg-white hover:bg-[#FFD166]'}`}>{h}</button>
+                            <button key={h} onClick={() => setPassHalf(h)} className={`flex-1 border-2 border-line p-1.5 font-black text-[11px] ${passHalf === h ? 'bg-black text-white' : 'bg-white hover:bg-[#6BDB58]'}`}>{h}</button>
                           ))}
                         </div>
                       </div>
                       <div>
-                        <label className="block mb-1 text-gray-500">Zone (by start)</label>
+                        <label className="block mb-1 text-[#5B6359]">Zone (by start)</label>
                         <div className="flex gap-1">
                           {[['ALL','All'],['DEF','Def 3rd'],['MID','Mid 3rd'],['ATT','Att 3rd']].map(([k,l]) => (
-                            <button key={k} onClick={() => setPassZone(k)} className={`flex-1 border-2 border-black p-1.5 font-black text-[10px] ${passZone === k ? 'bg-black text-white' : 'bg-white hover:bg-[#FFD166]'}`}>{l}</button>
+                            <button key={k} onClick={() => setPassZone(k)} className={`flex-1 border-2 border-line p-1.5 font-black text-[10px] ${passZone === k ? 'bg-black text-white' : 'bg-white hover:bg-[#6BDB58]'}`}>{l}</button>
                           ))}
                         </div>
                       </div>
                       <div>
-                        <label className="block mb-1 text-gray-500">Time Range (min)</label>
+                        <label className="block mb-1 text-[#5B6359]">Time Range (min)</label>
                         <div className="flex items-center gap-2">
-                          <input type="number" className="w-1/2 border-2 border-black p-1.5 text-xs font-black" value={passMinMin} min={0} max={absoluteMaxMinute} onChange={e => setPassMinMin(parseInt(e.target.value) || 0)} />
+                          <input type="number" className="w-1/2 border-2 border-line p-1.5 text-xs font-black" value={passMinMin} min={0} max={absoluteMaxMinute} onChange={e => setPassMinMin(parseInt(e.target.value) || 0)} />
                           <span className="text-xs font-black">TO</span>
-                          <input type="number" className="w-1/2 border-2 border-black p-1.5 text-xs font-black" value={passMaxMin} min={0} max={absoluteMaxMinute} onChange={e => setPassMaxMin(parseInt(e.target.value) || absoluteMaxMinute)} />
+                          <input type="number" className="w-1/2 border-2 border-line p-1.5 text-xs font-black" value={passMaxMin} min={0} max={absoluteMaxMinute} onChange={e => setPassMaxMin(parseInt(e.target.value) || absoluteMaxMinute)} />
                         </div>
                       </div>
                     </div>
@@ -1877,7 +1877,7 @@ export default function MatchReportPage() {
 
                 {/* Team-level passing stats */}
                 <section>
-                  <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Team Passing Stats</h3>
+                  <h3 className="text-xl font-black uppercase border-b-4 border-[#6BDB58] inline-block pb-1 mb-6">Team Passing Stats</h3>
                   <BrutalistCard>
                     {[
                       { title: 'Overall', rows: [
@@ -1916,7 +1916,7 @@ export default function MatchReportPage() {
                       ]},
                     ].map(section => (
                       <div key={section.title} className="mb-6 last:mb-0">
-                        <h4 className="text-sm font-black uppercase text-gray-400 mb-2 flex items-center gap-2"><Layers size={14} /> {section.title}</h4>
+                        <h4 className="text-sm font-black uppercase text-[#9AA397] mb-2 flex items-center gap-2"><Layers size={14} /> {section.title}</h4>
                         {section.rows.map((row, i) => (
                           <CompareRow
                             key={i}
@@ -1931,16 +1931,16 @@ export default function MatchReportPage() {
                         ))}
                       </div>
                     ))}
-                    <p className="text-[9px] font-bold uppercase text-gray-400 mt-2 border-t-2 border-black pt-2">Values shown as successful / total · success = Successful, Key Pass, Assist · incomplete = Missed, Intercepted, Off-Side</p>
+                    <p className="text-[9px] font-bold uppercase text-[#9AA397] mt-2 border-t-2 border-line pt-2">Values shown as successful / total · success = Successful, Key Pass, Assist · incomplete = Missed, Intercepted, Off-Side</p>
                   </BrutalistCard>
                 </section>
 
                 {/* Over-time charts */}
                 <section>
-                  <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Passing Tempo</h3>
+                  <h3 className="text-xl font-black uppercase border-b-4 border-[#6BDB58] inline-block pb-1 mb-6">Passing Tempo</h3>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <BrutalistCard>
-                      <h4 className="text-sm font-black uppercase text-gray-400 mb-3 flex items-center gap-2"><Layers size={14} /> Completed Passes / 5-min</h4>
+                      <h4 className="text-sm font-black uppercase text-[#9AA397] mb-3 flex items-center gap-2"><Layers size={14} /> Completed Passes / 5-min</h4>
                       <IntervalLineChart
                         data={passIntervalSeries.all}
                         yLabel="Completed"
@@ -1950,7 +1950,7 @@ export default function MatchReportPage() {
                       />
                     </BrutalistCard>
                     <BrutalistCard>
-                      <h4 className="text-sm font-black uppercase text-gray-400 mb-3 flex items-center gap-2"><Layers size={14} /> Successful Long Balls / 5-min</h4>
+                      <h4 className="text-sm font-black uppercase text-[#9AA397] mb-3 flex items-center gap-2"><Layers size={14} /> Successful Long Balls / 5-min</h4>
                       <IntervalLineChart
                         data={passIntervalSeries.long}
                         yLabel="Successful"
@@ -1964,13 +1964,13 @@ export default function MatchReportPage() {
 
                 {/* Passing Network */}
                 <section>
-                  <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Passing Network</h3>
+                  <h3 className="text-xl font-black uppercase border-b-4 border-[#6BDB58] inline-block pb-1 mb-6">Passing Network</h3>
                   <div className="flex gap-2 mb-4">
                     {['HOME', 'AWAY'].map(t => (
                       <button
                         key={t}
                         onClick={() => { setNetTeam(t); setPassSelectedPlayer(null) }}
-                        className={`text-xs font-black uppercase border-2 border-black px-4 py-1.5 transition-all ${netTeam === t ? 'bg-black text-white' : 'bg-white text-black hover:bg-[#FFD166]'}`}
+                        className={`text-xs font-black uppercase border-2 border-line px-4 py-1.5 transition-all ${netTeam === t ? 'bg-black text-white' : 'bg-white text-black hover:bg-[#6BDB58]'}`}
                       >
                         {t === 'HOME' ? match.home_team?.team_name : match.away_team?.team_name}
                       </button>
@@ -1990,7 +1990,7 @@ export default function MatchReportPage() {
                       <div className="flex gap-6 text-[10px] font-black uppercase mt-3 flex-wrap">
                         <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-[#0077B6]"></div> {match.home_team?.team_name}</div>
                         <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-[#D90429]"></div> {match.away_team?.team_name}</div>
-                        <div className="flex items-center gap-1 text-gray-400 italic ml-auto">* Click a player for breakdown · Hover for details</div>
+                        <div className="flex items-center gap-1 text-[#9AA397] italic ml-auto">* Click a player for breakdown · Hover for details</div>
                       </div>
                     </div>
                     {/* Player breakdown panel */}
@@ -2001,7 +2001,7 @@ export default function MatchReportPage() {
                         const ps = passStatsForSelectedPlayer
                         return (
                           <>
-                            <div className={`-m-4 mb-3 p-3 border-b-2 border-black ${isHomeP ? 'bg-[#0077B6]' : 'bg-[#D90429]'} text-white flex items-center justify-between`}>
+                            <div className={`-m-4 mb-3 p-3 border-b-2 border-line ${isHomeP ? 'bg-[#0077B6]' : 'bg-[#D90429]'} text-white flex items-center justify-between`}>
                               <div>
                                 <div className="text-[9px] font-bold uppercase opacity-80">#{lp?.jersey_no}</div>
                                 <h4 className="text-sm font-black uppercase leading-tight">{lp?.players?.player_name}</h4>
@@ -2036,10 +2036,10 @@ export default function MatchReportPage() {
                                 ['Free Kicks', `${ps.freeKickSucc}/${ps.freeKickTot}`],
                                 ['Corners', `${ps.cornerSucc}/${ps.cornerTot}`],
                               ].map((row, i) => row[0] === '—' ? (
-                                <div key={i} className="border-t border-gray-200 my-1.5"></div>
+                                <div key={i} className="border-t border-[#D6DBD3] my-1.5"></div>
                               ) : (
-                                <div key={i} className={`flex items-center justify-between px-1.5 py-0.5 ${row[2] ? 'bg-[#FFD166]' : ''}`}>
-                                  <span className="text-gray-600">{row[0]}</span>
+                                <div key={i} className={`flex items-center justify-between px-1.5 py-0.5 ${row[2] ? 'bg-[#6BDB58]' : ''}`}>
+                                  <span className="text-[#5B6359]">{row[0]}</span>
                                   <span>{row[1]}</span>
                                 </div>
                               ))}
@@ -2048,7 +2048,7 @@ export default function MatchReportPage() {
                         )
                       })() : (
                         <div className="flex items-center justify-center h-full min-h-[300px] text-center px-4">
-                          <p className="text-[11px] font-bold uppercase text-gray-400">Click a player on the network to see their pass breakdown here.</p>
+                          <p className="text-[11px] font-bold uppercase text-[#9AA397]">Click a player on the network to see their pass breakdown here.</p>
                         </div>
                       )}
                     </BrutalistCard>
@@ -2057,7 +2057,7 @@ export default function MatchReportPage() {
 
                 {/* Pass Link Matrices */}
                 <section>
-                  <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Pass Link Matrices</h3>
+                  <h3 className="text-xl font-black uppercase border-b-4 border-[#6BDB58] inline-block pb-1 mb-6">Pass Link Matrices</h3>
                   <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                     <PlayerPassMatrix
                       events={passFilteredEvents}
@@ -2074,7 +2074,7 @@ export default function MatchReportPage() {
                       teamName={match.away_team?.team_name}
                     />
                   </div>
-                  <p className="text-[9px] font-bold uppercase text-gray-400 mt-3 italic">Cells = completed pass count between the pair · respects the active half / zone / time-range filters · hover for the per-pass timeline</p>
+                  <p className="text-[9px] font-bold uppercase text-[#9AA397] mt-3 italic">Cells = completed pass count between the pair · respects the active half / zone / time-range filters · hover for the per-pass timeline</p>
                 </section>
 
                 {/* Pass Map Modal */}
@@ -2087,25 +2087,25 @@ export default function MatchReportPage() {
                       onClick={() => setPassModal(null)}
                     >
                       <div
-                        className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] max-w-6xl w-full p-5 my-auto"
+                        className="bg-white border-4 border-line max-w-6xl w-full p-5 my-auto"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <div className="flex items-start justify-between border-b-2 border-black pb-3 mb-4">
+                        <div className="flex items-start justify-between border-b-2 border-line pb-3 mb-4">
                           <div>
-                            <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Pass Map</p>
+                            <p className="text-[10px] font-black uppercase text-[#9AA397] tracking-widest">Pass Map</p>
                             <h3 className="text-2xl font-black uppercase tracking-tighter">{passModal.title}</h3>
-                            <p className="text-[10px] font-bold uppercase text-gray-500 mt-1">
+                            <p className="text-[10px] font-bold uppercase text-[#5B6359] mt-1">
                               <span style={{ color: '#0077B6' }}>{match.home_team?.team_name}: {filteredHome.length}</span>
                               {' · '}
                               <span style={{ color: '#D90429' }}>{match.away_team?.team_name}: {filteredAway.length}</span>
                               {(passHalf !== 'ALL' || passZone !== 'ALL' || passMinMin > 0 || passMaxMin < absoluteMaxMinute) && (
-                                <span className="text-gray-400 italic"> · filters applied</span>
+                                <span className="text-[#9AA397] italic"> · filters applied</span>
                               )}
                             </p>
                           </div>
                           <button
                             onClick={() => setPassModal(null)}
-                            className="border-2 border-black px-3 py-1 font-black text-sm bg-white hover:bg-[#FFD166] shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[1px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
+                            className="border-2 border-line px-3 py-1 font-black text-sm bg-white hover:bg-[#6BDB58] transition-all"
                           >✕ CLOSE</button>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2124,10 +2124,10 @@ export default function MatchReportPage() {
                             showEvents={true}
                           />
                         </div>
-                        <div className="mt-3 pt-2 border-t border-gray-200 flex items-center gap-x-4 gap-y-1 flex-wrap">
-                          <span className="text-[9px] font-bold uppercase text-gray-400">Arrows: start → end</span>
+                        <div className="mt-3 pt-2 border-t border-[#D6DBD3] flex items-center gap-x-4 gap-y-1 flex-wrap">
+                          <span className="text-[9px] font-bold uppercase text-[#9AA397]">Arrows: start → end</span>
                           {PASS_OUTCOME_LEGEND.map(([label, color]) => (
-                            <span key={label} className="inline-flex items-center gap-1 text-[9px] font-black uppercase text-gray-600">
+                            <span key={label} className="inline-flex items-center gap-1 text-[9px] font-black uppercase text-[#5B6359]">
                               <span className="inline-block w-3 h-[3px]" style={{ backgroundColor: color }} />
                               {label}
                             </span>
@@ -2147,32 +2147,32 @@ export default function MatchReportPage() {
                 <section>
                   <BrutalistCard>
                     <div className="flex items-center justify-between mb-4">
-                      <h4 className="text-[10px] font-black uppercase text-gray-400"><Filter size={12} className="inline" /> Filters</h4>
-                      <button onClick={() => { setAtkHalf('ALL'); setAtkZone('ALL'); setAtkMinMin(0); setAtkMaxMin(absoluteMaxMinute); setSelectedShotId(null) }} className="text-[10px] font-black uppercase border-2 border-black px-2 py-0.5 hover:bg-[#06D6A0]">Reset</button>
+                      <h4 className="text-[10px] font-black uppercase text-[#9AA397]"><Filter size={12} className="inline" /> Filters</h4>
+                      <button onClick={() => { setAtkHalf('ALL'); setAtkZone('ALL'); setAtkMinMin(0); setAtkMaxMin(absoluteMaxMinute); setSelectedShotId(null) }} className="text-[10px] font-black uppercase border-2 border-line px-2 py-0.5 hover:bg-[#6BDB58]">Reset</button>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-bold uppercase">
                       <div>
-                        <label className="block mb-1 text-gray-500">Half</label>
+                        <label className="block mb-1 text-[#5B6359]">Half</label>
                         <div className="flex gap-1">
                           {['ALL', '1ST', '2ND'].map(h => (
-                            <button key={h} onClick={() => setAtkHalf(h)} className={`flex-1 border-2 border-black p-1.5 font-black text-[11px] ${atkHalf === h ? 'bg-black text-white' : 'bg-white hover:bg-[#FFD166]'}`}>{h}</button>
+                            <button key={h} onClick={() => setAtkHalf(h)} className={`flex-1 border-2 border-line p-1.5 font-black text-[11px] ${atkHalf === h ? 'bg-black text-white' : 'bg-white hover:bg-[#6BDB58]'}`}>{h}</button>
                           ))}
                         </div>
                       </div>
                       <div>
-                        <label className="block mb-1 text-gray-500">Zone (by start)</label>
+                        <label className="block mb-1 text-[#5B6359]">Zone (by start)</label>
                         <div className="flex gap-1">
                           {[['ALL','All'],['DEF','Def 3rd'],['MID','Mid 3rd'],['ATT','Att 3rd']].map(([k,l]) => (
-                            <button key={k} onClick={() => setAtkZone(k)} className={`flex-1 border-2 border-black p-1.5 font-black text-[10px] ${atkZone === k ? 'bg-black text-white' : 'bg-white hover:bg-[#FFD166]'}`}>{l}</button>
+                            <button key={k} onClick={() => setAtkZone(k)} className={`flex-1 border-2 border-line p-1.5 font-black text-[10px] ${atkZone === k ? 'bg-black text-white' : 'bg-white hover:bg-[#6BDB58]'}`}>{l}</button>
                           ))}
                         </div>
                       </div>
                       <div>
-                        <label className="block mb-1 text-gray-500">Time Range (min)</label>
+                        <label className="block mb-1 text-[#5B6359]">Time Range (min)</label>
                         <div className="flex items-center gap-2">
-                          <input type="number" className="w-1/2 border-2 border-black p-1.5 text-xs font-black" value={atkMinMin} min={0} max={absoluteMaxMinute} onChange={e => setAtkMinMin(parseInt(e.target.value) || 0)} />
+                          <input type="number" className="w-1/2 border-2 border-line p-1.5 text-xs font-black" value={atkMinMin} min={0} max={absoluteMaxMinute} onChange={e => setAtkMinMin(parseInt(e.target.value) || 0)} />
                           <span className="text-xs font-black">TO</span>
-                          <input type="number" className="w-1/2 border-2 border-black p-1.5 text-xs font-black" value={atkMaxMin} min={0} max={absoluteMaxMinute} onChange={e => setAtkMaxMin(parseInt(e.target.value) || absoluteMaxMinute)} />
+                          <input type="number" className="w-1/2 border-2 border-line p-1.5 text-xs font-black" value={atkMaxMin} min={0} max={absoluteMaxMinute} onChange={e => setAtkMaxMin(parseInt(e.target.value) || absoluteMaxMinute)} />
                         </div>
                       </div>
                     </div>
@@ -2180,26 +2180,26 @@ export default function MatchReportPage() {
                 </section>
 
                 <section>
-                  <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Shot Maps (xG)</h3>
+                  <h3 className="text-xl font-black uppercase border-b-4 border-[#6BDB58] inline-block pb-1 mb-6">Shot Maps (xG)</h3>
                   <div className="flex flex-wrap gap-8 mb-8">
                     <ShotMapPitch shots={atkFilteredEvents.filter(e => e.action === 'Shoot' && e.team_id === match.home_team_id)} teamName={match.home_team?.team_name} isHome={true} lineups={lineups} isFutsal={isFutsal} selectedShotId={selectedShotId} onSelectShot={setSelectedShotId} />
                     <ShotMapPitch shots={atkFilteredEvents.filter(e => e.action === 'Shoot' && e.team_id === match.away_team_id)} teamName={match.away_team?.team_name} isHome={false} lineups={lineups} isFutsal={isFutsal} selectedShotId={selectedShotId} onSelectShot={setSelectedShotId} />
                   </div>
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-[10px] font-black uppercase text-gray-500 items-center">
-                    <span className="text-gray-400">Bubble (start):</span>
-                    <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-[#0077B6]"></div> Goal</div>
-                    <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full border-2 border-[#D90429] opacity-60"></div> No Goal</div>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-[10px] font-black uppercase text-[#5B6359] items-center">
+                    <span className="text-[#9AA397]">Bubble (start):</span>
+                    <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-[#0B0D0B]"></div> Goal</div>
+                    <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full border-2 border-[#0B0D0B] opacity-60"></div> No Goal</div>
                     {selectedShotId ? (
                       <>
-                        <span className="text-gray-300">·</span>
-                        <span className="text-gray-400">End point:</span>
-                        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#16a34a' }}></div> Goal</div>
-                        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#f97316' }}></div> Save</div>
-                        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-white border-2" style={{ borderColor: '#ef4444' }}></div> Off-Target</div>
-                        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-white border-2" style={{ borderColor: '#eab308' }}></div> Block</div>
+                        <span className="text-[#9AA397]">·</span>
+                        <span className="text-[#9AA397]">End point:</span>
+                        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#6BDB58' }}></div> Goal</div>
+                        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#0B0D0B' }}></div> Save</div>
+                        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-white border-2" style={{ borderColor: '#9AA397' }}></div> Off-Target</div>
+                        <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-white border-2" style={{ borderColor: '#5B6359' }}></div> Block</div>
                         <button
                           onClick={() => setSelectedShotId(null)}
-                          className="ml-2 border-2 border-black bg-white px-2 py-0.5 text-[9px] font-black uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-[#FFD166]"
+                          className="ml-2 border-2 border-line bg-white px-2 py-0.5 text-[9px] font-black uppercase hover:bg-[#6BDB58]"
                         >✕ Clear</button>
                       </>
                     ) : null}
@@ -2207,19 +2207,19 @@ export default function MatchReportPage() {
                   </div>
                 </section>
                 <section>
-                  <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Shot Placement (Goal Face)</h3>
+                  <h3 className="text-xl font-black uppercase border-b-4 border-[#6BDB58] inline-block pb-1 mb-6">Shot Placement (Goal Face)</h3>
                   <div className="flex flex-wrap gap-8">
                     <ShotPlacementPitch shots={atkFilteredEvents.filter(e => e.action === 'Shoot' && e.team_id === match.home_team_id)} teamName={match.home_team?.team_name} isHome={true} lineups={lineups} isFutsal={isFutsal} />
                     <ShotPlacementPitch shots={atkFilteredEvents.filter(e => e.action === 'Shoot' && e.team_id === match.away_team_id)} teamName={match.away_team?.team_name} isHome={false} lineups={lineups} isFutsal={isFutsal} />
                   </div>
-                  <div className="flex gap-4 mt-3 text-[10px] font-black uppercase text-gray-500">
-                    <div className="flex items-center gap-2"><div className="w-4 h-4 rounded-full bg-[#0077B6]"></div> Goal (Filled)</div>
-                    <div className="flex items-center gap-2"><div className="w-4 h-4 rounded-full border-2 border-[#D90429] opacity-50"></div> No Goal</div>
+                  <div className="flex gap-4 mt-3 text-[10px] font-black uppercase text-[#5B6359]">
+                    <div className="flex items-center gap-2"><div className="w-4 h-4 rounded-full bg-[#0B0D0B]"></div> Goal (Filled)</div>
+                    <div className="flex items-center gap-2"><div className="w-4 h-4 rounded-full border-2 border-[#0B0D0B] opacity-50"></div> No Goal</div>
                     <div className="ml-auto italic">* Bubble size = xGOT (off-target shots have xGOT 0 → smallest)</div>
                   </div>
                 </section>
                 <section>
-                  <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Attack Statistics</h3>
+                  <h3 className="text-xl font-black uppercase border-b-4 border-[#6BDB58] inline-block pb-1 mb-6">Attack Statistics</h3>
                   <BrutalistCard>
                     {[
                       { key: 'attack_shooting', title: 'Shooting & Efficiency' },
@@ -2227,7 +2227,7 @@ export default function MatchReportPage() {
                       { key: 'attack_pressure', title: 'Performance Under Pressure' }
                     ].map(section => (
                       <div key={section.key} className="mb-6 last:mb-0">
-                        <h4 className="text-sm font-black uppercase text-gray-400 mb-2 flex items-center gap-2"><Layers size={14} /> {section.title}</h4>
+                        <h4 className="text-sm font-black uppercase text-[#9AA397] mb-2 flex items-center gap-2"><Layers size={14} /> {section.title}</h4>
                         {renderStatRows(section.key, attackStatsFiltered?.home, attackStatsFiltered?.away)}
                       </div>
                     ))}
@@ -2236,31 +2236,31 @@ export default function MatchReportPage() {
 
                 {/* Goal Build-ups */}
                 <section>
-                  <div className="flex items-end justify-between gap-4 border-b-4 border-black mb-6 pb-1 flex-wrap">
+                  <div className="flex items-end justify-between gap-4 border-b-4 border-line mb-6 pb-1 flex-wrap">
                     <h3 className="text-xl font-black uppercase">Goal Build-up</h3>
                     <div className="flex items-center gap-2 text-[10px] font-black uppercase">
-                      <span className="text-gray-500">Actions before goal:</span>
+                      <span className="text-[#5B6359]">Actions before goal:</span>
                       <input
                         type="number"
                         min={1}
                         max={50}
                         value={buildupCount}
                         onChange={e => setBuildupCount(Math.max(1, Math.min(50, parseInt(e.target.value) || 1)))}
-                        className="w-16 border-2 border-black p-1 text-xs font-black text-center"
+                        className="w-16 border-2 border-line p-1 text-xs font-black text-center"
                       />
                       <div className="flex gap-1">
                         {[5, 10, 20, 30].map(n => (
                           <button
                             key={n}
                             onClick={() => setBuildupCount(n)}
-                            className={`border border-black px-1.5 py-0.5 text-[10px] ${buildupCount === n ? 'bg-black text-white' : 'bg-white hover:bg-[#FFD166]'}`}
+                            className={`border border-line px-1.5 py-0.5 text-[10px] ${buildupCount === n ? 'bg-black text-white' : 'bg-white hover:bg-[#6BDB58]'}`}
                           >{n}</button>
                         ))}
                       </div>
                     </div>
                   </div>
                   {goalBuildups.length === 0 ? (
-                    <div className="border-4 border-dashed border-gray-200 p-8 text-center text-[11px] font-black uppercase text-gray-400">
+                    <div className="border-4 border-dashed border-[#D6DBD3] p-8 text-center text-[11px] font-black uppercase text-[#9AA397]">
                       No goals in this match
                     </div>
                   ) : (
@@ -2269,7 +2269,7 @@ export default function MatchReportPage() {
                         const isOwnGoal = g.goalEvent.type === 'Own Goal'
                         return (
                           <BrutalistCard key={i}>
-                            <div className={`-m-4 mb-4 px-4 py-2 border-b-2 border-black flex items-center justify-between text-white ${g.isHome ? 'bg-[#0077B6]' : 'bg-[#D90429]'}`}>
+                            <div className={`-m-4 mb-4 px-4 py-2 border-b-2 border-line flex items-center justify-between text-white ${g.isHome ? 'bg-[#0077B6]' : 'bg-[#D90429]'}`}>
                               <div className="flex items-center gap-3">
                                 <span className="text-2xl">⚽</span>
                                 <div>
@@ -2288,26 +2288,26 @@ export default function MatchReportPage() {
                               isHome={g.isHome}
                               homeTeamId={match.home_team_id}
                             />
-                            <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[9px] font-black uppercase text-gray-500 border-t border-gray-200 pt-2">
-                              <span className="text-gray-400">Legend:</span>
+                            <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[9px] font-black uppercase text-[#5B6359] border-t border-[#D6DBD3] pt-2">
+                              <span className="text-[#9AA397]">Legend:</span>
                               {['Pass', 'Carry', 'Dribble', 'Shoot', 'Cross', 'Pass Intercept'].map(act => (
                                 <span key={act} className="flex items-center gap-1">
                                   <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor:
-                                    act === 'Pass' ? '#3b82f6' :
-                                    act === 'Carry' ? '#06b6d4' :
-                                    act === 'Dribble' ? '#0ea5e9' :
-                                    act === 'Shoot' ? '#ef4444' :
-                                    act === 'Cross' ? '#f59e0b' : '#84cc16'
+                                    act === 'Pass' ? '#0B0D0B' :
+                                    act === 'Carry' ? '#9AA397' :
+                                    act === 'Dribble' ? '#5B6359' :
+                                    act === 'Shoot' ? '#6BDB58' :
+                                    act === 'Cross' ? '#9BE58C' : '#CBD1C8'
                                   }} />
                                   {act}
                                 </span>
                               ))}
-                              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-[#FFD166] border border-black" /> Goal</span>
-                              <span className="text-gray-300">·</span>
-                              <span className="text-gray-400">Outer ring:</span>
+                              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-[#6BDB58] border border-line" /> Goal</span>
+                              <span className="text-[#9AA397]">·</span>
+                              <span className="text-[#9AA397]">Outer ring:</span>
                               <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full border-2" style={{ borderColor: '#0077B6' }} /> {match.home_team?.team_name}</span>
                               <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full border-2" style={{ borderColor: '#D90429' }} /> {match.away_team?.team_name}</span>
-                              <span className="ml-auto italic text-gray-400">Numbers = chronological · hover for details</span>
+                              <span className="ml-auto italic text-[#9AA397]">Numbers = chronological · hover for details</span>
                             </div>
                           </BrutalistCard>
                         )
@@ -2325,32 +2325,32 @@ export default function MatchReportPage() {
                 <section>
                   <BrutalistCard>
                     <div className="flex items-center justify-between mb-4">
-                      <h4 className="text-[10px] font-black uppercase text-gray-400"><Filter size={12} className="inline" /> Filters</h4>
-                      <button onClick={() => { setDefHalf('ALL'); setDefZone('ALL'); setDefMinMin(0); setDefMaxMin(absoluteMaxMinute) }} className="text-[10px] font-black uppercase border-2 border-black px-2 py-0.5 hover:bg-[#06D6A0]">Reset</button>
+                      <h4 className="text-[10px] font-black uppercase text-[#9AA397]"><Filter size={12} className="inline" /> Filters</h4>
+                      <button onClick={() => { setDefHalf('ALL'); setDefZone('ALL'); setDefMinMin(0); setDefMaxMin(absoluteMaxMinute) }} className="text-[10px] font-black uppercase border-2 border-line px-2 py-0.5 hover:bg-[#6BDB58]">Reset</button>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-bold uppercase">
                       <div>
-                        <label className="block mb-1 text-gray-500">Half</label>
+                        <label className="block mb-1 text-[#5B6359]">Half</label>
                         <div className="flex gap-1">
                           {['ALL', '1ST', '2ND'].map(h => (
-                            <button key={h} onClick={() => setDefHalf(h)} className={`flex-1 border-2 border-black p-1.5 font-black text-[11px] ${defHalf === h ? 'bg-black text-white' : 'bg-white hover:bg-[#FFD166]'}`}>{h}</button>
+                            <button key={h} onClick={() => setDefHalf(h)} className={`flex-1 border-2 border-line p-1.5 font-black text-[11px] ${defHalf === h ? 'bg-black text-white' : 'bg-white hover:bg-[#6BDB58]'}`}>{h}</button>
                           ))}
                         </div>
                       </div>
                       <div>
-                        <label className="block mb-1 text-gray-500">Zone (by start)</label>
+                        <label className="block mb-1 text-[#5B6359]">Zone (by start)</label>
                         <div className="flex gap-1">
                           {[['ALL','All'],['DEF','Def 3rd'],['MID','Mid 3rd'],['ATT','Att 3rd']].map(([k,l]) => (
-                            <button key={k} onClick={() => setDefZone(k)} className={`flex-1 border-2 border-black p-1.5 font-black text-[10px] ${defZone === k ? 'bg-black text-white' : 'bg-white hover:bg-[#FFD166]'}`}>{l}</button>
+                            <button key={k} onClick={() => setDefZone(k)} className={`flex-1 border-2 border-line p-1.5 font-black text-[10px] ${defZone === k ? 'bg-black text-white' : 'bg-white hover:bg-[#6BDB58]'}`}>{l}</button>
                           ))}
                         </div>
                       </div>
                       <div>
-                        <label className="block mb-1 text-gray-500">Time Range (min)</label>
+                        <label className="block mb-1 text-[#5B6359]">Time Range (min)</label>
                         <div className="flex items-center gap-2">
-                          <input type="number" className="w-1/2 border-2 border-black p-1.5 text-xs font-black" value={defMinMin} min={0} max={absoluteMaxMinute} onChange={e => setDefMinMin(parseInt(e.target.value) || 0)} />
+                          <input type="number" className="w-1/2 border-2 border-line p-1.5 text-xs font-black" value={defMinMin} min={0} max={absoluteMaxMinute} onChange={e => setDefMinMin(parseInt(e.target.value) || 0)} />
                           <span className="text-xs font-black">TO</span>
-                          <input type="number" className="w-1/2 border-2 border-black p-1.5 text-xs font-black" value={defMaxMin} min={0} max={absoluteMaxMinute} onChange={e => setDefMaxMin(parseInt(e.target.value) || absoluteMaxMinute)} />
+                          <input type="number" className="w-1/2 border-2 border-line p-1.5 text-xs font-black" value={defMaxMin} min={0} max={absoluteMaxMinute} onChange={e => setDefMaxMin(parseInt(e.target.value) || absoluteMaxMinute)} />
                         </div>
                       </div>
                     </div>
@@ -2358,13 +2358,13 @@ export default function MatchReportPage() {
                 </section>
 
                 <section>
-                  <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Defensive Density Heatmaps</h3>
+                  <h3 className="text-xl font-black uppercase border-b-4 border-[#6BDB58] inline-block pb-1 mb-6">Defensive Density Heatmaps</h3>
                   <div className="space-y-3 mb-6">
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <label className="text-[10px] font-black uppercase text-gray-500">Filter Action {defActionFilter.size > 0 && <span className="text-black">({defActionFilter.size} selected)</span>}</label>
+                        <label className="text-[10px] font-black uppercase text-[#5B6359]">Filter Action {defActionFilter.size > 0 && <span className="text-black">({defActionFilter.size} selected)</span>}</label>
                         {defActionFilter.size > 0 && (
-                          <button onClick={() => setDefActionFilter(new Set())} className="text-[9px] font-black uppercase border border-black px-1.5 py-0.5 hover:bg-[#FFD166]">Clear</button>
+                          <button onClick={() => setDefActionFilter(new Set())} className="text-[9px] font-black uppercase border border-line px-1.5 py-0.5 hover:bg-[#6BDB58]">Clear</button>
                         )}
                       </div>
                       <div className="flex flex-wrap gap-1.5">
@@ -2374,18 +2374,18 @@ export default function MatchReportPage() {
                             <button
                               key={a}
                               onClick={() => setDefActionFilter(prev => { const n = new Set(prev); n.has(a) ? n.delete(a) : n.add(a); return n })}
-                              className={`text-[10px] font-black uppercase border-2 border-black px-2 py-1 transition-all ${active ? 'bg-black text-white' : 'bg-white text-black hover:bg-[#FFD166]'}`}
+                              className={`text-[10px] font-black uppercase border-2 border-line px-2 py-1 transition-all ${active ? 'bg-black text-white' : 'bg-white text-black hover:bg-[#6BDB58]'}`}
                             >{a}</button>
                           )
                         })}
                       </div>
-                      {defActionFilter.size === 0 && <p className="text-[9px] font-bold uppercase text-gray-400 mt-1 italic">None selected → all defensive actions shown</p>}
+                      {defActionFilter.size === 0 && <p className="text-[9px] font-bold uppercase text-[#9AA397] mt-1 italic">None selected → all defensive actions shown</p>}
                     </div>
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <label className="text-[10px] font-black uppercase text-gray-500">Filter Outcome {defOutcomeFilter.size > 0 && <span className="text-black">({defOutcomeFilter.size} selected)</span>}</label>
+                        <label className="text-[10px] font-black uppercase text-[#5B6359]">Filter Outcome {defOutcomeFilter.size > 0 && <span className="text-black">({defOutcomeFilter.size} selected)</span>}</label>
                         {defOutcomeFilter.size > 0 && (
-                          <button onClick={() => setDefOutcomeFilter(new Set())} className="text-[9px] font-black uppercase border border-black px-1.5 py-0.5 hover:bg-[#FFD166]">Clear</button>
+                          <button onClick={() => setDefOutcomeFilter(new Set())} className="text-[9px] font-black uppercase border border-line px-1.5 py-0.5 hover:bg-[#6BDB58]">Clear</button>
                         )}
                       </div>
                       <div className="flex flex-wrap gap-1.5">
@@ -2395,12 +2395,12 @@ export default function MatchReportPage() {
                             <button
                               key={o}
                               onClick={() => setDefOutcomeFilter(prev => { const n = new Set(prev); n.has(o) ? n.delete(o) : n.add(o); return n })}
-                              className={`text-[10px] font-black uppercase border-2 border-black px-2 py-1 transition-all ${active ? 'bg-black text-white' : 'bg-white text-black hover:bg-[#FFD166]'}`}
+                              className={`text-[10px] font-black uppercase border-2 border-line px-2 py-1 transition-all ${active ? 'bg-black text-white' : 'bg-white text-black hover:bg-[#6BDB58]'}`}
                             >{o}</button>
                           )
                         })}
                       </div>
-                      {defOutcomeFilter.size === 0 && <p className="text-[9px] font-bold uppercase text-gray-400 mt-1 italic">None selected → all outcomes shown</p>}
+                      {defOutcomeFilter.size === 0 && <p className="text-[9px] font-bold uppercase text-[#9AA397] mt-1 italic">None selected → all outcomes shown</p>}
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-8">
@@ -2418,7 +2418,7 @@ export default function MatchReportPage() {
                   </div>
                 </section>
                 <section>
-                  <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Defense Statistics</h3>
+                  <h3 className="text-xl font-black uppercase border-b-4 border-[#6BDB58] inline-block pb-1 mb-6">Defense Statistics</h3>
                   <BrutalistCard>
                     {[
                       { key: 'defense_overview',         title: 'Ball Winning Overview' },
@@ -2432,7 +2432,7 @@ export default function MatchReportPage() {
                       { key: 'defense_pressing',         title: 'Pressing Intensity (PPDA)' }
                     ].map(section => (
                       <div key={section.key} className="mb-6 last:mb-0">
-                        <h4 className="text-sm font-black uppercase text-gray-400 mb-2 flex items-center gap-2"><Shield size={14} /> {section.title}</h4>
+                        <h4 className="text-sm font-black uppercase text-[#9AA397] mb-2 flex items-center gap-2"><Shield size={14} /> {section.title}</h4>
                         {renderStatRows(section.key, defenseStatsFiltered?.home, defenseStatsFiltered?.away, {
                           defense_total_regained: () => setDefenseModal({
                             title: 'Total Regained Possession',
@@ -2464,9 +2464,9 @@ export default function MatchReportPage() {
 
                 {/* Defensive Match-ups — player vs player matrix */}
                 <section>
-                  <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Defensive Match-ups</h3>
+                  <h3 className="text-xl font-black uppercase border-b-4 border-[#6BDB58] inline-block pb-1 mb-6">Defensive Match-ups</h3>
                   <div className="mb-4">
-                    <label className="block mb-1 text-[10px] font-black uppercase text-gray-500">Filter Action</label>
+                    <label className="block mb-1 text-[10px] font-black uppercase text-[#5B6359]">Filter Action</label>
                     <div className="flex flex-wrap gap-1.5">
                       {[
                         ['ALL', 'All Defensive'],
@@ -2482,7 +2482,7 @@ export default function MatchReportPage() {
                         <button
                           key={key}
                           onClick={() => setDefMatrixAction(key)}
-                          className={`text-[10px] font-black uppercase border-2 border-black px-2 py-1 transition-all ${defMatrixAction === key ? 'bg-black text-white' : 'bg-white text-black hover:bg-[#FFD166]'}`}
+                          className={`text-[10px] font-black uppercase border-2 border-line px-2 py-1 transition-all ${defMatrixAction === key ? 'bg-black text-white' : 'bg-white text-black hover:bg-[#6BDB58]'}`}
                         >{label}</button>
                       ))}
                     </div>
@@ -2511,7 +2511,7 @@ export default function MatchReportPage() {
                       attackerTeamName={match.home_team?.team_name}
                     />
                   </div>
-                  <p className="text-[9px] font-bold uppercase text-gray-400 mt-3 italic">Cells coloured by frequency · hover for full names · pairs with no events are blank</p>
+                  <p className="text-[9px] font-bold uppercase text-[#9AA397] mt-3 italic">Cells coloured by frequency · hover for full names · pairs with no events are blank</p>
                 </section>
 
                 {/* Defense Modal — pitch view of ball-winning event locations */}
@@ -2524,14 +2524,14 @@ export default function MatchReportPage() {
                       onClick={() => setDefenseModal(null)}
                     >
                       <div
-                        className="bg-white border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] max-w-6xl w-full p-5 my-auto"
+                        className="bg-white border-4 border-line max-w-6xl w-full p-5 my-auto"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <div className="flex items-start justify-between border-b-2 border-black pb-3 mb-4">
+                        <div className="flex items-start justify-between border-b-2 border-line pb-3 mb-4">
                           <div>
-                            <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Defense Map</p>
+                            <p className="text-[10px] font-black uppercase text-[#9AA397] tracking-widest">Defense Map</p>
                             <h3 className="text-2xl font-black uppercase tracking-tighter">{defenseModal.title}</h3>
-                            <p className="text-[10px] font-bold uppercase text-gray-500 mt-1">
+                            <p className="text-[10px] font-bold uppercase text-[#5B6359] mt-1">
                               <span style={{ color: '#0077B6' }}>{match.home_team?.team_name}: {filteredHome.length}</span>
                               {' · '}
                               <span style={{ color: '#D90429' }}>{match.away_team?.team_name}: {filteredAway.length}</span>
@@ -2539,7 +2539,7 @@ export default function MatchReportPage() {
                           </div>
                           <button
                             onClick={() => setDefenseModal(null)}
-                            className="border-2 border-black px-3 py-1 font-black text-sm bg-white hover:bg-[#FFD166] shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[1px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
+                            className="border-2 border-line px-3 py-1 font-black text-sm bg-white hover:bg-[#6BDB58] transition-all"
                           >✕ CLOSE</button>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2556,7 +2556,7 @@ export default function MatchReportPage() {
                             isFutsal={isFutsal}
                           />
                         </div>
-                        <p className="text-[9px] font-bold uppercase text-gray-400 mt-3">Heat density shows where each team's ball-winning events occurred on the pitch.</p>
+                        <p className="text-[9px] font-bold uppercase text-[#9AA397] mt-3">Heat density shows where each team's ball-winning events occurred on the pitch.</p>
                       </div>
                     </div>
                   )
@@ -2572,18 +2572,18 @@ export default function MatchReportPage() {
                 <section>
                   <button
                     onClick={() => setCacPointsOpen(o => !o)}
-                    className="flex items-center gap-3 text-xl font-black uppercase border-b-4 border-black pb-1 mb-4 hover:text-gray-600 transition-colors w-full text-left"
+                    className="flex items-center gap-3 text-xl font-black uppercase border-b-4 border-line pb-1 mb-4 hover:text-[#5B6359] transition-colors w-full text-left"
                   >
                     <span>CAC Points System</span>
                     <span className="text-sm">{cacPointsOpen ? '▲' : '▼'}</span>
                   </button>
                   {cacPointsOpen && <><div className="overflow-x-auto">
-                    <table className="border-4 border-black text-[11px] font-black uppercase w-full">
+                    <table className="border-4 border-line text-[11px] font-black uppercase w-full">
                       <thead>
                         <tr className="bg-black text-white">
                           <th className="px-3 py-2 text-left border-r-2 border-gray-600">Action</th>
                           <th className="px-3 py-2 text-center border-r-2 border-gray-600">Points</th>
-                          <th className="px-3 py-2 text-left text-gray-300 font-bold normal-case">Condition</th>
+                          <th className="px-3 py-2 text-left text-[#9AA397] font-bold normal-case">Condition</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -2594,13 +2594,13 @@ export default function MatchReportPage() {
                           { action: 'Shot on Target (In Box)', pts: '+2',  note: 'Shoot → Save inside penalty box' },
                           { action: 'Shot on Target (Out)',    pts: '+1',  note: 'Shoot → Save outside penalty box' },
                           { action: 'Big Chance Missed',       pts: '−2',  note: 'Shoot off-target/blocked with xG ≥ 0.30', neg: true },
-                          { section: 'PASSING', bg: 'bg-[#06D6A0] text-black' },
+                          { section: 'PASSING', bg: 'bg-[#6BDB58] text-black' },
                           { action: 'Assist',                  pts: '+6',  note: 'Pass → Assist' },
                           { action: 'Key Pass',                pts: '+3',  note: 'Pass → Key Pass' },
                           { action: 'Pass into Box',           pts: '+2',  note: 'Successful pass ending inside attacking penalty box' },
                           { action: 'Progressive Pass',        pts: '+1',  note: 'Successful forward pass ≥ threshold in/to attacking third' },
                           { action: 'Accurate Cross',          pts: '+1',  note: 'Successful pass from wide position into attacking box' },
-                          { section: 'DEFENDING', bg: 'bg-[#8338EC] text-white' },
+                          { section: 'DEFENDING', bg: 'bg-[#23801A] text-white' },
                           { action: 'Block (Def Box)',         pts: '+3',  note: 'Successful block inside defensive penalty box' },
                           { action: 'Block (Def 3rd)',         pts: '+2',  note: 'Successful block in defensive third (outside box)' },
                           { action: 'Ball Recovery',           pts: '+2',  note: 'Possession won via any recovery/tackle/intercept' },
@@ -2608,11 +2608,11 @@ export default function MatchReportPage() {
                           { action: 'Interception',            pts: '+2',  note: 'Pass Intercept → Successful' },
                           { action: 'Clearance',               pts: '+1',  note: 'Clearance action' },
                           { action: 'Aerial Duel Won',         pts: '+1',  note: 'Aerial Duel → Successful' },
-                          { section: 'POSSESSION', bg: 'bg-[#FFD166] text-black' },
+                          { section: 'POSSESSION', bg: 'bg-[#6BDB58] text-black' },
                           { action: 'Successful Dribble',      pts: '+1',  note: 'Dribble → Successful' },
                           { action: 'Foul Drawn',              pts: '+1',  note: 'Foul Won (non-penalty)' },
                           { action: 'Dispossessed',            pts: '−1',  note: 'Outcome → Dispossessed', neg: true },
-                          { section: 'DISCIPLINE', bg: 'bg-[#D90429] text-white' },
+                          { section: 'DISCIPLINE', bg: 'bg-[#0B0D0B] text-white' },
                           { action: 'Foul Committed',          pts: '−1',  note: 'Outcome → Foul (non-penalty)', neg: true },
                           { action: 'Yellow Card',             pts: '−2',  note: 'Type → Yellow Card', neg: true },
                           { action: 'Penalty Conceded',        pts: '−4',  note: 'Outcome → Foul (Penalty)', neg: true },
@@ -2623,30 +2623,30 @@ export default function MatchReportPage() {
                             <td colSpan={3} className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest">{row.section}</td>
                           </tr>
                         ) : (
-                          <tr key={i} className={`border-b border-black/10 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                            <td className="px-3 py-1.5 border-r-2 border-black">{row.action}</td>
-                            <td className={`px-3 py-1.5 border-r-2 border-black text-center font-black ${row.neg ? 'bg-[#D90429] text-white' : 'bg-[#FFD166]'}`}>{row.pts}</td>
-                            <td className="px-3 py-1.5 text-gray-500 normal-case font-bold">{row.note}</td>
+                          <tr key={i} className={`border-b border-line ${i % 2 === 0 ? 'bg-white' : 'bg-[#F0F2EE]'}`}>
+                            <td className="px-3 py-1.5 border-r-2 border-line">{row.action}</td>
+                            <td className={`px-3 py-1.5 border-r-2 border-line text-center font-black ${row.neg ? 'bg-[#0B0D0B] text-white' : 'bg-[#6BDB58]'}`}>{row.pts}</td>
+                            <td className="px-3 py-1.5 text-[#5B6359] normal-case font-bold">{row.note}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
-                  <p className="text-[9px] font-bold uppercase text-gray-400 mt-2">GK excluded from all rankings</p>
+                  <p className="text-[9px] font-bold uppercase text-[#9AA397] mt-2">GK excluded from all rankings</p>
                   </>}
                 </section>
 
                 {/* ── CAC PLAYER POINTS ── */}
                 <section>
-                  <div className="border-b-4 border-black pb-2 mb-6 flex items-end gap-4">
+                  <div className="border-b-4 border-line pb-2 mb-6 flex items-end gap-4">
                     <h2 className="text-3xl font-black uppercase tracking-tighter flex items-center gap-3"><Users size={32} /> CAC Player Points</h2>
-                    <span className="text-[10px] font-black uppercase text-gray-400 mb-1">GK excluded · sorted by total</span>
+                    <span className="text-[10px] font-black uppercase text-[#9AA397] mb-1">GK excluded · sorted by total</span>
                   </div>
                   <BrutalistCard>
                     <div className="overflow-x-auto">
                       <table className="w-full text-xs font-bold uppercase">
                         <thead>
-                          <tr className="border-b-4 border-black text-left text-[10px] text-gray-500">
+                          <tr className="border-b-4 border-line text-left text-[10px] text-[#5B6359]">
                             <th className="py-2 pr-3 w-8">#</th>
                             <th className="py-2 pr-3 w-8">No.</th>
                             <th className="py-2 pr-4">Player</th>
@@ -2657,7 +2657,7 @@ export default function MatchReportPage() {
                         <tbody>
                           {cacPlayerPoints.map((p, i) => {
                             const isExpanded = cacExpandedId === p.playerId
-                            const rowBg = i === 0 ? 'bg-[#FFD166]' : i < 3 ? 'bg-[#fff9e6]' : 'hover:bg-gray-50'
+                            const rowBg = i === 0 ? 'bg-[#6BDB58]' : i < 3 ? 'bg-[#EFFAEC]' : 'hover:bg-[#F0F2EE]'
                             const breakdown = Object.entries(p.cats || {})
                               .filter(([, cnt]) => cnt !== 0)
                               .map(([cat, cnt]) => ({
@@ -2670,39 +2670,39 @@ export default function MatchReportPage() {
                               .sort((a, b) => Math.abs(b.total) - Math.abs(a.total))
                             return (
                               <>
-                                <tr key={p.playerId} className={`border-b border-gray-200 ${rowBg}`}>
-                                  <td className="py-2 pr-3 font-black text-gray-400">{i + 1}</td>
+                                <tr key={p.playerId} className={`border-b border-[#D6DBD3] ${rowBg}`}>
+                                  <td className="py-2 pr-3 font-black text-[#9AA397]">{i + 1}</td>
                                   <td className="py-2 pr-3">
                                     <span className={`px-1.5 py-0.5 border text-[10px] font-black ${p.isHome ? 'border-[#0077B6] text-[#0077B6]' : 'border-[#D90429] text-[#D90429]'}`}>
                                       #{p.jersey}
                                     </span>
                                   </td>
                                   <td className="py-2 pr-4 font-black">{p.name}</td>
-                                  <td className="py-2 pr-3 text-gray-500 text-[10px]">{p.teamName}</td>
+                                  <td className="py-2 pr-3 text-[#5B6359] text-[10px]">{p.teamName}</td>
                                   <td className="py-2 text-right">
                                     <button
                                       onClick={() => setCacExpandedId(isExpanded ? null : p.playerId)}
-                                      className={`font-black text-base px-2 py-0.5 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all ${isExpanded ? 'bg-black text-white' : 'bg-white hover:bg-[#FFD166]'}`}
+                                      className={`font-black text-base px-2 py-0.5 border-2 border-line transition-all ${isExpanded ? 'bg-black text-white' : 'bg-white hover:bg-[#6BDB58]'}`}
                                     >
                                       {p.total} {isExpanded ? '▲' : '▼'}
                                     </button>
                                   </td>
                                 </tr>
                                 {isExpanded && (
-                                  <tr key={`${p.playerId}-breakdown`} className="border-b-2 border-black">
+                                  <tr key={`${p.playerId}-breakdown`} className="border-b-2 border-line">
                                     <td colSpan={5} className="px-4 py-3 bg-black text-white">
                                       <div className="flex flex-wrap gap-3">
                                         {breakdown.map((b, bi) => (
                                           <div key={bi} className="flex items-center gap-1.5 bg-white/10 border border-white/30 px-2 py-1 text-[10px] font-black uppercase">
-                                            <span className="text-gray-300">{b.label}</span>
-                                            <span className={b.neg ? 'text-[#ff6b6b]' : 'text-[#FFD166]'}>
+                                            <span className="text-[#9AA397]">{b.label}</span>
+                                            <span className={b.neg ? 'text-[#9AA397]' : 'text-[#6BDB58]'}>
                                               {b.count} × {b.pts > 0 ? '+' : ''}{b.pts} = {b.total > 0 ? '+' : ''}{b.total}
                                             </span>
                                           </div>
                                         ))}
                                         <div className="flex items-center gap-1.5 border-l border-white/30 pl-3 ml-auto text-[10px] font-black uppercase">
-                                          <span className="text-gray-300">Total</span>
-                                          <span className="text-[#FFD166] text-sm">{p.total} pts</span>
+                                          <span className="text-[#9AA397]">Total</span>
+                                          <span className="text-[#6BDB58] text-sm">{p.total} pts</span>
                                         </div>
                                       </div>
                                     </td>
@@ -2715,18 +2715,18 @@ export default function MatchReportPage() {
                       </table>
                     </div>
                     {/* point key */}
-                    <div className="mt-4 pt-3 border-t-2 border-black flex flex-wrap gap-x-4 gap-y-1 text-[9px] font-bold uppercase text-gray-500">
-                      <span className="text-[#0077B6]">Goal +10</span><span className="text-[#0077B6]">Pen Won +3</span><span className="text-[#0077B6]">SoT Box +2 / Out +1</span><span className="text-[#D90429]">Big Chance Missed −2</span>
-                      <span className="text-[#06D6A0]">Assist +6</span><span className="text-[#06D6A0]">Key Pass +3</span><span className="text-[#06D6A0]">Pass in Box +2</span><span className="text-[#06D6A0]">Prog Pass +1</span>
-                      <span className="text-[#8338EC]">Block Def Box +3</span><span className="text-[#8338EC]">Recovery/Tackle/Intercept +2</span><span className="text-[#8338EC]">Clearance +1</span>
-                      <span>Dribble +1</span><span>Foul Drawn +1</span><span className="text-[#D90429]">Yellow −2 · Red −6 · Pen Conceded −4 · OG −5</span>
+                    <div className="mt-4 pt-3 border-t-2 border-line flex flex-wrap gap-x-4 gap-y-1 text-[9px] font-bold uppercase text-[#5B6359]">
+                      <span className="text-[#23801A]">Goal +10</span><span className="text-[#23801A]">Pen Won +3</span><span className="text-[#23801A]">SoT Box +2 / Out +1</span><span className="text-[#5B6359]">Big Chance Missed −2</span>
+                      <span className="text-[#6BDB58]">Assist +6</span><span className="text-[#6BDB58]">Key Pass +3</span><span className="text-[#6BDB58]">Pass in Box +2</span><span className="text-[#6BDB58]">Prog Pass +1</span>
+                      <span className="text-[#23801A]">Block Def Box +3</span><span className="text-[#23801A]">Recovery/Tackle/Intercept +2</span><span className="text-[#23801A]">Clearance +1</span>
+                      <span>Dribble +1</span><span>Foul Drawn +1</span><span className="text-[#5B6359]">Yellow −2 · Red −6 · Pen Conceded −4 · OG −5</span>
                     </div>
                   </BrutalistCard>
                 </section>
 
                 {/* ── MATCH LEADERS ── */}
                 <section>
-                  <h3 className="text-xl font-black uppercase border-b-4 border-black inline-block pb-1 mb-6">Match Leaders</h3>
+                  <h3 className="text-xl font-black uppercase border-b-4 border-[#6BDB58] inline-block pb-1 mb-6">Match Leaders</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {matchLeaders.map((leader, i) => <LeaderCard key={i} leader={leader} />)}
                   </div>
@@ -2734,27 +2734,27 @@ export default function MatchReportPage() {
 
                 {/* ── PLAYER COMPARISON ── */}
                 <section>
-                  <div className="border-b-4 border-black pb-2 mb-8">
+                  <div className="border-b-4 border-line pb-2 mb-8">
                     <h2 className="text-3xl font-black uppercase tracking-tighter flex items-center gap-3"><Users size={32} /> Player Comparison</h2>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                    <BrutalistCard color="bg-[#f8fafc]">
-                      <h4 className="text-[10px] font-black uppercase text-gray-400 mb-2">PLAYER 1 (Blue)</h4>
-                      <select className="w-full border-2 border-black p-2 font-black text-xs uppercase mb-2" value={p1TeamId || ''} onChange={e => setP1TeamId(e.target.value)}>
+                    <BrutalistCard color="bg-[#FFFFFF]">
+                      <h4 className="text-[10px] font-black uppercase text-[#9AA397] mb-2">PLAYER 1 (Blue)</h4>
+                      <select className="w-full border-2 border-line p-2 font-black text-xs uppercase mb-2" value={p1TeamId || ''} onChange={e => setP1TeamId(e.target.value)}>
                         <option value={match.home_team_id}>{match.home_team?.team_name}</option>
                         <option value={match.away_team_id}>{match.away_team?.team_name}</option>
                       </select>
-                      <select className="w-full border-2 border-black p-2 font-black text-xs uppercase" value={p1PlayerId || ''} onChange={e => setP1PlayerId(e.target.value)}>
+                      <select className="w-full border-2 border-line p-2 font-black text-xs uppercase" value={p1PlayerId || ''} onChange={e => setP1PlayerId(e.target.value)}>
                         {p1Options.map(p => <option key={p.player_id} value={p.player_id}>#{p.jersey_no} {p.players?.player_name}</option>)}
                       </select>
                     </BrutalistCard>
-                    <BrutalistCard color="bg-[#f8fafc]">
-                      <h4 className="text-[10px] font-black uppercase text-gray-400 mb-2">PLAYER 2 (Red)</h4>
-                      <select className="w-full border-2 border-black p-2 font-black text-xs uppercase mb-2" value={p2TeamId || ''} onChange={e => setP2TeamId(e.target.value)}>
+                    <BrutalistCard color="bg-[#FFFFFF]">
+                      <h4 className="text-[10px] font-black uppercase text-[#9AA397] mb-2">PLAYER 2 (Red)</h4>
+                      <select className="w-full border-2 border-line p-2 font-black text-xs uppercase mb-2" value={p2TeamId || ''} onChange={e => setP2TeamId(e.target.value)}>
                         <option value={match.home_team_id}>{match.home_team?.team_name}</option>
                         <option value={match.away_team_id}>{match.away_team?.team_name}</option>
                       </select>
-                      <select className="w-full border-2 border-black p-2 font-black text-xs uppercase" value={p2PlayerId || ''} onChange={e => setP2PlayerId(e.target.value)}>
+                      <select className="w-full border-2 border-line p-2 font-black text-xs uppercase" value={p2PlayerId || ''} onChange={e => setP2PlayerId(e.target.value)}>
                         {p2Options.map(p => <option key={p.player_id} value={p.player_id}>#{p.jersey_no} {p.players?.player_name}</option>)}
                       </select>
                     </BrutalistCard>
@@ -2767,11 +2767,11 @@ export default function MatchReportPage() {
 
                       {/* ── PITCH COMPARISON ── */}
                       <BrutalistCard>
-                        <h4 className="text-sm font-black uppercase text-gray-400 mb-4">Pitch Heatmap</h4>
+                        <h4 className="text-sm font-black uppercase text-[#9AA397] mb-4">Pitch Heatmap</h4>
                         {/* Shared filters */}
                         <div className="flex flex-wrap gap-2 mb-4">
                           <select
-                            className="border-2 border-black p-1.5 font-black text-[10px] uppercase flex-1 min-w-[120px]"
+                            className="border-2 border-line p-1.5 font-black text-[10px] uppercase flex-1 min-w-[120px]"
                             value={cmpAction}
                             onChange={e => { setCmpAction(e.target.value); setCmpOutcome('ALL'); setCmpType('ALL') }}
                           >
@@ -2781,7 +2781,7 @@ export default function MatchReportPage() {
                             ))}
                           </select>
                           <select
-                            className="border-2 border-black p-1.5 font-black text-[10px] uppercase flex-1 min-w-[120px]"
+                            className="border-2 border-line p-1.5 font-black text-[10px] uppercase flex-1 min-w-[120px]"
                             value={cmpOutcome}
                             onChange={e => { setCmpOutcome(e.target.value); setCmpType('ALL') }}
                           >
@@ -2791,7 +2791,7 @@ export default function MatchReportPage() {
                             ))}
                           </select>
                           <select
-                            className="border-2 border-black p-1.5 font-black text-[10px] uppercase flex-1 min-w-[120px]"
+                            className="border-2 border-line p-1.5 font-black text-[10px] uppercase flex-1 min-w-[120px]"
                             value={cmpType}
                             onChange={e => setCmpType(e.target.value)}
                           >
@@ -2802,7 +2802,7 @@ export default function MatchReportPage() {
                           </select>
                           <button
                             onClick={() => { setCmpAction('ALL'); setCmpOutcome('ALL'); setCmpType('ALL') }}
-                            className="border-2 border-black px-3 py-1.5 font-black text-[10px] uppercase bg-white hover:bg-[#FFD166] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
+                            className="border-2 border-line px-3 py-1.5 font-black text-[10px] uppercase bg-white hover:bg-[#6BDB58] transition-all"
                           >Reset</button>
                         </div>
                         {/* Side by side pitches */}
@@ -2835,7 +2835,7 @@ export default function MatchReportPage() {
                       </BrutalistCard>
 
                       <BrutalistCard>
-                        <h4 className="text-sm font-black uppercase text-gray-400 mb-4">Head-to-Head</h4>
+                        <h4 className="text-sm font-black uppercase text-[#9AA397] mb-4">Head-to-Head</h4>
                         <CompareRow label="Total Passes" homeVal={p1Data.stats.passes} awayVal={p2Data.stats.passes} />
                         <CompareRow label="Pass Accuracy" homeVal={`${p1Data.stats.passAcc}%`} awayVal={`${p2Data.stats.passAcc}%`} highlight />
                         <CompareRow label="Total Shots" homeVal={p1Data.stats.shots} awayVal={p2Data.stats.shots} />
@@ -2855,7 +2855,7 @@ export default function MatchReportPage() {
             {/* HIGHLIGHTS TAB */}
             {activeTab === 'HIGHLIGHTS' && (
               <div className="space-y-8">
-                <div className="border-b-4 border-black pb-2 mb-6">
+                <div className="border-b-4 border-line pb-2 mb-6">
                   <h2 className="text-3xl font-black uppercase tracking-tighter flex items-center gap-3"><Video size={32} /> Highlights Reel</h2>
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -2863,7 +2863,7 @@ export default function MatchReportPage() {
                     <BrutalistCard>
                       {matchVideoUrl ? (
                         matchVideoProvider === 'youtube' ? (
-                          <div className="aspect-video w-full border-4 border-black bg-black">
+                          <div className="aspect-video w-full border-4 border-line bg-black">
                             <iframe
                               src={`https://www.youtube.com/embed/${getYouTubeId(matchVideoUrl)}?start=${Math.floor(hlSeekTime)}&autoplay=1`}
                               className="w-full h-full" allowFullScreen allow="autoplay"
@@ -2871,27 +2871,27 @@ export default function MatchReportPage() {
                             />
                           </div>
                         ) : matchVideoProvider === 'drive' ? (
-                          <div className="aspect-video w-full border-4 border-black bg-black">
+                          <div className="aspect-video w-full border-4 border-line bg-black">
                             <iframe src={`https://drive.google.com/file/d/${getDriveId(matchVideoUrl)}/preview`} className="w-full h-full" allowFullScreen />
                           </div>
                         ) : (
-                          <div className="aspect-video w-full border-4 border-black bg-black">
+                          <div className="aspect-video w-full border-4 border-line bg-black">
                             <video ref={videoRef} src={matchVideoUrl} controls className="w-full h-full" />
                           </div>
                         )
                       ) : (
-                        <div className="border-4 border-dashed border-gray-300 bg-gray-50 aspect-video w-full flex items-center justify-center">
-                          <p className="text-gray-400 font-black uppercase text-sm">No video available for this match</p>
+                        <div className="border-4 border-dashed border-[#D6DBD3] bg-[#F0F2EE] aspect-video w-full flex items-center justify-center">
+                          <p className="text-[#9AA397] font-black uppercase text-sm">No video available for this match</p>
                         </div>
                       )}
                     </BrutalistCard>
                     <div className="flex flex-wrap gap-2 mt-4">
                       {hotFilters.map((hf, i) => (
-                        <button key={i} onClick={() => { hf.apply(); setHlBrushBounds(null) }} className="text-[10px] font-black uppercase border-2 border-black px-2 py-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-[#FFD166] transition-all bg-white">
+                        <button key={i} onClick={() => { hf.apply(); setHlBrushBounds(null) }} className="text-[10px] font-black uppercase border-2 border-line px-2 py-1 hover:bg-[#6BDB58] transition-all bg-white">
                           {hf.label}
                         </button>
                       ))}
-                      <button onClick={() => { setHlAction('ALL'); setHlOutcome('ALL'); setHlType('ALL'); setHlTeam('ALL'); setHlPlayer('ALL'); setHlInsideBox(false); setHlBrushBounds(null) }} className="text-[10px] font-black uppercase border-2 border-black px-2 py-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-[#06D6A0] transition-all bg-white ml-auto">
+                      <button onClick={() => { setHlAction('ALL'); setHlOutcome('ALL'); setHlType('ALL'); setHlTeam('ALL'); setHlPlayer('ALL'); setHlInsideBox(false); setHlBrushBounds(null) }} className="text-[10px] font-black uppercase border-2 border-line px-2 py-1 hover:bg-[#6BDB58] transition-all bg-white ml-auto">
                         Reset
                       </button>
                     </div>
@@ -2910,32 +2910,32 @@ export default function MatchReportPage() {
                   </div>
                   <div>
                     <BrutalistCard className="max-h-[90vh] flex flex-col">
-                      <h4 className="text-[10px] font-black uppercase text-gray-400 mb-3 flex items-center gap-1 border-b-2 border-black pb-2">
+                      <h4 className="text-[10px] font-black uppercase text-[#9AA397] mb-3 flex items-center gap-1 border-b-2 border-line pb-2">
                         <Clock size={12} /> Event Timeline ({hlPitchFilteredEvents.length}
                         {hlBrushBounds ? ' in region' : ''})
                       </h4>
                       <div className="grid grid-cols-2 gap-2 mb-3">
-                        <select className="border-2 border-black p-1 font-black text-[10px] uppercase" value={hlTeam} onChange={e => { setHlTeam(e.target.value); setHlPlayer('ALL'); setHlBrushBounds(null) }}>
+                        <select className="border-2 border-line p-1 font-black text-[10px] uppercase" value={hlTeam} onChange={e => { setHlTeam(e.target.value); setHlPlayer('ALL'); setHlBrushBounds(null) }}>
                           <option value="ALL">All Teams</option>
                           <option value={match.home_team_id}>{match.home_team?.team_name}</option>
                           <option value={match.away_team_id}>{match.away_team?.team_name}</option>
                         </select>
-                        <select className="border-2 border-black p-1 font-black text-[10px] uppercase" value={hlPlayer} onChange={e => { setHlPlayer(e.target.value); setHlBrushBounds(null) }}>
+                        <select className="border-2 border-line p-1 font-black text-[10px] uppercase" value={hlPlayer} onChange={e => { setHlPlayer(e.target.value); setHlBrushBounds(null) }}>
                           <option value="ALL">All Players</option>
                           {(hlTeam === 'ALL' ? lineups : lineups.filter(l => l.team_id === hlTeam)).map(p => (
                             <option key={p.player_id} value={p.player_id}>#{p.jersey_no} {p.players?.player_name}</option>
                           ))}
                         </select>
-                        <select className="border-2 border-black p-1 font-black text-[10px] uppercase" value={hlAction} onChange={e => { setHlAction(e.target.value); setHlOutcome('ALL'); setHlType('ALL'); setHlBrushBounds(null) }}>
+                        <select className="border-2 border-line p-1 font-black text-[10px] uppercase" value={hlAction} onChange={e => { setHlAction(e.target.value); setHlOutcome('ALL'); setHlType('ALL'); setHlBrushBounds(null) }}>
                           <option value="ALL">All Actions</option>
                           {hlFilterOptions.actions.map(a => <option key={a} value={a}>{a}</option>)}
                         </select>
-                        <select className="border-2 border-black p-1 font-black text-[10px] uppercase" value={hlOutcome} onChange={e => { setHlOutcome(e.target.value); setHlType('ALL'); setHlBrushBounds(null) }}>
+                        <select className="border-2 border-line p-1 font-black text-[10px] uppercase" value={hlOutcome} onChange={e => { setHlOutcome(e.target.value); setHlType('ALL'); setHlBrushBounds(null) }}>
                           <option value="ALL">All Outcomes</option>
                           {hlFilterOptions.outcomes.map(o => <option key={o} value={o}>{o}</option>)}
                         </select>
                         {hlFilterOptions.types.length > 0 && (
-                          <select className="border-2 border-black p-1 font-black text-[10px] uppercase" value={hlType} onChange={e => { setHlType(e.target.value); setHlBrushBounds(null) }}>
+                          <select className="border-2 border-line p-1 font-black text-[10px] uppercase" value={hlType} onChange={e => { setHlType(e.target.value); setHlBrushBounds(null) }}>
                             <option value="ALL">All Types</option>
                             {hlFilterOptions.types.map(t => <option key={t} value={t}>{t}</option>)}
                           </select>
@@ -2943,11 +2943,11 @@ export default function MatchReportPage() {
                       </div>
                       <div className="flex-1 overflow-y-auto no-scrollbar">
                         {hlPitchFilteredEvents.length === 0 ? (
-                          <div className="text-center py-6 text-gray-400 font-bold text-xs uppercase">No events match filters</div>
+                          <div className="text-center py-6 text-[#9AA397] font-bold text-xs uppercase">No events match filters</div>
                         ) : (
                           <table className="w-full text-[10px] font-bold uppercase">
                             <thead>
-                              <tr className="border-b-2 border-black text-left text-gray-500">
+                              <tr className="border-b-2 border-line text-left text-[#5B6359]">
                                 <th className="py-1 w-10">Time</th>
                                 <th className="py-1 w-4">T</th>
                                 <th className="py-1">Player</th>
@@ -2963,13 +2963,13 @@ export default function MatchReportPage() {
                                   <tr
                                     key={i}
                                     onClick={() => handleEventClick(e.match_time_seconds)}
-                                    className="border-b border-gray-200 hover:bg-[#FFD166] cursor-pointer transition-colors"
+                                    className="border-b border-[#D6DBD3] hover:bg-[#6BDB58] cursor-pointer transition-colors"
                                   >
                                     <td className="py-2 font-black text-black">{Math.floor((e.match_time_seconds || 0) / 60)}'</td>
                                     <td className="py-2"><div className={`w-3 h-3 rounded-full ${isHome ? 'bg-[#0077B6]' : 'bg-[#D90429]'}`}></div></td>
                                     <td className="py-2 truncate max-w-[80px]">{pLineup ? `#${pLineup.jersey_no} ${pLineup.players?.player_name}` : 'Unknown'}</td>
                                     <td className="py-2">{e.action}</td>
-                                    <td className="py-2 text-gray-600">{e.outcome}</td>
+                                    <td className="py-2 text-[#5B6359]">{e.outcome}</td>
                                   </tr>
                                 )
                               })}
@@ -2989,18 +2989,18 @@ export default function MatchReportPage() {
 
                 {/* ── AI ANALYSIS ── */}
                 <section>
-                  <div className="border-b-4 border-black pb-2 mb-6 flex items-end justify-between flex-wrap gap-3">
+                  <div className="border-b-4 border-line pb-2 mb-6 flex items-end justify-between flex-wrap gap-3">
                     <h2 className="text-3xl font-black uppercase tracking-tighter flex items-center gap-3"><Edit3 size={32} /> Match Analysis</h2>
                     <div className="flex items-center gap-3">
                       {analysisSaved && analysisGeneratedAt && (
-                        <span className="text-[10px] font-bold text-gray-400 uppercase">
+                        <span className="text-[10px] font-bold text-[#9AA397] uppercase">
                           Saved · {new Date(analysisGeneratedAt).toLocaleDateString()}
                         </span>
                       )}
                       <button
                         onClick={generateAnalysis}
                         disabled={analysisLoading}
-                        className="flex items-center gap-2 border-2 border-black px-4 py-2 font-black uppercase text-xs shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-[#FFD166] transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-white"
+                        className="flex items-center gap-2 border-2 border-line px-4 py-2 font-black uppercase text-xs hover:bg-[#6BDB58] transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-white"
                       >
                         {analysisLoading ? (
                           <><RefreshCw size={12} className="animate-spin" /> Generating...</>
@@ -3014,8 +3014,8 @@ export default function MatchReportPage() {
                   </div>
 
                   {analysisLoading && (
-                    <BrutalistCard color="bg-[#f8fafc]">
-                      <div className="flex items-center gap-3 py-8 justify-center text-gray-400 font-bold uppercase text-sm animate-pulse">
+                    <BrutalistCard color="bg-[#FFFFFF]">
+                      <div className="flex items-center gap-3 py-8 justify-center text-[#9AA397] font-bold uppercase text-sm animate-pulse">
                         <RefreshCw size={16} className="animate-spin" />
                         Groq AI is analysing match data…
                       </div>
@@ -3025,20 +3025,20 @@ export default function MatchReportPage() {
                   {!analysisLoading && analysisText && (
                     <BrutalistCard color="bg-white">
                       {analysisSaved && (
-                        <div className="flex items-center gap-2 mb-4 text-[10px] font-black uppercase text-[#06D6A0] border-b-2 border-black pb-3">
-                          <span className="w-2 h-2 rounded-full bg-[#06D6A0] inline-block" />
+                        <div className="flex items-center gap-2 mb-4 text-[10px] font-black uppercase text-[#6BDB58] border-b-2 border-line pb-3">
+                          <span className="w-2 h-2 rounded-full bg-[#6BDB58] inline-block" />
                           Saved to Supabase
                         </div>
                       )}
-                      <div className="prose prose-sm max-w-none font-mono text-sm leading-relaxed whitespace-pre-wrap text-gray-800">
+                      <div className="prose prose-sm max-w-[72ch] font-sans text-base leading-relaxed whitespace-pre-wrap text-[#0B0D0B]">
                         {analysisText}
                       </div>
                     </BrutalistCard>
                   )}
 
                   {!analysisLoading && !analysisText && (
-                    <BrutalistCard color="bg-[#f8fafc]">
-                      <div className="py-10 text-center text-gray-400 font-bold uppercase text-sm">
+                    <BrutalistCard color="bg-[#FFFFFF]">
+                      <div className="py-10 text-center text-[#9AA397] font-bold uppercase text-sm">
                         <p className="mb-2">No analysis yet.</p>
                         <p className="text-[10px]">Click "Generate Analysis" to let Groq AI write the match report.</p>
                       </div>
@@ -3046,46 +3046,46 @@ export default function MatchReportPage() {
                   )}
                 </section>
 
-                <div className="border-b-4 border-black pb-2 mb-6">
+                <div className="border-b-4 border-line pb-2 mb-6">
                   <h2 className="text-3xl font-black uppercase tracking-tighter flex items-center gap-3"><Edit3 size={32} /> Match Info</h2>
                 </div>
-                <BrutalistCard color="bg-[#FFD166]">
+                <BrutalistCard color="bg-[#6BDB58]">
                   <div className="mb-4">
-                    <h3 className="text-lg font-black uppercase border-b-2 border-black pb-1 inline-block">Match Details</h3>
+                    <h3 className="text-lg font-black uppercase border-b-2 border-[#6BDB58] pb-1 inline-block">Match Details</h3>
                   </div>
                   <div className="space-y-3 text-sm font-bold">
-                    <div className="flex justify-between border-b border-dashed border-black/30 pb-2">
-                      <span className="text-gray-700 uppercase text-xs">Match Name</span>
+                    <div className="flex justify-between border-b border-dashed border-line pb-2">
+                      <span className="text-[#5B6359] uppercase text-xs">Match Name</span>
                       <span>{match.match_name || 'N/A'}</span>
                     </div>
-                    <div className="flex justify-between border-b border-dashed border-black/30 pb-2">
-                      <span className="text-gray-700 uppercase text-xs">Date</span>
+                    <div className="flex justify-between border-b border-dashed border-line pb-2">
+                      <span className="text-[#5B6359] uppercase text-xs">Date</span>
                       <span>{match.match_date || 'N/A'}</span>
                     </div>
-                    <div className="flex justify-between border-b border-dashed border-black/30 pb-2">
-                      <span className="text-gray-700 uppercase text-xs">Tournament</span>
+                    <div className="flex justify-between border-b border-dashed border-line pb-2">
+                      <span className="text-[#5B6359] uppercase text-xs">Tournament</span>
                       <span>{tournamentName}</span>
                     </div>
-                    <div className="flex justify-between border-b border-dashed border-black/30 pb-2">
-                      <span className="text-gray-700 uppercase text-xs">Sport</span>
+                    <div className="flex justify-between border-b border-dashed border-line pb-2">
+                      <span className="text-[#5B6359] uppercase text-xs">Sport</span>
                       <span>{isFutsal ? 'Futsal' : 'Football'}</span>
                     </div>
-                    <div className="flex justify-between border-b border-dashed border-black/30 pb-2">
-                      <span className="text-gray-700 uppercase text-xs">Score (DB)</span>
+                    <div className="flex justify-between border-b border-dashed border-line pb-2">
+                      <span className="text-[#5B6359] uppercase text-xs">Score (DB)</span>
                       <span>{match.home_team?.team_name} {dbHomeScore} - {dbAwayScore} {match.away_team?.team_name}</span>
                     </div>
-                    <div className="flex justify-between border-b border-dashed border-black/30 pb-2">
-                      <span className="text-gray-700 uppercase text-xs">Score (Events)</span>
+                    <div className="flex justify-between border-b border-dashed border-line pb-2">
+                      <span className="text-[#5B6359] uppercase text-xs">Score (Events)</span>
                       <span>{match.home_team?.team_name} {computedScores.home} - {computedScores.away} {match.away_team?.team_name}</span>
                     </div>
                     {matchVideoUrl && (
-                      <div className="flex justify-between border-b border-dashed border-black/30 pb-2">
-                        <span className="text-gray-700 uppercase text-xs">Video</span>
+                      <div className="flex justify-between border-b border-dashed border-line pb-2">
+                        <span className="text-[#5B6359] uppercase text-xs">Video</span>
                         <a href={matchVideoUrl} target="_blank" rel="noreferrer" className="text-[#0077B6] underline truncate max-w-[300px]">{matchVideoUrl}</a>
                       </div>
                     )}
                     <div className="flex justify-between">
-                      <span className="text-gray-700 uppercase text-xs">Total Events</span>
+                      <span className="text-[#5B6359] uppercase text-xs">Total Events</span>
                       <span>{enrichedEvents.length}</span>
                     </div>
                   </div>
@@ -3101,7 +3101,7 @@ export default function MatchReportPage() {
         )}
       </main>
 
-      <footer className="mt-20 p-8 border-t-4 border-black text-center text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
+      <footer className="mt-20 p-8 border-t-4 border-line text-center text-[10px] font-black uppercase tracking-[0.2em] text-[#9AA397]">
         <a href="https://calcioac.com" target="_blank" rel="noreferrer" className="hover:text-black transition-colors">CAC Analytics Engine</a>
       </footer>
 

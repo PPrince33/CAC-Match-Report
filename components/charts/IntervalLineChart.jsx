@@ -33,7 +33,7 @@ export default function IntervalLineChart({ data = [], yLabel = 'Count', homeNam
 
   if (!data.length) {
     return (
-      <div className="border-4 border-dashed border-gray-200 p-8 text-center text-[11px] font-black uppercase text-gray-400">
+      <div className="border-4 border-dashed border-[#D6DBD3] p-8 text-center text-[11px] font-black uppercase text-[#9AA397]">
         No data for this metric in the current filter range
       </div>
     )
@@ -81,7 +81,7 @@ export default function IntervalLineChart({ data = [], yLabel = 'Count', homeNam
       >
         {/* gridlines */}
         {yTicks.map(t => (
-          <line key={`g${t}`} x1={padL} y1={yScale(t)} x2={padL + innerW} y2={yScale(t)} stroke="#e5e7eb" strokeWidth="1" />
+          <line key={`g${t}`} x1={padL} y1={yScale(t)} x2={padL + innerW} y2={yScale(t)} stroke="#D6DBD3" strokeWidth="1" />
         ))}
 
         {/* axes */}
@@ -92,10 +92,10 @@ export default function IntervalLineChart({ data = [], yLabel = 'Count', homeNam
         {yTicks.map(t => (
           <g key={`y${t}`}>
             <line x1={padL - 4} y1={yScale(t)} x2={padL} y2={yScale(t)} stroke="black" strokeWidth="1.5" />
-            <text x={padL - 8} y={yScale(t)} dy="0.32em" textAnchor="end" fontSize="11" fontFamily="monospace" fontWeight="700" fill="#374151">{t}</text>
+            <text x={padL - 8} y={yScale(t)} dy="0.32em" textAnchor="end" fontSize="11" fontFamily="monospace" fontWeight="700" fill="#2A302A">{t}</text>
           </g>
         ))}
-        <text x={12} y={padT + innerH / 2} fontSize="10" fontFamily="monospace" fontWeight="900" fill="#6b7280" textAnchor="middle"
+        <text x={12} y={padT + innerH / 2} fontSize="10" fontFamily="monospace" fontWeight="900" fill="#5B6359" textAnchor="middle"
           transform={`rotate(-90 12 ${padT + innerH / 2})`}>{yLabel.toUpperCase()}</text>
 
         {/* x-axis ticks + labels (every 5 min) */}
@@ -105,12 +105,12 @@ export default function IntervalLineChart({ data = [], yLabel = 'Count', homeNam
             <g key={`x${d.interval}`}>
               <line x1={xScale(d.interval)} y1={padT + innerH} x2={xScale(d.interval)} y2={padT + innerH + 4} stroke="black" strokeWidth="1.5" />
               {showLabel && (
-                <text x={xScale(d.interval)} y={padT + innerH + 18} textAnchor="middle" fontSize="11" fontFamily="monospace" fontWeight="700" fill="#374151">{d.interval}'</text>
+                <text x={xScale(d.interval)} y={padT + innerH + 18} textAnchor="middle" fontSize="11" fontFamily="monospace" fontWeight="700" fill="#2A302A">{d.interval}'</text>
               )}
             </g>
           )
         })}
-        <text x={padL + innerW / 2} y={H - 4} textAnchor="middle" fontSize="10" fontFamily="monospace" fontWeight="900" fill="#6b7280">MATCH MINUTE (5-MIN INTERVALS)</text>
+        <text x={padL + innerW / 2} y={H - 4} textAnchor="middle" fontSize="10" fontFamily="monospace" fontWeight="900" fill="#5B6359">MATCH MINUTE (5-MIN INTERVALS)</text>
 
         {/* hover vertical guide */}
         {hovered && (
@@ -131,31 +131,31 @@ export default function IntervalLineChart({ data = [], yLabel = 'Count', homeNam
       </svg>
 
       {/* legend */}
-      <div className="flex items-center gap-4 mt-1 text-[10px] font-black uppercase text-gray-600">
+      <div className="flex items-center gap-4 mt-1 text-[10px] font-black uppercase text-[#5B6359]">
         <span className="flex items-center gap-1.5"><span className="inline-block w-4 h-[3px]" style={{ backgroundColor: HOME_COLOR }} />{homeName}</span>
         <span className="flex items-center gap-1.5"><span className="inline-block w-4 h-[3px]" style={{ backgroundColor: AWAY_COLOR }} />{awayName}</span>
-        <span className="ml-auto text-gray-400 italic">Hover anywhere for breakdown</span>
+        <span className="ml-auto text-[#9AA397] italic">Hover anywhere for breakdown</span>
       </div>
 
       {/* tooltip card */}
       {hovered && (
-        <div className="mt-3 border-2 border-black bg-white p-3 text-[11px] font-black uppercase shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
-          <div className="flex items-center justify-between border-b-2 border-black pb-1.5 mb-2">
-            <span className="text-gray-500">Minute</span>
+        <div className="mt-3 border-2 border-line bg-white p-3 text-[11px] font-black uppercase">
+          <div className="flex items-center justify-between border-b-2 border-line pb-1.5 mb-2">
+            <span className="text-[#5B6359]">Minute</span>
             <span className="text-base">{hovered.interval}–{hovered.interval + 5}'</span>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <div className="text-[10px] mb-1" style={{ color: HOME_COLOR }}>{homeName}</div>
-              <div className="flex justify-between gap-3"><span className="text-gray-500">{metricLabel}</span><span style={{ color: HOME_COLOR }}>{hovered.homeY ?? 0}</span></div>
-              <div className="flex justify-between gap-3"><span className="text-gray-500">Incompleted</span><span className="text-[#FF4D4D]">{hovered.homeIncomplete ?? 0}</span></div>
-              <div className="flex justify-between gap-3"><span className="text-gray-500">Total</span><span>{hovered.homeTotal ?? 0}</span></div>
+              <div className="flex justify-between gap-3"><span className="text-[#5B6359]">{metricLabel}</span><span style={{ color: HOME_COLOR }}>{hovered.homeY ?? 0}</span></div>
+              <div className="flex justify-between gap-3"><span className="text-[#5B6359]">Incompleted</span><span className="text-[#9AA397]">{hovered.homeIncomplete ?? 0}</span></div>
+              <div className="flex justify-between gap-3"><span className="text-[#5B6359]">Total</span><span>{hovered.homeTotal ?? 0}</span></div>
             </div>
             <div>
               <div className="text-[10px] mb-1" style={{ color: AWAY_COLOR }}>{awayName}</div>
-              <div className="flex justify-between gap-3"><span className="text-gray-500">{metricLabel}</span><span style={{ color: AWAY_COLOR }}>{hovered.awayY ?? 0}</span></div>
-              <div className="flex justify-between gap-3"><span className="text-gray-500">Incompleted</span><span className="text-[#FF4D4D]">{hovered.awayIncomplete ?? 0}</span></div>
-              <div className="flex justify-between gap-3"><span className="text-gray-500">Total</span><span>{hovered.awayTotal ?? 0}</span></div>
+              <div className="flex justify-between gap-3"><span className="text-[#5B6359]">{metricLabel}</span><span style={{ color: AWAY_COLOR }}>{hovered.awayY ?? 0}</span></div>
+              <div className="flex justify-between gap-3"><span className="text-[#5B6359]">Incompleted</span><span className="text-[#9AA397]">{hovered.awayIncomplete ?? 0}</span></div>
+              <div className="flex justify-between gap-3"><span className="text-[#5B6359]">Total</span><span>{hovered.awayTotal ?? 0}</span></div>
             </div>
           </div>
         </div>

@@ -78,26 +78,26 @@ export default function PlayerPassMatrix({
 
   if (rowPlayers.length === 0 || colPlayers.length === 0) {
     return (
-      <div className="border-4 border-dashed border-gray-200 p-6 text-center text-[10px] font-black uppercase text-gray-400">
+      <div className="border-4 border-dashed border-[#D6DBD3] p-6 text-center text-[10px] font-black uppercase text-[#9AA397]">
         No completed passes for {teamName} in current filter range
       </div>
     )
   }
 
   return (
-    <div className="border-4 border-black bg-white">
-      <div className="px-3 py-2 border-b-2 border-black text-white text-[11px] font-black uppercase flex items-center justify-between" style={{ backgroundColor: teamColor }}>
+    <div className="border-4 border-line bg-white">
+      <div className="px-3 py-2 border-b-2 border-line text-white text-[11px] font-black uppercase flex items-center justify-between" style={{ backgroundColor: teamColor }}>
         <span>{teamName}</span>
         <span className="opacity-90 normal-case">passer → receiver</span>
       </div>
-      <div className="px-3 py-1.5 text-[9px] font-bold uppercase text-gray-500 border-b border-gray-200">
+      <div className="px-3 py-1.5 text-[9px] font-bold uppercase text-[#5B6359] border-b border-[#D6DBD3]">
         {totalEvents} completed passes · max {maxCount} per pair
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-[10px] font-black uppercase">
           <thead>
-            <tr className="bg-gray-50 border-b-2 border-black">
-              <th className="px-2 py-1 text-left text-gray-500 sticky left-0 bg-gray-50 z-10">Passer ↓ / Receiver →</th>
+            <tr className="bg-[#F0F2EE] border-b-2 border-line">
+              <th className="px-2 py-1 text-left text-[#5B6359] sticky left-0 bg-[#F0F2EE] z-10">Passer ↓ / Receiver →</th>
               {colPlayers.map(p => (
                 <th key={p.player_id} className="px-1.5 py-1 text-center min-w-[34px]" style={{ color: teamColor }} title={p.players?.player_name}>
                   #{p.jersey_no}
@@ -107,8 +107,8 @@ export default function PlayerPassMatrix({
           </thead>
           <tbody>
             {rowPlayers.map(rp => (
-              <tr key={rp.player_id} className="border-b border-gray-100">
-                <th className="px-2 py-1 text-left sticky left-0 bg-white z-10 border-r border-gray-200" style={{ color: teamColor }}>
+              <tr key={rp.player_id} className="border-b border-[#D6DBD3]">
+                <th className="px-2 py-1 text-left sticky left-0 bg-white z-10 border-r border-[#D6DBD3]" style={{ color: teamColor }}>
                   <div className="flex items-center gap-1.5">
                     <span className="px-1 border" style={{ borderColor: teamColor }}>#{rp.jersey_no}</span>
                     <span className="truncate max-w-[110px]" title={rp.players?.player_name}>{rp.players?.player_name}</span>
@@ -121,7 +121,7 @@ export default function PlayerPassMatrix({
                   return (
                     <td
                       key={cp.player_id}
-                      className={`px-1 py-1 text-center min-w-[34px] cursor-default transition-colors ${isHover ? 'outline outline-2 outline-black' : ''} ${isSelf ? 'bg-gray-100 text-gray-300' : ''}`}
+                      className={`px-1 py-1 text-center min-w-[34px] cursor-default transition-colors ${isHover ? 'outline outline-2 outline-black' : ''} ${isSelf ? 'bg-[#F0F2EE] text-[#9AA397]' : ''}`}
                       style={{ backgroundColor: isSelf ? undefined : cellBg(c) }}
                       onMouseEnter={() => setHoverCell({ row: rp.player_id, col: cp.player_id, count: c, passerName: rp.players?.player_name, recvName: cp.players?.player_name })}
                       onMouseLeave={() => setHoverCell(null)}
@@ -136,9 +136,9 @@ export default function PlayerPassMatrix({
         </table>
       </div>
       {hoverCell && hoverCell.count > 0 && (
-        <div className="px-3 py-2 border-t-2 border-black bg-black text-white text-[10px] font-bold uppercase">
+        <div className="px-3 py-2 border-t-2 border-line bg-black text-white text-[10px] font-bold uppercase">
           <div className="flex items-center gap-2 border-b border-white/20 pb-1 mb-1.5">
-            <span style={{ color: '#FFD166' }} className="text-sm">{hoverCell.count}</span>
+            <span style={{ color: '#6BDB58' }} className="text-sm">{hoverCell.count}</span>
             <span>{hoverCell.passerName} → {hoverCell.recvName}</span>
           </div>
           <div className="flex flex-wrap gap-1">
@@ -147,7 +147,7 @@ export default function PlayerPassMatrix({
               .sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0))
               .map((d, i) => (
                 <span key={i} className="border border-white/30 px-1.5 py-0.5 bg-white/10 normal-case">
-                  <span className="text-[#FFD166]">{d.minute != null ? `${d.minute}'` : '?'}</span>
+                  <span className="text-[#6BDB58]">{d.minute != null ? `${d.minute}'` : '?'}</span>
                   {' '}{d.action}{d.outcome !== 'Successful' ? ` · ${d.outcome}` : ''}
                 </span>
               ))}

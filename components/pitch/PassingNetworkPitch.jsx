@@ -219,16 +219,16 @@ export default function PassingNetworkPitch({ events = [], lineups = [], homeTea
       if (isSel) {
         ctx.beginPath()
         ctx.arc(cx, cy, r + 5, 0, Math.PI * 2)
-        ctx.strokeStyle = '#FFD166'
+        ctx.strokeStyle = '#6BDB58'
         ctx.lineWidth = 4
         ctx.stroke()
       }
 
       ctx.beginPath()
       ctx.arc(cx, cy, r, 0, Math.PI * 2)
-      ctx.fillStyle = isHN ? '#FFD166' : (isSel ? '#000' : color)
+      ctx.fillStyle = isHN ? '#6BDB58' : (isSel ? '#000' : color)
       ctx.fill()
-      ctx.strokeStyle = isSel ? '#FFD166' : '#000'
+      ctx.strokeStyle = isSel ? '#6BDB58' : '#000'
       ctx.lineWidth = isHN || isSel ? 4 : 3
       ctx.stroke()
 
@@ -349,7 +349,7 @@ export default function PassingNetworkPitch({ events = [], lineups = [], homeTea
       <div className="flex flex-wrap items-center gap-2 mb-3">
         {['ALL', 'XI', 'CUSTOM'].map(f => (
           <button key={f} onClick={() => setPlayerFilter(f)}
-            className={`text-[10px] font-black uppercase border-2 border-black px-3 py-1 transition-all ${playerFilter === f ? 'bg-black text-white' : 'bg-white text-black hover:bg-[#FFD166]'}`}>
+            className={`text-[10px] font-black uppercase border-2 border-line px-3 py-1 transition-all ${playerFilter === f ? 'bg-black text-white' : 'bg-white text-black hover:bg-[#6BDB58]'}`}>
             {f === 'ALL' ? 'All' : f === 'XI' ? 'Starting XI' : 'Select Players'}
           </button>
         ))}
@@ -357,13 +357,13 @@ export default function PassingNetworkPitch({ events = [], lineups = [], homeTea
 
       {/* Player selection grid — shown when CUSTOM */}
       {playerFilter === 'CUSTOM' && (
-        <div className="border-2 border-black p-3 mb-3 bg-white">
+        <div className="border-2 border-line p-3 mb-3 bg-white">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-black uppercase text-gray-500">Select players to display</span>
+            <span className="text-[10px] font-black uppercase text-[#5B6359]">Select players to display</span>
             <div className="flex gap-1">
-              <button onClick={() => setSelectedPlayers(new Set(teamPlayers.map(p => p.player_id)))} className="text-[9px] font-bold uppercase border px-1.5 py-0.5 hover:bg-[#FFD166]">All</button>
-              <button onClick={() => setSelectedPlayers(new Set(teamPlayers.filter(p => p.starting_xi).map(p => p.player_id)))} className="text-[9px] font-bold uppercase border px-1.5 py-0.5 hover:bg-[#FFD166]">XI</button>
-              <button onClick={() => setSelectedPlayers(new Set())} className="text-[9px] font-bold uppercase border px-1.5 py-0.5 hover:bg-gray-100">None</button>
+              <button onClick={() => setSelectedPlayers(new Set(teamPlayers.map(p => p.player_id)))} className="text-[9px] font-bold uppercase border px-1.5 py-0.5 hover:bg-[#6BDB58]">All</button>
+              <button onClick={() => setSelectedPlayers(new Set(teamPlayers.filter(p => p.starting_xi).map(p => p.player_id)))} className="text-[9px] font-bold uppercase border px-1.5 py-0.5 hover:bg-[#6BDB58]">XI</button>
+              <button onClick={() => setSelectedPlayers(new Set())} className="text-[9px] font-bold uppercase border px-1.5 py-0.5 hover:bg-[#F0F2EE]">None</button>
             </div>
           </div>
           <div className="flex flex-wrap gap-1.5">
@@ -372,50 +372,50 @@ export default function PassingNetworkPitch({ events = [], lineups = [], homeTea
               return (
                 <button key={p.player_id} onClick={() => togglePlayer(p.player_id)}
                   title={`${p.player_name}${p.starting_xi ? ' (Starter)' : ' (Sub)'}`}
-                  className={`text-[10px] font-bold border-2 px-2 py-0.5 transition-all ${active ? 'text-white border-transparent' : 'bg-white text-black border-black hover:bg-gray-100'} ${!p.starting_xi ? 'border-dashed opacity-70' : ''}`}
+                  className={`text-[10px] font-bold border-2 px-2 py-0.5 transition-all ${active ? 'text-white border-transparent' : 'bg-white text-black border-line hover:bg-[#F0F2EE]'} ${!p.starting_xi ? 'border-dashed opacity-70' : ''}`}
                   style={active ? { backgroundColor: color, borderColor: color } : {}}>
                   #{p.jersey_no}{p.starting_xi ? '' : '°'}
                 </button>
               )
             })}
           </div>
-          <p className="text-[9px] text-gray-400 font-bold mt-2 uppercase">Solid = Starter · Dashed + ° = Sub</p>
+          <p className="text-[9px] text-[#9AA397] font-bold mt-2 uppercase">Solid = Starter · Dashed + ° = Sub</p>
         </div>
       )}
 
       <div className="relative" ref={containerRef}>
         <canvas ref={canvasRef}
-          className="block border-4 border-black"
+          className="block border-4 border-line"
           style={{ cursor: (hoverNode || hoverLine) ? 'pointer' : 'default' }}
           onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave} onClick={handleClick} />
 
         {tooltip && (
-          <div className="fixed z-50 bg-black text-white text-[10px] font-black uppercase px-3 py-2 border-2 border-[#FFD166] pointer-events-none shadow-[4px_4px_0px_0px_#FFD166] min-w-[170px]"
+          <div className="fixed z-50 bg-black text-white text-[10px] font-black uppercase px-3 py-2 border-2 border-[#6BDB58] pointer-events-none min-w-[170px]"
             style={{ left: tooltip.x + 14, top: tooltip.y - 80 }}>
             {tooltip.type === 'node' ? (
               <>
-                <div className="text-[#FFD166] text-[11px] mb-1.5">#{tooltip.jersey} {tooltip.name}</div>
-                <div className="flex justify-between gap-4"><span>Total</span><span className="text-[#FFD166]">{tooltip.total}</span></div>
-                <div className="flex justify-between gap-4"><span>Completed</span><span className="text-[#06D6A0]">{tooltip.successful}</span></div>
-                <div className="flex justify-between gap-4"><span>Incompleted</span><span className="text-[#FF4D4D]">{tooltip.miss}</span></div>
-                <div className="flex justify-between gap-4 border-t border-gray-600 mt-1 pt-1"><span>Accuracy</span><span className="text-[#FFD166]">{tooltip.rate}%</span></div>
+                <div className="text-[#6BDB58] text-[11px] mb-1.5">#{tooltip.jersey} {tooltip.name}</div>
+                <div className="flex justify-between gap-4"><span>Total</span><span className="text-[#6BDB58]">{tooltip.total}</span></div>
+                <div className="flex justify-between gap-4"><span>Completed</span><span className="text-[#6BDB58]">{tooltip.successful}</span></div>
+                <div className="flex justify-between gap-4"><span>Incompleted</span><span className="text-[#9AA397]">{tooltip.miss}</span></div>
+                <div className="flex justify-between gap-4 border-t border-gray-600 mt-1 pt-1"><span>Accuracy</span><span className="text-[#6BDB58]">{tooltip.rate}%</span></div>
               </>
             ) : (
               <>
-                <div className="text-[#FFD166] text-[11px] mb-1.5">#{tooltip.jerseyA} {tooltip.nameA} ↔ #{tooltip.jerseyB} {tooltip.nameB}</div>
-                <div className="text-gray-300 text-[9px] uppercase mb-1">Total passes: <span className="text-white">{tooltip.total}</span></div>
+                <div className="text-[#6BDB58] text-[11px] mb-1.5">#{tooltip.jerseyA} {tooltip.nameA} ↔ #{tooltip.jerseyB} {tooltip.nameB}</div>
+                <div className="text-[#9AA397] text-[9px] uppercase mb-1">Total passes: <span className="text-white">{tooltip.total}</span></div>
                 <div className="border-t border-gray-600 pt-1 space-y-0.5">
                   <div className="flex justify-between gap-3">
                     <span>#{tooltip.jerseyA}→#{tooltip.jerseyB}</span>
-                    <span><span className="text-[#06D6A0]">{tooltip.aToB}</span> passes · <span className="text-[#FFD166]">{tooltip.rateAtoB}%</span> of #{tooltip.jerseyA}'s</span>
+                    <span><span className="text-[#6BDB58]">{tooltip.aToB}</span> passes · <span className="text-[#6BDB58]">{tooltip.rateAtoB}%</span> of #{tooltip.jerseyA}'s</span>
                   </div>
                   <div className="flex justify-between gap-3">
                     <span>#{tooltip.jerseyB}→#{tooltip.jerseyA}</span>
-                    <span><span className="text-[#06D6A0]">{tooltip.bToA}</span> passes · <span className="text-[#FFD166]">{tooltip.rateBtoA}%</span> of #{tooltip.jerseyB}'s</span>
+                    <span><span className="text-[#6BDB58]">{tooltip.bToA}</span> passes · <span className="text-[#6BDB58]">{tooltip.rateBtoA}%</span> of #{tooltip.jerseyB}'s</span>
                   </div>
-                  <div className="border-t border-gray-600 mt-1 pt-1 text-gray-300 text-[9px] uppercase">Overall accuracy</div>
-                  <div className="flex justify-between gap-3"><span>#{tooltip.jerseyA}</span><span className="text-[#FFD166]">{tooltip.accA}%</span></div>
-                  <div className="flex justify-between gap-3"><span>#{tooltip.jerseyB}</span><span className="text-[#FFD166]">{tooltip.accB}%</span></div>
+                  <div className="border-t border-gray-600 mt-1 pt-1 text-[#9AA397] text-[9px] uppercase">Overall accuracy</div>
+                  <div className="flex justify-between gap-3"><span>#{tooltip.jerseyA}</span><span className="text-[#6BDB58]">{tooltip.accA}%</span></div>
+                  <div className="flex justify-between gap-3"><span>#{tooltip.jerseyB}</span><span className="text-[#6BDB58]">{tooltip.accB}%</span></div>
                 </div>
               </>
             )}
