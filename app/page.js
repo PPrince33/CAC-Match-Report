@@ -105,52 +105,51 @@ export default function HomePage() {
             <RefreshCw className="animate-spin" size={18} /> Fetching match data
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <ul className="border-t-2 border-[#D6DBD3]">
             {filteredMatches.length > 0 ? filteredMatches.map((m) => (
-              <div
-                key={m.match_id}
-                className="rounded-[22px] p-6 bg-[#F0F2EE] flex flex-col"
-              >
-                {/* Badges */}
-                <div className="flex items-center gap-2 mb-5">
-                  <span className="bg-white rounded-full px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-wider">
-                    {m.tournament_name || 'CAC'}
+              <li key={m.match_id} className="border-b-2 border-[#D6DBD3]">
+                <Link
+                  href={`/match/${m.match_id}`}
+                  className="group grid grid-cols-1 md:grid-cols-[110px_minmax(0,1fr)_auto_auto] items-center gap-x-6 gap-y-2 px-2 md:px-4 py-5 rounded-xl hover:bg-[#F0F2EE] transition-colors"
+                >
+                  {/* Date */}
+                  <span className="font-mono text-xs uppercase tracking-wider text-[#5B6359] tabular-nums">
+                    {m.match_date || '—'}
                   </span>
-                  <span className={`rounded-full px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-wider ${m.is_futsal ? 'bg-[#6BDB58] text-[#0B0D0B]' : 'bg-[#0B0D0B] text-white'}`}>
-                    {m.is_futsal ? 'Futsal' : 'Football'}
+
+                  {/* Match: one line */}
+                  <h2 className="text-xl md:text-2xl uppercase leading-none md:whitespace-nowrap md:truncate">
+                    <span className="text-[#0077B6]">{m.home_team?.team_name}</span>
+                    {' '}
+                    <span className="text-[#0077B6] tabular-nums">{m.home_team_score ?? 0}</span>
+                    <span className="text-[#9AA397] mx-2">–</span>
+                    <span className="text-[#D90429] tabular-nums">{m.away_team_score ?? 0}</span>
+                    {' '}
+                    <span className="text-[#D90429]">{m.away_team?.team_name}</span>
+                  </h2>
+
+                  {/* Tags */}
+                  <span className="flex items-center gap-2">
+                    <span className="bg-[#F0F2EE] group-hover:bg-white rounded-full px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-wider whitespace-nowrap transition-colors">
+                      {m.tournament_name || 'CAC'}
+                    </span>
+                    <span className={`rounded-full px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-wider ${m.is_futsal ? 'bg-[#6BDB58] text-[#0B0D0B]' : 'bg-[#0B0D0B] text-white'}`}>
+                      {m.is_futsal ? 'Futsal' : 'Football'}
+                    </span>
                   </span>
-                </div>
 
-                {/* Score */}
-                <h2 className="text-2xl md:text-3xl uppercase leading-[0.95] mb-3">
-                  <span className="text-[#0077B6]">{m.home_team?.team_name}</span>
-                  {' '}
-                  <span className="text-[#0077B6] tabular-nums">{m.home_team_score ?? 0}</span>
-                  <span className="text-[#9AA397] mx-2">–</span>
-                  <span className="text-[#D90429] tabular-nums">{m.away_team_score ?? 0}</span>
-                  {' '}
-                  <span className="text-[#D90429]">{m.away_team?.team_name}</span>
-                </h2>
-
-                <p className="font-mono text-xs uppercase tracking-wider text-[#5B6359] mb-6">
-                  {m.match_date} · {m.match_name}
-                </p>
-
-                <div className="mt-auto">
-                  <Link
-                    href={`/match/${m.match_id}`}
-                    className="rounded-full bg-[#0B0D0B] text-white px-6 py-2.5 font-mono font-bold uppercase text-xs tracking-wider hover:bg-[#6BDB58] hover:text-[#0B0D0B] transition-colors inline-block"
-                  >
+                  {/* Action */}
+                  <span className="hidden md:inline-block font-mono font-bold uppercase text-xs tracking-wider whitespace-nowrap group-hover:text-[#23801A] transition-colors">
                     View report →
-                  </Link>
-                </div>
-              </div>
+                  </span>
+                </Link>
+              </li>
             )) : (
-              <div className="col-span-full py-16 rounded-[22px] border-2 border-dashed border-[#D6DBD3] text-center">
+              <li className="py-16 text-center border-b-2 border-[#D6DBD3]">
                 <p className="text-[#5B6359] font-semibold">No matches found for this selection.</p>
-              </div>
+              </li>
             )}
-          </div>
+          </ul>
         )}
       </main>
 
