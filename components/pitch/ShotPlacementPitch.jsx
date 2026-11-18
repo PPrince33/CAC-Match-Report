@@ -21,9 +21,12 @@ export default function ShotPlacementPitch({ shots, teamName, isHome, lineups, i
     return 4 + val * 18
   }
 
-  // One metre is the same number of pixels across and up, so the goal keeps its real shape
-  // (football 7.32 × 2.44 m, futsal 3 × 2 m). View: one goal-width either side of the posts,
-  // half a metre below the ground line and 60% of the crossbar height above it.
+  // Height is drawn Z_STRETCH times taller than true scale, so shots at different heights
+  // separate clearly (as broadcast goal-mouth graphics do). The footer label says so.
+  // View: one goal-width either side of the posts, half a metre below the ground line
+  // and 60% of the crossbar height above it.
+  // Futsal's 3 × 2 m goal is already readable at true scale, so only football is stretched.
+  const Z_STRETCH = isFutsal ? 1 : 1.75
   const PAD = 30
   const goalW = goalYMax - goalYMin
   const viewMinY = goalYMin - goalW
@@ -33,15 +36,16 @@ export default function ShotPlacementPitch({ shots, teamName, isHome, lineups, i
   const viewMaxZ = goalH * 1.6
   const viewRangeZ = viewMaxZ - viewMinZ
   const TOP = 16 // room for the team name chip above the frame
-  const heightFor = (w) => Math.round(PAD * 2 + TOP + (w - PAD * 2) * viewRangeZ / viewRangeY)
+  const heightFor = (w) => Math.round(PAD * 2 + TOP + (w - PAD * 2) * viewRangeZ * Z_STRETCH / viewRangeY)
   const getView = (w, h) => {
-    const k = Math.min((w - PAD * 2) / viewRangeY, (h - PAD * 2 - TOP) / viewRangeZ)
+    const k = Math.min((w - PAD * 2) / viewRangeY, (h - PAD * 2 - TOP) / (viewRangeZ * Z_STRETCH))
+    const kz = k * Z_STRETCH
     const ox = (w - viewRangeY * k) / 2
-    const oy = TOP + (h - TOP - viewRangeZ * k) / 2
+    const oy = TOP + (h - TOP - viewRangeZ * kz) / 2
     return {
-      k, ox, oy, frameW: viewRangeY * k, frameH: viewRangeZ * k,
+      k, ox, oy, frameW: viewRangeY * k, frameH: viewRangeZ * kz,
       scaleY: (y) => ox + (viewMaxY - y) * k,
-      scaleZ: (z) => oy + (viewMaxZ - z) * k,
+      scaleZ: (z) => oy + (viewMaxZ - z) * kz,
     }
   }
 
@@ -195,7 +199,7 @@ export default function ShotPlacementPitch({ shots, teamName, isHome, lineups, i
         </div>
       )}
       <div className="border-t-2 border-line px-3 py-1.5 bg-[#F0F2EE] text-[9px] font-black uppercase tracking-widest text-[#5B6359] flex items-center justify-center gap-2">
-        <span>Attack Direction →</span>
+        <span>{Z_STRETCH > 1 ? `Goal face · height shown ×${Z_STRETCH} for readability` : 'Goal face · true scale'}</span>
       </div>
     </div>
   )
