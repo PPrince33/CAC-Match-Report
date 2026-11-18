@@ -108,7 +108,7 @@ export default function ShotPlacementPitch({ shots, teamName, isHome, lineups, i
       ctx.arc(pY, pZ, isHovered ? radius + 2 : radius, 0, Math.PI * 2)
       if (isGoal) {
         ctx.fillStyle = primaryColor; ctx.fill()
-        ctx.strokeStyle = '#000000'; ctx.lineWidth = isHovered ? 3 : 2; ctx.stroke()
+        ctx.strokeStyle = '#6BDB58'; ctx.lineWidth = isHovered ? 4 : 3; ctx.stroke()
       } else {
         ctx.fillStyle = `${primaryColor}66`; ctx.fill()
         ctx.strokeStyle = primaryColor; ctx.lineWidth = isHovered ? 2.5 : 1.5; ctx.stroke()

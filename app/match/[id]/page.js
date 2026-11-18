@@ -2187,7 +2187,7 @@ export default function MatchReportPage() {
                   </div>
                   <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-[10px] font-black uppercase text-[#5B6359] items-center">
                     <span className="text-[#9AA397]">Bubble (start):</span>
-                    <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-[#0B0D0B]"></div> Goal</div>
+                    <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-[#0B0D0B] ring-2 ring-[#6BDB58]"></div> Goal</div>
                     <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full border-2 border-[#0B0D0B] opacity-60"></div> No Goal</div>
                     {selectedShotId ? (
                       <>
@@ -2213,7 +2213,7 @@ export default function MatchReportPage() {
                     <ShotPlacementPitch shots={atkFilteredEvents.filter(e => e.action === 'Shoot' && e.team_id === match.away_team_id)} teamName={match.away_team?.team_name} isHome={false} lineups={lineups} isFutsal={isFutsal} />
                   </div>
                   <div className="flex gap-4 mt-3 text-[10px] font-black uppercase text-[#5B6359]">
-                    <div className="flex items-center gap-2"><div className="w-4 h-4 rounded-full bg-[#0B0D0B]"></div> Goal (Filled)</div>
+                    <div className="flex items-center gap-2"><div className="w-4 h-4 rounded-full bg-[#0B0D0B] ring-2 ring-[#6BDB58]"></div> Goal (filled, green ring)</div>
                     <div className="flex items-center gap-2"><div className="w-4 h-4 rounded-full border-2 border-[#0B0D0B] opacity-50"></div> No Goal</div>
                     <div className="ml-auto italic">* Bubble size = xGOT (off-target shots have xGOT 0 → smallest)</div>
                   </div>
