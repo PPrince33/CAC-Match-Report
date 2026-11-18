@@ -3030,7 +3030,7 @@ export default function MatchReportPage() {
                           Saved to Supabase
                         </div>
                       )}
-                      <div className="prose prose-sm max-w-[72ch] font-sans text-base leading-relaxed whitespace-pre-wrap text-[#0B0D0B]">
+                      <div className="prose prose-sm max-w-none font-sans text-base leading-relaxed whitespace-pre-wrap text-[#0B0D0B]">
                         {analysisText}
                       </div>
                     </BrutalistCard>
