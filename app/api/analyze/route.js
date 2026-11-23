@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 
-const GROQ_MODELS = ['llama-3.3-70b-versatile', 'llama3-70b-8192', 'gemma2-9b-it', 'llama-3.1-8b-instant']
+// Current Groq models (the llama/gemma ids were shut down in 2025-26)
+const GROQ_MODELS = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b']
+const GEMINI_MODEL = 'gemini-3.6-flash'
 
 const isSkippableError = (status, errJson) => {
   const code = errJson?.error?.code || ''
@@ -54,13 +56,13 @@ Write the analysis in clear paragraphs covering: (1) match overview & result, (2
   if (geminiKey) {
     try {
       const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${geminiKey}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ role: 'user', parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
+            generationConfig: { temperature: 0.7, maxOutputTokens: 4096 },
           }),
         }
       )
@@ -80,12 +82,12 @@ Write the analysis in clear paragraphs covering: (1) match overview & result, (2
         const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${groqKey}` },
-          body: JSON.stringify({ model, messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_tokens: 1024 }),
+          body: JSON.stringify({ model, messages: [{ role: 'user', content: prompt }], temperature: 0.7, max_completion_tokens: 4096, reasoning_effort: 'low', include_reasoning: false }),
         })
         if (!res.ok) {
           const errJson = await res.json().catch(() => ({}))
-          if (isSkippableError(res.status, errJson)) continue
-          break
+          if (!isSkippableError(res.status, errJson)) console.error('Groq error:', model, res.status, JSON.stringify(errJson))
+          continue
         }
         const data = await res.json()
         const analysis = data.choices?.[0]?.message?.content || ''
