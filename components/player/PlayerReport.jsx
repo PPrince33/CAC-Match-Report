@@ -288,15 +288,6 @@ export default function PlayerReport({ report: r, profile, summary, onFormatChan
         </div>
       </Section>
 
-      {/* 8. Footer */}
-      <footer className="report-section border-t-2 border-[#0B0D0B] pt-6 mt-4 grid md:grid-cols-[auto_1fr] gap-6 items-start text-sm">
-        <CacLogo className="w-16 h-auto" />
-        <div className="space-y-2 text-[#5B6359]">
-          <p><strong className="text-[#0B0D0B]">Data source.</strong> Event data tagged by CAC analysts from match video, frame by frame, then processed (halves, minutes, attacking direction left to right). {r.playerModeMatches ? `${r.playerModeMatches} of ${r.perMatch.length} matches were tagged in player-only mode; opponents in those matches are recorded as a single stand-in. ` : ''}Minutes come from lineup sub times where recorded{r.minutesApprox ? ', otherwise they are estimated from tagged events' : ''}.</p>
-          <p><strong className="text-[#0B0D0B]">Method.</strong> Counting stats are {unit} minutes. xG uses the CAC model (distance, angle, technique, assist type, pressure). {poolNote}.</p>
-          <p><strong className="text-[#0B0D0B]">Contact.</strong> CAC · <a className="underline" href="https://calcioac.com">calcioac.com</a></p>
-        </div>
-      </footer>
     </div>
   )
 }
