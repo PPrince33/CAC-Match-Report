@@ -6,12 +6,13 @@ import { ChevronDown, Check } from 'lucide-react'
 /**
  * Pill-shaped dropdown with a checkbox list. `selected` empty = everything.
  * @param {object} p
- *   label:    e.g. "Tournaments"
+ *   label:    e.g. "Matches"
+ *   prefix:   optional text before the summary, e.g. "vs"
  *   options:  [{ value, label, hint? }]
  *   selected: string[] of values ([] means all)
  *   onChange: (string[]) => void
  */
-export default function MultiSelect({ label, options, selected, onChange }) {
+export default function MultiSelect({ label, options, selected, onChange, prefix = null }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
 
@@ -38,7 +39,7 @@ export default function MultiSelect({ label, options, selected, onChange }) {
     <div ref={ref} className="relative">
       <button type="button" onClick={() => setOpen(o => !o)} aria-haspopup="listbox" aria-expanded={open} aria-label={`${label}: ${summary}`}
         className={`inline-flex items-center gap-2 rounded-full border-2 px-4 py-2 font-mono font-bold uppercase text-xs bg-white transition-colors ${all ? 'border-[#D6DBD3]' : 'border-[#6BDB58]'} hover:border-[#0B0D0B]`}>
-        <span className="max-w-[200px] truncate">{summary}</span><ChevronDown size={14} className={open ? 'rotate-180 transition-transform' : 'transition-transform'} />
+        {prefix && <span className="text-[#5B6359]">{prefix}</span>}<span className="max-w-[200px] truncate">{summary}</span><ChevronDown size={14} className={open ? 'rotate-180 transition-transform' : 'transition-transform'} />
       </button>
       {open && (
         <div role="listbox" aria-multiselectable="true"

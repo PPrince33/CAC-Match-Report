@@ -80,7 +80,10 @@ export default function PlayerReport({ report: r, profile, summary, onFormatChan
   const sec = (n) => (summary ? n : n - 1) // section numbers close up when there is no summary
   const radarAxes = r.radarKeys.map(k => ({ label: PLAYER_STATS[k]?.label || k, value: r.percentiles[k] }))
   const trendSeries = PLAYER_TREND_METRICS.map(k => ({ label: `${PLAYER_STATS[k].label} ${unit}`, values: r.perMatch.map(m => m.per90[k]) }))
-  const poolNote = r.poolSize ? `Percentiles vs ${r.poolSize} CAC ${r.poolLabel} with ${r.poolMinMinutes}+ minutes (${r.isFutsal ? 'futsal' : '11-a-side'})` : `Not enough CAC ${r.poolLabel || 'players'} with ${r.poolMinMinutes}+ minutes yet for percentiles`
+  const leaguesText = r.poolAllLeagues ? 'all CAC leagues' : r.compareLeagues.length === 1 ? r.compareLeagues[0] : `${r.compareLeagues.length} leagues`
+  const poolNote = r.poolSize
+    ? `Percentiles vs ${r.poolSize} ${r.poolLabel} in ${leaguesText} with ${r.poolMinMinutes}+ minutes (${r.isFutsal ? 'futsal' : '11-a-side'})`
+    : `Not enough ${r.poolLabel || 'players'} in ${leaguesText} with ${r.poolMinMinutes}+ minutes yet for percentiles`
 
   const detail = [
     ['Position', GROUP_TITLE[r.group] + (r.player.position ? ` (${r.player.position})` : r.groupInferred ? ' (from match data)' : '')],
@@ -190,7 +193,7 @@ export default function PlayerReport({ report: r, profile, summary, onFormatChan
       <Section n={sec(4)} title={<>{GROUP_TITLE[r.group]} <span className="hl">profile</span></>} kicker={poolNote}>
         <div className="grid md:grid-cols-[1.2fr_1fr] gap-8 items-center">
           {radarAxes.some(a => a.value != null) ? <PercentileRadar axes={radarAxes} /> : (
-            <BrutalistCard><p className="text-sm text-[#5B6359]">The radar shows percentiles against other CAC {r.poolLabel || 'players'}. It fills in once enough players have {r.poolMinMinutes}+ minutes of processed data in this format. The raw numbers are on the right.</p></BrutalistCard>
+            <BrutalistCard><p className="text-sm text-[#5B6359]">The radar shows percentiles against other CAC {r.poolLabel || 'players'}. It fills in once enough players in the chosen league(s) have {r.poolMinMinutes}+ minutes of processed data, or compare with more leagues using the "vs" filter at the top. The raw numbers are on the right.</p></BrutalistCard>
           )}
           <ul className="space-y-2 text-sm">
             {r.radarKeys.map(k => (

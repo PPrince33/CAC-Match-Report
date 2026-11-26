@@ -24,23 +24,22 @@ export default function PlayerReportShell({ playerId, matchIds = null, summary =
   const [error, setError] = useState(errorIn)
   const [format, setFormat] = useState(null)
   const [loading, setLoading] = useState(false)
-  // Tournament + match filters (empty = all). Options come from the all-matches view.
+  // Matches filter (empty = all; options come from the all-matches view) and the
+  // leagues the player is compared with (null = his own league(s), [] = all leagues)
   const [matchOptions, setMatchOptions] = useState([])
-  const [selTournaments, setSelTournaments] = useState([])
   const [selMatches, setSelMatches] = useState([])
+  const [compareWith, setCompareWith] = useState(null)
 
-  const inTournaments = (m) => !selTournaments.length || selTournaments.includes(m.tournament)
-  const visibleMatches = matchOptions.filter(inTournaments)
-  const chosen = visibleMatches.filter(m => !selMatches.length || selMatches.includes(m.id))
+  const chosen = matchOptions.filter(m => !selMatches.length || selMatches.includes(m.id))
   const filtered = matchOptions.length > 0 && chosen.length < matchOptions.length
-  const filterKey = filtered ? chosen.map(m => m.id).join(',') : ''
+  const filterKey = (filtered ? chosen.map(m => m.id).join(',') : '') + '|' + (compareWith == null ? 'own' : compareWith.join(','))
 
   useEffect(() => {
     if (errorIn || !playerId) return
     if (filtered && !chosen.length) return
     let alive = true
     setLoading(true) // keep the current report on screen while the new selection loads
-    loadPlayerReport(playerId, filtered ? chosen.map(m => m.id) : matchIds, format)
+    loadPlayerReport(playerId, filtered ? chosen.map(m => m.id) : matchIds, format, compareWith)
       .then(r => {
         if (!alive) return
         setReport(r); setLoading(false)
@@ -54,28 +53,20 @@ export default function PlayerReportShell({ playerId, matchIds = null, summary =
     return () => { alive = false }
   }, [playerId, matchIds?.join(','), format, filterKey, errorIn])
 
-  // Ticking tournaments drops matches that are no longer in them
-  const changeTournaments = (ts) => {
-    setSelTournaments(ts)
-    setSelMatches(prev => prev.filter(id => {
-      const m = matchOptions.find(x => x.id === id)
-      return m && (!ts.length || ts.includes(m.tournament))
-    }))
-  }
-  const resetFilters = () => { setSelTournaments([]); setSelMatches([]) }
+  const resetFilters = () => { setSelMatches([]); setCompareWith(null) }
 
   const changeFormat = (f) => { setMatchOptions([]); resetFilters(); setFormat(f) }
 
   const filterBar = <>
-      {matchOptions.length > 1 && (() => {
-        const tournaments = [...new Set(matchOptions.map(m => m.tournament))]
-        return <>
-          <MultiSelect label="Tournaments" selected={selTournaments} onChange={changeTournaments}
-            options={tournaments.map(t => ({ value: t, label: t, hint: `${matchOptions.filter(m => m.tournament === t).length} match(es)` }))} />
-          <MultiSelect label="Matches" selected={selMatches} onChange={setSelMatches}
-            options={visibleMatches.map(m => ({ value: m.id, label: m.label, hint: m.tournament }))} />
-        </>
-      })()}
+      {report && !report.empty && report.leagueOptions?.length > 0 && (
+        <MultiSelect label="Leagues" prefix="vs" selected={compareWith ?? report.ownLeagues} onChange={setCompareWith}
+          options={report.leagueOptions.map(l => ({ value: l.name, label: l.name,
+            hint: `${l.players} player${l.players !== 1 ? 's' : ''} with ${report.poolMinMinutes}+ min${report.ownLeagues.includes(l.name) ? ' · own league' : ''}` }))} />
+      )}
+      {matchOptions.length > 1 && (
+        <MultiSelect label="Matches" selected={selMatches} onChange={setSelMatches}
+          options={matchOptions.map(m => ({ value: m.id, label: m.label, hint: m.tournament }))} />
+      )}
   </>
   const pdfButton = <button onClick={() => window.print()} className={`${pill} bg-[#0B0D0B] text-white hover:bg-[#23801A]`}><Printer size={14} />Download PDF</button>
 
