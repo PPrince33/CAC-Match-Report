@@ -6,6 +6,7 @@ import { RefreshCw, Printer } from 'lucide-react'
 import { loadPlayerReport } from '../../lib/playerData.js'
 import CacLogo from '../ui/CacLogo.jsx'
 import PlayerReport from './PlayerReport.jsx'
+import MultiSelect from './MultiSelect.jsx'
 
 const pill = 'inline-flex items-center gap-2 rounded-full px-4 py-2 font-mono font-bold uppercase text-xs transition-colors'
 
@@ -22,35 +23,67 @@ export default function PlayerReportShell({ playerId, matchIds = null, summary =
   const [report, setReport] = useState(null)
   const [error, setError] = useState(errorIn)
   const [format, setFormat] = useState(null)
-  // Single-match filter: null = all matches of this report
-  const [oneMatch, setOneMatch] = useState(null)
+  const [loading, setLoading] = useState(false)
+  // Tournament + match filters (empty = all). Options come from the all-matches view.
   const [matchOptions, setMatchOptions] = useState([])
+  const [selTournaments, setSelTournaments] = useState([])
+  const [selMatches, setSelMatches] = useState([])
+
+  const inTournaments = (m) => !selTournaments.length || selTournaments.includes(m.tournament)
+  const visibleMatches = matchOptions.filter(inTournaments)
+  const chosen = visibleMatches.filter(m => !selMatches.length || selMatches.includes(m.id))
+  const filtered = matchOptions.length > 0 && chosen.length < matchOptions.length
+  const filterKey = filtered ? chosen.map(m => m.id).join(',') : ''
 
   useEffect(() => {
     if (errorIn || !playerId) return
+    if (filtered && !chosen.length) return
     let alive = true
-    setReport(null)
-    loadPlayerReport(playerId, oneMatch ? [oneMatch] : matchIds, format)
+    setLoading(true) // keep the current report on screen while the new selection loads
+    loadPlayerReport(playerId, filtered ? chosen.map(m => m.id) : matchIds, format)
       .then(r => {
         if (!alive) return
-        setReport(r)
-        // Remember the full match list (from the all-matches view) for the dropdown
-        if (!oneMatch && !r.empty) setMatchOptions(r.perMatch.map(m => ({
+        setReport(r); setLoading(false)
+        if (!filtered && !r.empty) setMatchOptions(r.perMatch.map(m => ({
           id: m.match.match_id,
+          tournament: m.match.tournament_name || 'Other',
           label: `${m.match.match_date ? new Date(m.match.match_date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '?'} · v ${m.oppName || '?'}`,
         })))
       })
-      .catch(e => { if (alive) setError(e.message) })
+      .catch(e => { if (alive) { setError(e.message); setLoading(false) } })
     return () => { alive = false }
-  }, [playerId, matchIds?.join(','), format, oneMatch, errorIn])
+  }, [playerId, matchIds?.join(','), format, filterKey, errorIn])
 
-  const changeFormat = (f) => { setOneMatch(null); setFormat(f) }
+  // Ticking tournaments drops matches that are no longer in them
+  const changeTournaments = (ts) => {
+    setSelTournaments(ts)
+    setSelMatches(prev => prev.filter(id => {
+      const m = matchOptions.find(x => x.id === id)
+      return m && (!ts.length || ts.includes(m.tournament))
+    }))
+  }
+  const resetFilters = () => { setSelTournaments([]); setSelMatches([]) }
+
+  const changeFormat = (f) => { setMatchOptions([]); resetFilters(); setFormat(f) }
+
+  const filterBar = <>
+      {matchOptions.length > 1 && (() => {
+        const tournaments = [...new Set(matchOptions.map(m => m.tournament))]
+        return <>
+          <MultiSelect label="Tournaments" selected={selTournaments} onChange={changeTournaments}
+            options={tournaments.map(t => ({ value: t, label: t, hint: `${matchOptions.filter(m => m.tournament === t).length} match(es)` }))} />
+          <MultiSelect label="Matches" selected={selMatches} onChange={setSelMatches}
+            options={visibleMatches.map(m => ({ value: m.id, label: m.label, hint: m.tournament }))} />
+        </>
+      })()}
+  </>
+  const pdfButton = <button onClick={() => window.print()} className={`${pill} bg-[#0B0D0B] text-white hover:bg-[#23801A]`}><Printer size={14} />Download PDF</button>
 
   if (error) {
     return <Frame><div className="max-w-xl mx-auto mt-16 rounded-[20px] bg-[#F0F2EE] p-8"><h2 className="text-2xl uppercase mb-2">Report unavailable</h2><p className="text-[#5B6359]">{error}</p></div></Frame>
   }
   if (!report) {
-    return <Frame><div className="flex items-center justify-center gap-3 mt-24 font-mono font-bold uppercase"><RefreshCw className="animate-spin" size={18} /> Building player report…</div></Frame>
+    return <Frame actions={<>{filterBar}</>}><div className="flex items-center justify-center gap-3 mt-24 font-mono font-bold uppercase"><RefreshCw className="animate-spin" size={18} /> Building player report…</div></Frame>
   }
   if (report.empty) {
     return <Frame><div className="max-w-xl mx-auto mt-16 rounded-[20px] bg-[#F0F2EE] p-8">
@@ -64,22 +97,15 @@ export default function PlayerReportShell({ playerId, matchIds = null, summary =
     : null
 
   return (
-    <Frame actions={<>
-      {matchOptions.length > 1 && (
-        <select value={oneMatch || ''} onChange={e => setOneMatch(e.target.value || null)} aria-label="Show one match or all matches"
-          className="rounded-full border-2 border-[#D6DBD3] bg-white px-4 py-2 font-mono font-bold uppercase text-xs focus:outline-none focus:border-[#6BDB58] cursor-pointer max-w-[260px]">
-          <option value="">All matches ({matchOptions.length})</option>
-          {matchOptions.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
-        </select>
-      )}
-      <button onClick={() => window.print()} className={`${pill} bg-[#0B0D0B] text-white hover:bg-[#23801A]`}><Printer size={14} />Download PDF</button>
-    </>}>
+    <Frame actions={<>{filterBar}{pdfButton}</>}>
       {report.missing.length > 0 && (
         <p className="no-print mb-4 rounded-[14px] bg-[#EFFAEC] px-4 py-3 font-mono text-xs">
           {report.missing.length} selected match{report.missing.length > 1 ? 'es have' : ' has'} no processed data for this player yet and {report.missing.length > 1 ? 'are' : 'is'} not included.
         </p>
       )}
-      <PlayerReport report={report} profile={profile} summary={summaryBlock} onFormatChange={changeFormat} />
+      <div className={loading ? 'opacity-50 pointer-events-none transition-opacity' : 'transition-opacity'} aria-busy={loading}>
+        <PlayerReport report={report} profile={profile} summary={summaryBlock} onFormatChange={changeFormat} />
+      </div>
     </Frame>
   )
 }
