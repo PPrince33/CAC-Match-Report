@@ -22,16 +22,29 @@ export default function PlayerReportShell({ playerId, matchIds = null, summary =
   const [report, setReport] = useState(null)
   const [error, setError] = useState(errorIn)
   const [format, setFormat] = useState(null)
+  // Single-match filter: null = all matches of this report
+  const [oneMatch, setOneMatch] = useState(null)
+  const [matchOptions, setMatchOptions] = useState([])
 
   useEffect(() => {
     if (errorIn || !playerId) return
     let alive = true
     setReport(null)
-    loadPlayerReport(playerId, matchIds, format)
-      .then(r => { if (alive) setReport(r) })
+    loadPlayerReport(playerId, oneMatch ? [oneMatch] : matchIds, format)
+      .then(r => {
+        if (!alive) return
+        setReport(r)
+        // Remember the full match list (from the all-matches view) for the dropdown
+        if (!oneMatch && !r.empty) setMatchOptions(r.perMatch.map(m => ({
+          id: m.match.match_id,
+          label: `${m.match.match_date ? new Date(m.match.match_date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '?'} · v ${m.oppName || '?'}`,
+        })))
+      })
       .catch(e => { if (alive) setError(e.message) })
     return () => { alive = false }
-  }, [playerId, matchIds?.join(','), format, errorIn])
+  }, [playerId, matchIds?.join(','), format, oneMatch, errorIn])
+
+  const changeFormat = (f) => { setOneMatch(null); setFormat(f) }
 
   if (error) {
     return <Frame><div className="max-w-xl mx-auto mt-16 rounded-[20px] bg-[#F0F2EE] p-8"><h2 className="text-2xl uppercase mb-2">Report unavailable</h2><p className="text-[#5B6359]">{error}</p></div></Frame>
@@ -51,13 +64,22 @@ export default function PlayerReportShell({ playerId, matchIds = null, summary =
     : null
 
   return (
-    <Frame actions={<button onClick={() => window.print()} className={`${pill} bg-[#0B0D0B] text-white hover:bg-[#23801A]`}><Printer size={14} />Download PDF</button>}>
+    <Frame actions={<>
+      {matchOptions.length > 1 && (
+        <select value={oneMatch || ''} onChange={e => setOneMatch(e.target.value || null)} aria-label="Show one match or all matches"
+          className="rounded-full border-2 border-[#D6DBD3] bg-white px-4 py-2 font-mono font-bold uppercase text-xs focus:outline-none focus:border-[#6BDB58] cursor-pointer max-w-[260px]">
+          <option value="">All matches ({matchOptions.length})</option>
+          {matchOptions.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
+        </select>
+      )}
+      <button onClick={() => window.print()} className={`${pill} bg-[#0B0D0B] text-white hover:bg-[#23801A]`}><Printer size={14} />Download PDF</button>
+    </>}>
       {report.missing.length > 0 && (
         <p className="no-print mb-4 rounded-[14px] bg-[#EFFAEC] px-4 py-3 font-mono text-xs">
           {report.missing.length} selected match{report.missing.length > 1 ? 'es have' : ' has'} no processed data for this player yet and {report.missing.length > 1 ? 'are' : 'is'} not included.
         </p>
       )}
-      <PlayerReport report={report} profile={profile} summary={summaryBlock} onFormatChange={setFormat} />
+      <PlayerReport report={report} profile={profile} summary={summaryBlock} onFormatChange={changeFormat} />
     </Frame>
   )
 }
