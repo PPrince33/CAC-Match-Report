@@ -66,7 +66,7 @@ function Frame({ children, actions }) {
   return (
     <div className="min-h-screen bg-white font-sans">
       <header className="no-print bg-white/95 backdrop-blur border-b-2 border-[#D6DBD3] px-4 md:px-8 py-3 flex justify-between items-center gap-4 sticky top-0 z-50">
-        <Link href="/" className="flex items-center gap-3 hover:opacity-70"><CacLogo className="w-12 h-auto" /><span className="font-mono text-[11px] uppercase tracking-widest text-[#5B6359]">Player report</span></Link>
+        <Link href="/players" className="flex items-center gap-3 hover:opacity-70" title="All player reports"><CacLogo className="w-12 h-auto" /><span className="font-mono text-[11px] uppercase tracking-widest text-[#5B6359]">Player report</span></Link>
         <div className="flex gap-2">{actions}</div>
       </header>
       <main className="p-4 md:p-8 max-w-6xl mx-auto">{children}</main>
