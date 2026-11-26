@@ -1,4 +1,13 @@
 import { NextResponse } from 'next/server'
+import { loadPlayerReport, summaryPayload, resetPoolCache } from '../../../lib/playerData.js'
+
+// The tagger (another site) asks for player scout summaries, so this route allows cross-origin calls.
+const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type' }
+const withCors = (res) => { Object.entries(CORS).forEach(([k, v]) => res.headers.set(k, v)); return res }
+
+export function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: CORS })
+}
 
 // Current Groq models (the llama/gemma ids were shut down in 2025-26)
 const GROQ_MODELS = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b']
@@ -14,11 +23,21 @@ const isSkippableError = (status, errJson) => {
 
 export async function POST(req) {
   if (!process.env.GEMINI_API_KEY && !process.env.GROQ_API_KEY) {
-    return NextResponse.json({ error: 'No API keys configured' }, { status: 500 })
+    return withCors(NextResponse.json({ error: 'No API keys configured' }, { status: 500 }))
   }
 
   const body = await req.json()
-  if (body.kind === 'player') return runModels(playerPrompt(body.player))
+  if (body.kind === 'player') {
+    // { kind: 'player', playerId, matchIds } → stats are computed here from processed data
+    try {
+      resetPoolCache()
+      const report = await loadPlayerReport(body.playerId, body.matchIds?.length ? body.matchIds : null)
+      if (report.empty) return withCors(NextResponse.json({ error: 'No processed match data for this player yet.' }, { status: 400 }))
+      return withCors(await runModels(playerPrompt(summaryPayload(report))))
+    } catch (e) {
+      return withCors(NextResponse.json({ error: e.message }, { status: 500 }))
+    }
+  }
   const { match, home, away, homeStats, awayStats, defHome, defAway, vertHome, vertAway, fieldTilt, topPlayers } = body
 
   const prompt = `You are a professional football/futsal data analyst. Write a concise, insightful match analysis report (4–5 paragraphs) based on the following statistics. Be specific, reference numbers, and highlight key tactical observations.

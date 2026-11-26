@@ -52,7 +52,7 @@ function Section({ n, title, children, kicker }) {
   )
 }
 
-export default function PlayerReport({ report: r, profile, summary, onFormatChange, profileEditor }) {
+export default function PlayerReport({ report: r, profile, summary, onFormatChange }) {
   const [selectedShotId, setSelectedShotId] = useState(null)
   const unit = perUnitLabel(r.isFutsal)
   const cfg = getPitchConfig(r.isFutsal)
@@ -77,6 +77,7 @@ export default function PlayerReport({ report: r, profile, summary, onFormatChan
     ]
   }, [r.actor])
 
+  const sec = (n) => (summary ? n : n - 1) // section numbers close up when there is no summary
   const radarAxes = r.radarKeys.map(k => ({ label: PLAYER_STATS[k]?.label || k, value: r.percentiles[k] }))
   const trendSeries = PLAYER_TREND_METRICS.map(k => ({ label: `${PLAYER_STATS[k].label} ${unit}`, values: r.perMatch.map(m => m.per90[k]) }))
   const poolNote = r.poolSize ? `Percentiles vs ${r.poolSize} CAC ${r.poolLabel} with ${r.poolMinMinutes}+ minutes (${r.isFutsal ? 'futsal' : '11-a-side'})` : `Not enough CAC ${r.poolLabel || 'players'} with ${r.poolMinMinutes}+ minutes yet for percentiles`
@@ -131,7 +132,6 @@ export default function PlayerReport({ report: r, profile, summary, onFormatChan
             ))}
           </div>
         )}
-        {profileEditor}
       </section>
 
       {/* 2. Scout summary */}
@@ -142,7 +142,7 @@ export default function PlayerReport({ report: r, profile, summary, onFormatChan
       )}
 
       {/* 3. Key numbers */}
-      <Section n={3} title={<>Key <span className="hl">numbers</span></>} kicker={`Counting stats ${unit} minutes · ${poolNote}`}>
+      <Section n={sec(3)} title={<>Key <span className="hl">numbers</span></>} kicker={`Counting stats ${unit} minutes · ${poolNote}`}>
         <div className="grid md:grid-cols-2 gap-x-10 gap-y-3">
           {r.keyNumbers.map(k => (
             <div key={k} className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1">
@@ -187,7 +187,7 @@ export default function PlayerReport({ report: r, profile, summary, onFormatChan
       </Section>
 
       {/* 4. Radar */}
-      <Section n={4} title={<>{GROUP_TITLE[r.group]} <span className="hl">profile</span></>} kicker={poolNote}>
+      <Section n={sec(4)} title={<>{GROUP_TITLE[r.group]} <span className="hl">profile</span></>} kicker={poolNote}>
         <div className="grid md:grid-cols-[1.2fr_1fr] gap-8 items-center">
           {radarAxes.some(a => a.value != null) ? <PercentileRadar axes={radarAxes} /> : (
             <BrutalistCard><p className="text-sm text-[#5B6359]">The radar shows percentiles against other CAC {r.poolLabel || 'players'}. It fills in once enough players have {r.poolMinMinutes}+ minutes of processed data in this format. The raw numbers are on the right.</p></BrutalistCard>
@@ -204,7 +204,7 @@ export default function PlayerReport({ report: r, profile, summary, onFormatChan
       </Section>
 
       {/* 5. Match by match */}
-      <Section n={5} title={<>Match by <span className="hl">match</span></>} kicker={r.best && r.worst ? 'Best and worst match by CAC impact score (decisive and progressive actions minus losses, per 90)' : null}>
+      <Section n={sec(5)} title={<>Match by <span className="hl">match</span></>} kicker={r.best && r.worst ? 'Best and worst match by CAC impact score (decisive and progressive actions minus losses, per 90)' : null}>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -246,7 +246,7 @@ export default function PlayerReport({ report: r, profile, summary, onFormatChan
       </Section>
 
       {/* 6. On the pitch */}
-      <Section n={6} title={<>On the <span className="hl">pitch</span></>} kicker={`${r.perMatch.length > 1 ? `All ${r.perMatch.length} matches combined` : '1 match'} · attacking left to right`}>
+      <Section n={sec(6)} title={<>On the <span className="hl">pitch</span></>} kicker={`${r.perMatch.length > 1 ? `All ${r.perMatch.length} matches combined` : '1 match'} · attacking left to right`}>
         <div className="grid md:grid-cols-2 gap-6 pitch-grid">
           <div><h4 className="text-sm uppercase mb-2">Heatmap · all actions</h4>
             <HeatmapPitch events={ballEvents} teamName={r.player.player_name} isHome isFutsal={r.isFutsal} /></div>
@@ -267,7 +267,7 @@ export default function PlayerReport({ report: r, profile, summary, onFormatChan
       </Section>
 
       {/* 7. Clips */}
-      <Section n={7} title={<>Watch the <span className="hl">clips</span></>} kicker="Each link opens the match video 5 seconds before the action">
+      <Section n={sec(7)} title={<>Watch the <span className="hl">clips</span></>} kicker="Each link opens the match video 5 seconds before the action">
         <div className="grid md:grid-cols-3 gap-6">
           {clips.map(group => (
             <div key={group.title}>

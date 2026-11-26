@@ -16,10 +16,10 @@ export default function SharedPlayerReportPage() {
   useEffect(() => {
     supabase.rpc('get_shared_player_project', { token }).then(({ data, error }) => {
       if (error || !data) setState({ error: 'This report link is not valid. Ask CAC for a new one.' })
-      else setState({ project: { scout_summary: data.scout_summary, summary_approved: !!data.scout_summary }, playerId: data.player_id, matchIds: data.match_ids || [], profile: data.profile })
+      else setState({ summary: data.scout_summary, playerId: data.player_id, matchIds: data.match_ids || [], profile: data.profile })
     })
   }, [token])
 
   if (!state) return null
-  return <PlayerReportShell shared playerId={state.playerId} matchIds={state.matchIds} project={state.project} profile={state.profile} error={state.error} />
+  return <PlayerReportShell playerId={state.playerId} matchIds={state.matchIds} summary={state.summary} profile={state.profile} error={state.error} />
 }
