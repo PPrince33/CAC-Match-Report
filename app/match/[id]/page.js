@@ -143,7 +143,7 @@ export default function MatchReportPage() {
       try {
         const [matchData, eventsData, lineupsData] = await Promise.all([
           fetchSupabase('matches', {
-            select: 'match_id,home_team_id,away_team_id,match_date,match_name,status,is_futsal,video_url,tournament_name,home_team_score,away_team_score,home_team:teams!matches_home_team_id_fkey(team_name),away_team:teams!matches_away_team_id_fkey(team_name)',
+            select: '*,home_team:teams!matches_home_team_id_fkey(team_name),away_team:teams!matches_away_team_id_fkey(team_name)', // '*' includes exclude_from_reports once it exists
             'match_id': `eq.${matchId}`
           }),
           fetchSupabase('processed_match_events', {
@@ -157,7 +157,7 @@ export default function MatchReportPage() {
         ])
 
         const m = matchData?.[0]
-        if (!m) return
+        if (!m || m.exclude_from_reports) return // hidden from reports → shows "Match not found"
         setMatch(m)
 
         const sortedLineups = (lineupsData || []).sort((a, b) => (a.jersey_no || 99) - (b.jersey_no || 99))

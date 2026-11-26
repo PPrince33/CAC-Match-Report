@@ -18,7 +18,7 @@ export default function HomePage() {
       try {
         const [matchesData, tournamentsData] = await Promise.all([
           fetchSupabase('matches', {
-            select: 'match_id,home_team_id,away_team_id,match_date,match_name,status,is_futsal,video_url,tournament_name,tournament_id,home_team_score,away_team_score,home_team:teams!matches_home_team_id_fkey(team_name),away_team:teams!matches_away_team_id_fkey(team_name)',
+            select: '*,home_team:teams!matches_home_team_id_fkey(team_name),away_team:teams!matches_away_team_id_fkey(team_name)', // '*' includes exclude_from_reports once it exists
             'status': 'eq.Done',
             order: 'match_date.desc'
           }),
@@ -27,7 +27,7 @@ export default function HomePage() {
             order: 'tournament_name.asc'
           }),
         ])
-        setMatches(matchesData || [])
+        setMatches((matchesData || []).filter(m => !m.exclude_from_reports)) // hidden in Admin Portal → Matches
         setTournaments(tournamentsData || [])
       } catch (err) {
         console.error('Fetch Error:', err)
