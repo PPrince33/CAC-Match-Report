@@ -100,7 +100,7 @@ export default function PlayerReport({ report: r, profile, summary, onFormatChan
           <div className="flex justify-between items-start gap-6 flex-wrap">
             <div>
               <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#6BDB58] mb-2">CAC Player Report · {r.isFutsal ? 'Futsal' : 'Football'}</p>
-              <h1 className="text-4xl md:text-6xl uppercase leading-[0.95]">{r.player.player_name}</h1>
+              <h1 className="text-4xl md:text-6xl uppercase leading-[0.95] [word-spacing:0.2em]">{r.player.player_name}</h1>
               <dl className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-3">
                 {detail.map(([k, v]) => (
                   <div key={k}>

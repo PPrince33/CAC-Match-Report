@@ -13,6 +13,7 @@ const nextConfig = {
       { source: '/', destination: `${SITE}${BASE_PATH}`, basePath: false, permanent: false },
       { source: '/match/:id', destination: `${SITE}${BASE_PATH}/match/:id`, basePath: false, permanent: false },
       { source: '/player/:path*', destination: `${SITE}${BASE_PATH}/player/:path*`, basePath: false, permanent: false },
+      { source: '/players', destination: `${SITE}${BASE_PATH}/players`, basePath: false, permanent: false },
     ]
   },
 }
