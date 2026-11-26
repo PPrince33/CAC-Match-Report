@@ -59,7 +59,7 @@ export default function HomePage() {
           <div className="flex items-center gap-4 font-mono text-xs uppercase tracking-[0.16em] text-[#5B6359]">
             <span className="w-10 h-1 bg-[#6BDB58]" />
             <span><b className="text-[#0B0D0B] font-semibold">CAC</b> Calcio Analysis Company</span>
-            <Link href="/players" className="ml-auto underline hover:text-[#0B0D0B]">Player reports</Link>
+            <Link href="/players" className="ml-auto hover:text-[#0B0D0B]">Player reports</Link>
           </div>
           <h1 className="text-5xl md:text-7xl uppercase leading-[0.9]">
             Match <span className="hl">reports.</span>
