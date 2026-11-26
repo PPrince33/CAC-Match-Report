@@ -11,8 +11,9 @@
   .print-only { display: block; }
   main { padding: 0 !important; max-width: none !important; }
 
-  .report-section { break-after: page; page-break-after: always; break-inside: avoid-page; margin: 0 !important; }
-  .report-section:last-child { break-after: auto; page-break-after: auto; }
+  /* Each section starts a new page; screen-only sections (video) are display:none so add no blank page */
+  .report-section { break-inside: avoid-page; margin: 0 !important; }
+  .report-section + .report-section { break-before: page; page-break-before: always; }
   .report-print-header {
     display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding-bottom: 6px;
     border-bottom: 2px solid #0B0D0B; font-family: "JetBrains Mono", monospace; font-size: 9px;

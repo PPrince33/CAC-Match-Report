@@ -10,8 +10,8 @@ import { PercentileBar, PercentileRadar, TrendChart, pctColor } from './PlayerCh
 import { PLAYER_STATS, PLAYER_TREND_METRICS } from '../../lib/statsRegistry.js'
 import { calculateXG } from '../../lib/xg.js'
 import { getPitchConfig } from '../../lib/pitchConfig.js'
-import { isAssist, isKeyPass, isDefensiveWin, perUnitLabel } from '../../lib/playerStats.js'
-import { clipUrl } from '../../lib/video.js'
+import { perUnitLabel } from '../../lib/playerStats.js'
+import VideoClips from './VideoClips.jsx'
 
 const GROUP_TITLE = {
   goalkeeper: 'Goalkeeper', 'centre-back': 'Centre-back', 'full-back': 'Full-back',
@@ -36,9 +36,9 @@ function ageFrom(dob) {
   return a
 }
 
-function Section({ n, title, children, kicker }) {
+function Section({ n, title, children, kicker, className = '' }) {
   return (
-    <section className="report-section mb-10">
+    <section className={`report-section mb-10 ${className}`}>
       <div className="print-only report-print-header">
         <CacLogo className="w-10 h-auto" /><span>CAC Player Report</span>
       </div>
@@ -65,17 +65,6 @@ export default function PlayerReport({ report: r, profile, summary, onFormatChan
   const shots = useMemo(() => r.actor.filter(e => e.action === 'Shoot').map(e => ({ ...e, xg: calculateXG(e, cfg) })), [r.actor, cfg])
   const passCarry = useMemo(() => ballEvents.filter(e => ['Pass', 'Through Ball', 'Carry', 'Dribble'].includes(e.action)), [ballEvents])
   const defensive = useMemo(() => ballEvents.filter(e => ['Standing Tackle', 'Sliding Tackle', 'Pass Intercept', 'Block', 'Clearance', 'Pressure'].includes(e.action)), [ballEvents])
-
-  const clips = useMemo(() => {
-    const tag = (e) => e.action === 'Shoot' ? `Shot · ${e.outcome}` : isAssist(e) ? 'Assist' : isKeyPass(e) ? 'Key pass' : `${e.action} won`
-    const pick = (fn) => r.actor.filter(fn).map(e => ({ e, label: tag(e), url: clipUrl(e._match?.video_url, e.match_time_seconds) }))
-      .sort((a, b) => String(a.e._match?.match_date).localeCompare(String(b.e._match?.match_date)) || a.e.match_time_seconds - b.e.match_time_seconds)
-    return [
-      { title: 'Shots', items: pick(e => e.action === 'Shoot') },
-      { title: 'Assists & key passes', items: pick(e => isAssist(e) || isKeyPass(e)) },
-      { title: 'Defensive wins', items: pick(isDefensiveWin) },
-    ]
-  }, [r.actor])
 
   const sec = (n) => (summary ? n : n - 1) // section numbers close up when there is no summary
   const radarAxes = r.radarKeys.map(k => ({ label: PLAYER_STATS[k]?.label || k, value: r.percentiles[k] }))
@@ -269,26 +258,9 @@ export default function PlayerReport({ report: r, profile, summary, onFormatChan
         </div>
       </Section>
 
-      {/* 7. Clips */}
-      <Section n={sec(7)} title={<>Watch the <span className="hl">clips</span></>} kicker="Each link opens the match video 5 seconds before the action">
-        <div className="grid md:grid-cols-3 gap-6">
-          {clips.map(group => (
-            <div key={group.title}>
-              <h4 className="text-sm uppercase mb-2">{group.title} <span className="font-mono text-[#5B6359]">({group.items.length})</span></h4>
-              {group.items.length === 0 ? <p className="text-sm text-[#5B6359]">None.</p> : (
-                <ul className="space-y-1 text-sm max-h-[420px] overflow-y-auto pr-2 clip-list">
-                  {group.items.map(({ e, label, url }) => (
-                    <li key={e.processed_event_id} className="flex justify-between gap-3 border-b border-[#D6DBD3] py-1">
-                      <span><span className="font-mono text-[#5B6359]">{shortDate(e._match?.match_date)} · {e.match_minute ?? '?'}′</span> {label}</span>
-                      {url ? <a href={url} target="_blank" rel="noopener noreferrer" className="font-mono text-xs font-bold text-[#23801A] underline whitespace-nowrap">Watch ▸</a>
-                        : <span className="font-mono text-[10px] text-[#9AA397] whitespace-nowrap">no video</span>}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          ))}
-        </div>
+      {/* 7. Video (screen only: left out of print / PDF) */}
+      <Section n={sec(7)} className="no-print" title={<>Watch the <span className="hl">clips</span></>} kicker={`Pick clip types, click a clip, or Play all · each clip starts 5 seconds before the action`}>
+        <VideoClips events={r.actor} cfg={cfg} />
       </Section>
 
     </div>
