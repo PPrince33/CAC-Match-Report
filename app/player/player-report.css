@@ -1,0 +1,26 @@
+/* Player report: print / PDF layout (A4, one section per page, CAC header on each page).
+   Screen styles come from app/globals.css and Tailwind, unchanged. */
+
+.print-only { display: none; }
+
+@media print {
+  @page { size: A4; margin: 14mm 12mm; }
+  html, body { background: #fff !important; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .no-print { display: none !important; }
+  .print-only { display: block; }
+  main { padding: 0 !important; max-width: none !important; }
+
+  .report-section { break-after: page; page-break-after: always; break-inside: avoid-page; margin: 0 !important; }
+  .report-section:last-child { break-after: auto; page-break-after: auto; }
+  .report-print-header {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding-bottom: 6px;
+    border-bottom: 2px solid #0B0D0B; font-family: "JetBrains Mono", monospace; font-size: 9px;
+    font-weight: 700; text-transform: uppercase; letter-spacing: .12em;
+  }
+  .pitch-grid { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
+  .pitch-grid canvas { max-height: 62mm; width: 100% !important; object-fit: contain; }
+  .clip-list { max-height: none !important; overflow: visible !important; }
+  table { font-size: 9.5px; }
+  a[href^="http"]::after { content: ""; }
+}

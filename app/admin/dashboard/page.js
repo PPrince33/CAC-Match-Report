@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase, fetchSupabase } from '../../../lib/supabase.js'
 import { RefreshCw, LogOut, Edit3, Plus } from 'lucide-react'
+import PlayerReportsAdmin from '../../../components/player/PlayerReportsAdmin.jsx'
 
 export default function AdminDashboardPage() {
   const router = useRouter()
@@ -115,6 +116,8 @@ export default function AdminDashboardPage() {
 
       {/* Main Content */}
       <main className="p-6 md:p-8 max-w-7xl mx-auto w-full flex-1">
+        <PlayerReportsAdmin />
+
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-black uppercase border-b-4 border-line pb-1">All Matches</h2>
         </div>
